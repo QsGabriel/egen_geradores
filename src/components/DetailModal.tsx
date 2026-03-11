@@ -1,0 +1,139 @@
+import React, { useEffect } from "react";
+import { X, Maximize2, Minimize2 } from "lucide-react";
+
+interface DetailModalProps {
+  title: string;
+  children: React.ReactNode;
+  onClose: () => void;
+  icon?: React.ReactNode;
+  accentColor?: string;
+}
+
+const DetailModal: React.FC<DetailModalProps> = ({ 
+  title, 
+  children, 
+  onClose,
+  icon,
+  accentColor = "blue"
+}) => {
+  const [isExpanded, setIsExpanded] = React.useState(false);
+
+  // Suporte para tecla ESC
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
+
+  const colorClasses: Record<string, { gradient: string; border: string; iconBg: string }> = {
+    blue: {
+      gradient: "from-blue-500 to-indigo-500",
+      border: "border-blue-200",
+      iconBg: "bg-blue-500"
+    },
+    green: {
+      gradient: "from-green-500 to-emerald-500",
+      border: "border-green-200",
+      iconBg: "bg-green-500"
+    },
+    orange: {
+      gradient: "from-orange-500 to-amber-500",
+      border: "border-orange-200",
+      iconBg: "bg-orange-500"
+    },
+    red: {
+      gradient: "from-red-500 to-rose-500",
+      border: "border-red-200",
+      iconBg: "bg-red-500"
+    },
+    purple: {
+      gradient: "from-purple-500 to-violet-500",
+      border: "border-purple-200",
+      iconBg: "bg-purple-500"
+    }
+  };
+
+  const colors = colorClasses[accentColor] || colorClasses.blue;
+
+  return (
+    <div 
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in p-2 sm:p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div 
+        className={`bg-white dark:bg-gray-800 rounded-2xl shadow-2xl flex flex-col animate-scale-in transition-all duration-300 w-full ${
+          isExpanded 
+            ? 'sm:w-[95vw] h-[95vh]' 
+            : 'max-w-[95vw] sm:max-w-[90vw] max-h-[90vh] sm:max-h-[85vh] sm:min-w-[400px]'
+        }`}
+      >
+        {/* Cabeçalho com Gradiente */}
+        <div className="relative overflow-hidden rounded-t-2xl flex-shrink-0">
+          {/* Background Gradient */}
+          <div className={`absolute inset-0 bg-gradient-to-r ${colors.gradient} opacity-10 dark:opacity-20`}></div>
+          
+          <div className="relative flex items-center justify-between px-4 py-3 sm:px-6 sm:py-5 border-b-2 border-gray-100 dark:border-gray-700">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+              {icon && (
+                <div className={`p-2 sm:p-2.5 rounded-xl ${colors.iconBg} shadow-lg flex-shrink-0`}>
+                  {icon}
+                </div>
+              )}
+              <div className="space-y-0.5 sm:space-y-1 min-w-0">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100 leading-tight truncate">{title}</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400 leading-tight hidden sm:block">Clique fora para fechar</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 ml-2">
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-all duration-200 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hidden sm:block"
+                title={isExpanded ? "Minimizar" : "Expandir"}
+              >
+                {isExpanded ? (
+                  <Minimize2 className="w-4 h-4" />
+                ) : (
+                  <Maximize2 className="w-4 h-4" />
+                )}
+              </button>
+              <button
+                onClick={onClose}
+                className="p-1.5 sm:p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-all duration-200 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 sm:hover:rotate-90"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Conteúdo Rolável */}
+        <div className="flex-1 px-3 pt-4 pb-4 sm:px-6 sm:pt-6 sm:pb-6 overflow-y-auto scrollbar-thin">
+          {children}
+        </div>
+
+        {/* Footer */}
+        <div className="px-3 py-3 sm:px-6 sm:py-4 border-t-2 border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/50 rounded-b-2xl flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-gray-400 hidden sm:block">
+              Pressione ESC para fechar
+            </p>
+            <button
+              onClick={onClose}
+              className={`px-4 py-2 text-sm font-medium text-white rounded-xl bg-gradient-to-r ${colors.gradient} hover:shadow-lg transition-all duration-200 hover:scale-105 w-full sm:w-auto`}
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default DetailModal;
