@@ -6,3 +6,4 @@
  */
 
 export * as Quotations from './quotations';
+export * as CRM from './crm';

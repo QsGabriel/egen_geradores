@@ -5,22 +5,10 @@ import { hasPermission } from './utils/permissions';
 import Auth from './components/Auth';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
-import ProductList from './components/ProductList';
-import AddProduct from './components/AddProduct';
-import MovementHistory from './components/MovementHistory';
-import RequestManagement from './components/RequestManagement';
-import ExpirationMonitor from './components/ExpirationMonitor';
-import ProductChangeLog from './components/ProductChangeLog';
 import UserManagement from './components/UserManagement';
-import SupplierManagement from './components/SupplierManagement';
-import { QuotationManagementPage } from './modules/quotations';
-import RequestPeriodConfig from './components/RequestPeriodConfig';
+import { CrmPage } from './modules/crm';
 import ResetPassword from './components/ResetPassword';
 import Home from './components/Home';
-import { MessagingProviderSettings } from './modules/messaging';
-import PaymentRequestManagement from './components/PaymentRequestManagement';
-import RequestHub from './components/RequestHub';
-import { MaintenanceRequestManagement } from './components/MaintenanceRequest';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ 
@@ -72,74 +60,10 @@ const AuthenticatedApp: React.FC = () => {
           }
         />
         <Route
-          path="/products"
+          path="/crm"
           element={
-            <ProtectedRoute permission="canViewProducts" userRole={userRole}>
-              <ProductList />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/add-product"
-          element={
-            <ProtectedRoute permission="canAddProducts" userRole={userRole}>
-              <AddProduct />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/movements"
-          element={
-            <ProtectedRoute permission="canViewMovements" userRole={userRole}>
-              <MovementHistory />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/requests"
-          element={
-            <ProtectedRoute permission="canViewRequests" userRole={userRole}>
-              <RequestHub />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/requests/purchases"
-          element={
-            <ProtectedRoute permission="canViewRequests" userRole={userRole}>
-              <RequestManagement />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/requests/payments"
-          element={
-            <ProtectedRoute permission="canViewRequests" userRole={userRole}>
-              <PaymentRequestManagement />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/requests/maintenance"
-          element={
-            <ProtectedRoute permission="canViewRequests" userRole={userRole}>
-              <MaintenanceRequestManagement />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/expiration"
-          element={
-            <ProtectedRoute permission="canViewExpiration" userRole={userRole}>
-              <ExpirationMonitor />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/changelog"
-          element={
-            <ProtectedRoute permission="canViewChangelog" userRole={userRole}>
-              <ProductChangeLog />
+            <ProtectedRoute permission="canViewClients" userRole={userRole}>
+              <CrmPage />
             </ProtectedRoute>
           }
         />
@@ -148,47 +72,6 @@ const AuthenticatedApp: React.FC = () => {
           element={
             <ProtectedRoute permission="canManageUsers" userRole={userRole}>
               <UserManagement />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/suppliers"
-          element={
-            <ProtectedRoute permission="canManageSuppliers" userRole={userRole}>
-              <SupplierManagement />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/quotations"
-          element={
-            <ProtectedRoute permission="canManageQuotations" userRole={userRole}>
-              <QuotationManagementPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/request-periods"
-          element={
-            <ProtectedRoute permission="canConfigureRequestPeriods" userRole={userRole}>
-              <RequestPeriodConfig />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/messaging-settings"
-          element={
-            <ProtectedRoute permission="canManageUsers" userRole={userRole}>
-              <MessagingProviderSettings />
-            </ProtectedRoute>
-          }
-        />
-        {/* Legacy route - redirects to new hub */}
-        <Route
-          path="/payment-requests"
-          element={
-            <ProtectedRoute permission="canViewRequests" userRole={userRole}>
-              <PaymentRequestManagement />
             </ProtectedRoute>
           }
         />

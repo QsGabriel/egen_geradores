@@ -2,25 +2,14 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
-  Package, 
-  Plus, 
-  History, 
-  FileText, 
-  AlertTriangle,
   Menu,
   X,
   LogOut,
   User,
-  Clock,
   ChevronDown,
-  ChevronRight,
   Users,
   Shield,
-  Building2,
-  Calculator,
-  DollarSign,
-  MessageSquare,
-  Settings
+  Briefcase,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { hasPermission, getRoleLabel } from '../utils/permissions';
@@ -44,7 +33,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, userProfile, signOut } = useAuth();
   const { isDark } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [expandedItems, setExpandedItems] = useState<string[]>(['Produtos']);
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const userRole = userProfile?.role || 'requester';
 
@@ -56,40 +45,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       permission: 'canViewDashboard'
     },
     { 
-      name: 'Produtos', 
-      href: '/products', 
-      icon: Package,
-      permission: 'canViewProducts',
-      subItems: [
-        { name: 'Lista de Produtos', href: '/products', icon: Package, permission: 'canViewProducts' },
-        { name: 'Adicionar Produto', href: '/add-product', icon: Plus, permission: 'canAddProducts' },
-        { name: 'Controle de Validade', href: '/expiration', icon: AlertTriangle, permission: 'canViewExpiration' },
-        { name: 'Histórico de Alterações', href: '/changelog', icon: Clock, permission: 'canViewChangelog' },
-      ]
-    },
-    { 
-      name: 'Movimentações', 
-      href: '/movements', 
-      icon: History,
-      permission: 'canViewMovements'
-    },
-    { 
-      name: 'Solicitações', 
-      href: '/requests', 
-      icon: FileText,
-      permission: 'canViewRequests'
-    },
-    { 
-      name: 'Fornecedores', 
-      href: '/suppliers', 
-      icon: Building2,
-      permission: 'canManageSuppliers'
-    },
-    { 
-      name: 'Cotações', 
-      href: '/quotations', 
-      icon: Calculator,
-      permission: 'canManageQuotations'
+      name: 'Comercial / CRM', 
+      href: '/crm', 
+      icon: Briefcase,
+      permission: 'canViewClients'
     },
     { 
       name: 'Usuários', 
@@ -97,16 +56,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       icon: Users,
       permission: 'canManageUsers'
     },
-    {
-      name: 'Sistema',
-      href: '/system',
-      icon: Settings,
-      permission: 'canManageUsers',
-      subItems: [
-        { name: 'Configurar Períodos', href: '/request-periods', icon: Clock, permission: 'canConfigureRequestPeriods' },
-        { name: 'Provedores de Mensagens', href: '/messaging-settings', icon: MessageSquare, permission: 'canManageUsers' },
-      ]
-    }
   ];
 
   const handleSignOut = async () => {

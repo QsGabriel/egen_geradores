@@ -196,6 +196,15 @@ export interface RolePermissions {
   canManageSuppliers: boolean;
   canManageQuotations: boolean;
   canConfigureRequestPeriods: boolean;
+  // CRM permissions
+  canViewClients: boolean;
+  canCreateClients: boolean;
+  canEditClients: boolean;
+  canDeleteClients: boolean;
+  canViewLeads: boolean;
+  canCreateLeads: boolean;
+  canEditLeads: boolean;
+  canDeleteLeads: boolean;
 }
 
 // Supplier types
