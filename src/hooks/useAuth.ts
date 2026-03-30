@@ -94,28 +94,8 @@ export const useAuth = () => {
     });
 
     if (data.user && !error) {
-      // Verifica se já existem perfis para definir se este será admin
-      const existingProfiles = await supabase
-        .from('user_profiles')
-        .select('id')
-        .limit(1);
-
-      const defaultRole: UserRole =
-        existingProfiles.data?.length === 0 ? 'admin' : 'requester';
-
-      // Insere o perfil manualmente
-      const { error: insertError } = await supabase.from('user_profiles').insert({
-        id: data.user.id,
-        email,
-        name: name || email.split('@')[0],
-        role: defaultRole,
-        department,
-      });
-
-      if (insertError) {
-        console.error('Erro ao inserir perfil:', insertError);
-      }
-
+      // O perfil é criado automaticamente pela trigger on_auth_user_created.
+      // Apenas carregamos o perfil após o signup.
       await loadUserProfile(data.user.id);
     }
 

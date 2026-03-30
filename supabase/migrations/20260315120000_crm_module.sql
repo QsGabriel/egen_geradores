@@ -48,12 +48,13 @@ BEGIN
     assigned_role := 'requester';
   END IF;
 
-  INSERT INTO user_profiles (id, email, name, role)
+  INSERT INTO user_profiles (id, email, name, role, department)
   VALUES (
     NEW.id,
     NEW.email,
     COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
-    assigned_role
+    assigned_role,
+    NEW.raw_user_meta_data->>'department'
   );
   RETURN NEW;
 END;
