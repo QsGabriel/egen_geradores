@@ -367,8 +367,8 @@ export const useMaintenanceRequest = () => {
       return (data || []).map(item => ({
         id: item.id,
         maintenanceRequestId: item.maintenance_request_id,
-        productId: item.product_id,
-        productName: item.product_name,
+        equipmentId: item.product_id,
+        equipmentName: item.product_name,
         movementId: item.movement_id,
         quantity: item.quantity,
         createdAt: item.created_at

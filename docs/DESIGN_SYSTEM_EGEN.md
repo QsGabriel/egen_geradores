@@ -1,99 +1,94 @@
-Design System — EGEN System
+# Design System — EGEN System
 
 Documento de referência visual e UX/UI para o sistema interno da EGEN Geradores.
 Versão inicial para implementação no frontend React.
 
-1. Princípios de Design
+## 1. Princípios de Design
 
 O design do sistema deve refletir os valores da EGEN:
+* Energia
+* Confiabilidade
+* Tecnologia
+* Operação industrial
 
-Energia
+**Diretrizes principais:**
+* Interface limpa e objetiva
+* Layout focado em dados operacionais
+* Visual corporativo e seguro com a presença da identidade da marca
+* Uso estratégico de cores de destaque para ações e status
+* Componentes reutilizáveis
 
-Confiabilidade
+## 2. Paleta de Cores
 
-Tecnologia
+A identidade visual do sistema utiliza o Azul Marinho corporativo da marca como base de ancoragem, o Amarelo como destaque principal, e incorpora os tons de Azul Claro e Verde do símbolo para ações secundárias e de feedback.
 
-Operação industrial
+**Cores Primárias**
 
-Diretrizes principais:
+| Cor | Hex | Uso |
+| :--- | :--- | :--- |
+| Azul Marinho EGEN | `#0D2A59` | Backgrounds de Header e Sidebar, Tipografia principal em botões de destaque |
+| Amarelo EGEN | `#F3B229` | Destaques, botões de ação principal (Primary), badges |
+| Branco | `#FFFFFF` | Texto em fundos escuros, áreas de conteúdo e cards |
+| Cinza Escuro | `#2B2B2B` | Textos padrão e neutros |
 
-Interface limpa e objetiva
+**Cores Secundárias e Semânticas**
 
-Layout focado em dados operacionais
+| Cor | Hex | Uso |
+| :--- | :--- | :--- |
+| Azul Claro EGEN | `#6A93C7` | Links, botões secundários, ícones informativos |
+| Verde EGEN | `#7AC15F` | Status positivo (Sucesso, Ativo, Disponível) |
+| Cinza Médio | `#6B6B6B` | Texto secundário, legendas |
+| Background Leve | `#F5F7FA` | Fundo principal da aplicação (cinza levemente azulado) |
+| Vermelho Alerta | `#E5484D` | Erros e ações destrutivas (Excluir, Cancelar) |
 
-Visual moderno com inspiração industrial
+## 3. Tipografia
 
-Uso predominante de cores fortes com contraste alto
+O site utiliza uma tipografia moderna e corporativa, excelente para leitura de dados.
 
-Componentes reutilizáveis
+**Fonte principal:** `Inter`
 
-2. Paleta de Cores
+**Motivos:**
+* Excelente para dashboards
+* Legível em dados e tabelas
+* Muito usada em aplicações SaaS corporativas
 
-A identidade visual do site da empresa utiliza tons de energia elétrica (amarelo) combinados com preto e branco, criando contraste forte e industrial.
+**Hierarquia tipográfica:**
 
-Cores Primárias
-Cor	Hex	Uso
-Amarelo EGEN	#F5C400	Destaques, botões principais
-Preto Industrial	#111111	Backgrounds e navbar
-Cinza Escuro	#2B2B2B	Cards e containers
-Branco	#FFFFFF	Texto e áreas de conteúdo
-Cores Secundárias
-Cor	Hex	Uso
-Cinza Médio	#6B6B6B	Texto secundário
-Cinza Claro	#F2F2F2	Backgrounds leves
-Verde Sucesso	#2EBD59	Status positivo
-Vermelho Alerta	#E5484D	Erros
-Amarelo Alerta	#FFB800	Avisos
-3. Tipografia
+| Elemento | Tamanho |
+| :--- | :--- |
+| Heading 1 | 32px |
+| Heading 2 | 24px |
+| Heading 3 | 20px |
+| Body | 16px |
+| Small | 14px |
+| Caption | 12px |
 
-O site utiliza uma tipografia moderna e industrial, similar a fontes utilizadas em interfaces corporativas.
+**Peso recomendado:**
+* Regular — 400
+* Medium — 500
+* Bold — 700
 
-Sugestão para o sistema:
+## 4. Grid e Layout
 
-Fonte principal
-Inter
+O sistema seguirá o padrão de dashboard SaaS.
 
-Motivos:
+**Grid base:** 12 colunas
 
-Excelente para dashboards
+**Espaçamento:**
 
-Legível em dados e tabelas
+| Tipo | Valor |
+| :--- | :--- |
+| XS | 4px |
+| SM | 8px |
+| MD | 16px |
+| LG | 24px |
+| XL | 32px |
 
-Muito usada em aplicações SaaS
-
-Hierarquia tipográfica
-Elemento	Tamanho
-Heading 1	32px
-Heading 2	24px
-Heading 3	20px
-Body	16px
-Small	14px
-Caption	12px
-
-Peso recomendado:
-
-Regular — 400
-Medium — 500
-Bold — 700
-4. Grid e Layout
-
-O sistema seguirá padrão dashboard SaaS.
-
-Grid base
-12 colunas
-
-Espaçamento:
-
-Tipo	Valor
-XS	4px
-SM	8px
-MD	16px
-LG	24px
-XL	32px
-5. Estrutura de Layout
+## 5. Estrutura de Layout
 
 Layout padrão do sistema.
 
+```text
 ┌───────────────────────────────┐
 │            HEADER             │
 ├───────────────┬───────────────┤
@@ -103,7 +98,6 @@ Layout padrão do sistema.
 │               │               │
 └───────────────┴───────────────┘
 6. Header
-
 Elementos:
 
 Logo EGEN
@@ -114,232 +108,233 @@ Notificações
 
 Menu de usuário
 
-Altura:
+Altura: 64px
+Cor de Fundo: #0D2A59 (Azul Marinho EGEN)
+Cor dos Ícones/Texto: #FFFFFF
 
-64px
-
-Cor:
-
-#111111
 7. Sidebar
-
 Menu lateral de navegação.
 
 Estrutura:
 
 Dashboard
+
 Clientes
+
 Orçamentos
+
 Equipamentos
+
 Manutenção
+
 Financeiro
+
 Estoque
+
 Usuários
+
 Configurações
 
 Estilo:
 
-Background: #111111
+Background: #0D2A59 (Azul Marinho EGEN)
 
-Texto: branco
+Texto: #FFFFFF
 
-Item ativo: #F5C400
+Item ativo: Fundo rgba(243, 178, 41, 0.1) com borda ou ícone em #F3B229 (Amarelo EGEN)
 
 8. Cards
-
 Os dados do sistema serão exibidos em cards.
 
 Estilo:
 
 background: #FFFFFF
+
 border-radius: 10px
-box-shadow: subtle
+
+box-shadow: 0 4px 6px rgba(13, 42, 89, 0.05) (sombra suave puxando para o azul)
+
 padding: 24px
 
-Exemplo:
-
-┌──────────────────┐
-│ Equipamentos     │
-│ Disponíveis: 12  │
-└──────────────────┘
 9. Botões
 Primary Button
-background: #F5C400
-color: #111
+
+background: #F3B229 (Amarelo EGEN)
+
+color: #0D2A59 (Azul Marinho EGEN)
+
 border-radius: 8px
+
 padding: 10px 16px
 
-Uso:
-
-salvar
-
-criar
-
-confirmar
+Uso: salvar, criar, confirmar
 
 Secondary Button
-background: transparent
-border: 1px solid #CCC
-color: #333
-Danger Button
-background: #E5484D
-color: white
-10. Inputs
 
+background: transparent
+
+border: 1px solid #6A93C7 (Azul Claro EGEN)
+
+color: #6A93C7
+
+Danger Button
+
+background: #E5484D
+
+color: #FFFFFF
+
+10. Inputs
 Estilo padrão:
 
 height: 40px
+
 border-radius: 8px
+
 border: 1px solid #DDD
+
 padding: 8px 12px
 
 Estado focus:
 
-border-color: #F5C400
-box-shadow: 0 0 0 2px rgba(245,196,0,0.2)
-11. Tabelas
+border-color: #6A93C7 (Azul Claro EGEN)
 
+box-shadow: 0 0 0 2px rgba(106, 147, 199, 0.2)
+
+11. Tabelas
 As tabelas são centrais no sistema.
 
 Estilo:
 
-background: white
+background: #FFFFFF
+
 border-radius: 10px
+
+header background: #F5F7FA
 
 Colunas:
 
 Cliente
+
 Contrato
+
 Equipamento
+
 Status
+
 Valor
+
 Ações
 
-Status com badge:
-
-Status	Cor
-Ativo	Verde
-Pendente	Amarelo
-Cancelado	Vermelho
 12. Badges de Status
-
 Formato:
 
 padding: 4px 8px
+
 border-radius: 6px
+
 font-size: 12px
 
-Exemplo:
+font-weight: 500
 
-Disponível
-Locado
-Manutenção
+Cores por Status:
+
+Ativo / Disponível: Fundo verde claro com texto em #7AC15F (Verde EGEN)
+
+Pendente / Manutenção: Fundo amarelo claro com texto em #F3B229 (Amarelo EGEN)
+
+Cancelado / Erro: Fundo vermelho claro com texto em #E5484D
+
 13. Dashboard
-
 Cards principais:
 
 Equipamentos disponíveis
+
 Equipamentos locados
+
 Manutenções próximas
+
 Contratos ativos
+
 Faturamento do mês
 
-Layout:
+Layout: 4 cards por linha
 
-4 cards por linha
 14. Ícones
-
-Biblioteca recomendada:
-
-Lucide Icons
-
-Motivo:
-
-leve
-
-compatível com React
-
-moderno
+Biblioteca recomendada: Lucide Icons
+Motivo: leve, compatível com React, moderno e combina com a fonte Inter.
 
 15. Animações
-
-Utilizar animações leves.
-
-Biblioteca recomendada:
-
-Framer Motion
-
-Exemplos:
-
-abertura de modais
-
-loading states
-
-dropdown
+Utilizar animações leves para não comprometer a performance e a sensação de "sistema ágil".
+Biblioteca recomendada: Framer Motion
+Exemplos: abertura de modais, loading states, dropdowns.
 
 16. Responsividade
-
 Breakpoints:
 
-Dispositivo	Width
-Mobile	640px
-Tablet	768px
-Laptop	1024px
-Desktop	1280px
-17. Componentes Reutilizáveis
+Mobile: 640px
 
-Componentes que devem existir no sistema:
+Tablet: 768px
+
+Laptop: 1024px
+
+Desktop: 1280px
+
+17. Componentes Reutilizáveis
+Componentes que devem ser implementados na biblioteca UI:
 
 Button
+
 Card
+
 Table
+
 Modal
-Input
-Select
+
+Input / Select
+
 Badge
-Alert
+
+Alert / Toast
+
 Tabs
+
 Drawer
-Toast
+
 18. Dark Mode (Opcional)
+Caso o sistema suporte modo escuro, deve utilizar tons escuros do Azul Marinho para manter a identidade da marca, evitando o cinza genérico.
 
-O sistema pode futuramente suportar modo escuro.
+Cores (Dark Mode):
 
-Cores:
+Background: #07152D (Azul Marinho super escuro)
 
-Background: #0E0E0E
-Card: #1A1A1A
-Text: #F2F2F2
-Primary: #F5C400
+Card / Surfaces: #102140
+
+Text: #F5F7FA
+
+Primary: #F3B229 (Amarelo EGEN)
+
 19. Bibliotecas recomendadas para o projeto React
+Para acelerar o desenvolvimento de forma robusta:
 
-Para acelerar o desenvolvimento:
+React + TypeScript
 
-React
-TypeScript
-TailwindCSS
-Shadcn UI
-Lucide Icons
-React Query
-React Hook Form
-Zod
-Framer Motion
+TailwindCSS (Estilização)
+
+Shadcn UI (Base de componentes)
+
+Lucide Icons (Ícones)
+
+React Query (Gerenciamento de estado do servidor)
+
+React Hook Form + Zod (Formulários e validação)
+
+Framer Motion (Animações)
+
 20. Inspiração visual
+O sistema deve transmitir a robustez da EGEN, lembrando:
 
-O sistema deve lembrar:
+Sistemas ERP modernos (ex: SAP Fiori atualizado)
 
-dashboards industriais
+Dashboards de gestão de frotas/equipamentos
 
-sistemas ERP modernos
-
-softwares SaaS corporativos
-
-Referências:
-
-Stripe Dashboard
-
-Linear
-
-Vercel Dashboard
-
-Notion
+Softwares SaaS corporativos (Stripe, Vercel, Linear)

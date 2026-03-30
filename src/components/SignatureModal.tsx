@@ -5,7 +5,7 @@ import { useNotification } from '../hooks/useNotification';
 
 interface SignatureModalProps {
   requestId: string;
-  items: { productName: string; quantity: number }[];
+  items: { equipmentName: string; quantity: number }[];
   onConfirm: (signature: string, receiverName: string) => void;
   onClose: () => void;
 }
@@ -110,7 +110,7 @@ const SignatureModal: React.FC<SignatureModalProps> = ({ requestId, items, onCon
         <div className="space-y-2">
           {items.map((item, idx) => (
             <p key={idx} className="text-sm text-gray-700">
-              {item.productName} - {item.quantity} un.
+              {item.equipmentName} - {item.quantity} un.
             </p>
           ))}
         </div>

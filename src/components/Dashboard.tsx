@@ -37,27 +37,27 @@ import {
   Area
 } from 'recharts';
 
-// Cores para gráficos
+// Cores para gráficos - EGEN palette
 const CHART_COLORS = [
-  '#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', 
-  '#EF4444', '#6366F1', '#EC4899', '#14B8A6'
+  '#0D2A59', '#F3B229', '#6A93C7', '#7AC15F', 
+  '#E5484D', '#2B2B2B', '#6B6B6B', '#102140'
 ];
 
 // Skeleton Component para loading
 const SkeletonCard: React.FC = () => (
-  <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 animate-pulse">
+  <div className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card border border-gray-100 dark:border-white/5 p-6 animate-pulse">
     <div className="flex items-center justify-between">
       <div className="space-y-3 flex-1">
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24 skeleton"></div>
-        <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-16 skeleton"></div>
+        <div className="h-4 bg-gray-200 dark:bg-white/10 rounded w-24 skeleton"></div>
+        <div className="h-8 bg-gray-200 dark:bg-white/10 rounded w-16 skeleton"></div>
       </div>
-      <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-xl skeleton"></div>
+      <div className="w-12 h-12 bg-gray-200 dark:bg-white/10 rounded-card skeleton"></div>
     </div>
   </div>
 );
 
 const Dashboard: React.FC = () => {
-  const { getDashboardData, getFinancialMetrics, products, movements, requests, loading, error } = useInventory();
+  const { getDashboardData, getFinancialMetrics, equipment, movements, requests, loading, error } = useInventory();
   const [selectedDetail, setSelectedDetail] = useState<string | null>(null);
   const [showCharts, setShowCharts] = useState<boolean>(true);
   const [movementsPeriod, setMovementsPeriod] = useState<7 | 15 | 30 | 'custom'>(7);
@@ -70,7 +70,7 @@ const Dashboard: React.FC = () => {
 
   // Dados para gráficos - DEVE estar antes de qualquer return condicional
   const chartData = useMemo(() => {
-    if (!dashboardData || !products || !movements) {
+    if (!dashboardData || !equipment || !movements) {
       return {
         categoryPieData: [],
         categoryValueData: [],
@@ -146,9 +146,9 @@ const Dashboard: React.FC = () => {
 
     // Dados para indicadores de status
     const statusData = [
-      { name: 'Ativos', value: (products || []).filter(p => p.status === 'active').length, color: '#10B981' },
-      { name: 'Estoque Baixo', value: (products || []).filter(p => p.status === 'low-stock').length, color: '#F59E0B' },
-      { name: 'Vencidos', value: (products || []).filter(p => {
+      { name: 'Ativos', value: (equipment || []).filter(p => p.status === 'active').length, color: '#10B981' },
+      { name: 'Estoque Baixo', value: (equipment || []).filter(p => p.status === 'low-stock').length, color: '#F59E0B' },
+      { name: 'Vencidos', value: (equipment || []).filter(p => {
         if (!p?.expirationDate) return false;
         const expDate = new Date(p.expirationDate);
         return expDate < new Date();
@@ -182,7 +182,7 @@ const Dashboard: React.FC = () => {
       statusData,
       departmentRankingData
     };
-  }, [dashboardData, products, movements, requests, movementsPeriod, customStartDate, customEndDate]);
+  }, [dashboardData, equipment, movements, requests, movementsPeriod, customStartDate, customEndDate]);
 
   if (loading) {
     return (
@@ -240,16 +240,16 @@ const Dashboard: React.FC = () => {
 
   const stats = [
     {
-      name: 'Total de Produtos',
-      value: dashboardData.totalProducts,
+      name: 'Total de Equipamentos',
+      value: dashboardData.totalEquipment,
       icon: Package,
       color: 'bg-blue-500',
       textColor: 'text-blue-600',
-      detailKey: 'allProducts'
+      detailKey: 'allEquipment'
     },
     {
       name: 'Estoque Baixo',
-      value: dashboardData.lowStockProducts,
+      value: dashboardData.lowStockEquipment,
       icon: AlertTriangle,
       color: 'bg-orange-500',
       textColor: 'text-orange-600',
@@ -257,7 +257,7 @@ const Dashboard: React.FC = () => {
     },
     {
       name: 'Próximos ao Vencimento',
-      value: dashboardData.expiringProducts,
+      value: dashboardData.expiringEquipment,
       icon: Calendar,
       color: 'bg-red-500',
       textColor: 'text-red-600',
@@ -293,8 +293,8 @@ const Dashboard: React.FC = () => {
       detailKey: 'financialStats'
     },
     {
-      name: 'Valor Médio por Produto',
-      value: formatCurrency(dashboardData.averageProductValue),
+      name: 'Valor Médio por Equipamento',
+      value: formatCurrency(dashboardData.averageEquipmentValue),
       change: 0, // Pode ser calculado se necessário
       changeValue: formatCurrency(0),
       icon: Package,
@@ -303,9 +303,9 @@ const Dashboard: React.FC = () => {
     }
   ];
 
-  const lowStockProducts = products.filter(p => p.status === 'low-stock');
-  const expiringProducts = products.filter(p => {
-    if (p.quantity <= 0) return false; // Não exibir produtos sem estoque
+  const lowStockEquipment = equipment.filter(p => p.status === 'low-stock');
+  const expiringEquipment = equipment.filter(p => {
+    if (p.quantity <= 0) return false; // Não exibir equipamentos sem estoque
     const expirationDate = new Date(p.expirationDate);
     const thirtyDaysFromNow = new Date();
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
@@ -316,13 +316,13 @@ const Dashboard: React.FC = () => {
 
   const getModalTitle = (detail: string): string => {
     const titles: Record<string, string> = {
-      lowStock: 'Produtos com Estoque Baixo',
-      expiring: 'Produtos Próximos ao Vencimento',
+      lowStock: 'Equipamentos com Estoque Baixo',
+      expiring: 'Equipamentos Próximos ao Vencimento',
       recentMovements: 'Movimentações Recentes',
-      topValue: 'Produtos de Maior Valor',
+      topValue: 'Equipamentos de Maior Valor',
       financialStats: 'Métricas Financeiras Detalhadas',
-      categories: 'Produtos por Categoria',
-      allProducts: 'Todos os Produtos',
+      categories: 'Equipamentos por Categoria',
+      allEquipment: 'Todos os Equipamentos',
       departmentRanking: 'Solicitações por Departamento - Controle de Custos'
     };
     return titles[detail] || 'Detalhes';
@@ -332,23 +332,23 @@ const Dashboard: React.FC = () => {
     detail: string, 
     dashboardData: any, 
     financialMetrics: any, 
-    products: any[], 
+    equipment: any[], 
     movements: any[], 
     formatCurrency: (value: number) => string
   ) => {
     switch (detail) {
       case 'lowStock':
-        const lowStockProducts = products.filter(p => p.status === 'low-stock');
+        const lowStockProducts = equipment.filter(p => p.status === 'low-stock');
         return (
           <div className="space-y-4">
             <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-              {lowStockProducts.length} produto(s) com estoque abaixo do mínimo
+              {lowStockProducts.length} equipamento(s) com estoque abaixo do mínimo
             </p>
             <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-xs sm:text-sm">
                 <thead className="bg-gray-50 dark:bg-gray-700/50">
                   <tr>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Produto</th>
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Equipamento</th>
                     <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Atual</th>
                     <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Mín</th>
                     <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden sm:table-cell">Valor</th>
@@ -385,9 +385,9 @@ const Dashboard: React.FC = () => {
         );
 
       case 'expiring':
-        const expiringProducts = products
+        const expiringProducts = equipment
           .filter(p => {
-            if (p.quantity <= 0) return false; // Não exibir produtos sem estoque
+            if (p.quantity <= 0) return false; // Não exibir equipamentos sem estoque
             const expirationDate = new Date(p.expirationDate);
             const thirtyDaysFromNow = new Date();
             thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
@@ -398,13 +398,13 @@ const Dashboard: React.FC = () => {
         return (
           <div className="space-y-4">
             <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-              {expiringProducts.length} produto(s) próximos ao vencimento (próximos 30 dias)
+              {expiringProducts.length} equipamento(s) próximos ao vencimento (próximos 30 dias)
             </p>
             <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-xs sm:text-sm">
                 <thead className="bg-gray-50 dark:bg-gray-700/50">
                   <tr>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Produto</th>
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Equipamento</th>
                     <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Validade</th>
                     <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Dias</th>
                     <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden sm:table-cell">Qtd</th>
@@ -469,7 +469,7 @@ const Dashboard: React.FC = () => {
                 <thead className="bg-gray-50 dark:bg-gray-700/50">
                   <tr>
                     <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Data</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Produto</th>
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Equipamento</th>
                     <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Qtd</th>
                     <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden sm:table-cell">Motivo</th>
                     <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden md:table-cell">Valor</th>
@@ -483,7 +483,7 @@ const Dashboard: React.FC = () => {
                         {movement.date}
                       </td>
                       <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-gray-100">
-                        {movement.productName}
+                        {movement.equipmentName}
                       </td>
                       <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-red-600 dark:text-red-400 font-medium">
                         -{movement.quantity}
@@ -512,19 +512,19 @@ const Dashboard: React.FC = () => {
         );
 
       case 'topValue':
-        const sortedProducts = [...products].sort((a, b) => (b.totalValue || 0) - (a.totalValue || 0));
+        const sortedProducts = [...equipment].sort((a, b) => (b.totalValue || 0) - (a.totalValue || 0));
         
         return (
           <div className="space-y-3 sm:space-y-4">
             <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-              Todos os produtos ordenados por valor total (decrescente)
+              Todos os equipamentos ordenados por valor total (decrescente)
             </p>
             <div className="overflow-x-auto -mx-2 sm:mx-0">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-700/50">
                   <tr>
                     <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Pos.</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Produto</th>
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Equipamento</th>
                     <th className="hidden sm:table-cell px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Qtd</th>
                     <th className="hidden md:table-cell px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Preço Unit.</th>
                     <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Total</th>
@@ -663,7 +663,7 @@ const Dashboard: React.FC = () => {
             name: categoryName,
             count: count as number,
             value: dashboardData.allCategoryValues[categoryName] || 0,
-            products: products.filter(p => p.category === categoryName),
+            equipment: equipment.filter(p => p.category === categoryName),
             colors: categoryColors[index % categoryColors.length]
           }));
         
@@ -677,15 +677,15 @@ const Dashboard: React.FC = () => {
                   <p className="text-xs text-gray-500 dark:text-gray-400">Categorias</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">{products.length}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Total Produtos</p>
+                  <p className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">{equipment.length}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Total Equipamentos</p>
                 </div>
                 <div className="text-center">
                   <p className="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(dashboardData.totalInventoryValue)}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Valor Total</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-lg sm:text-2xl font-bold text-purple-600 dark:text-purple-400">{formatCurrency(dashboardData.averageProductValue)}</p>
+                  <p className="text-lg sm:text-2xl font-bold text-purple-600 dark:text-purple-400">{formatCurrency(dashboardData.averageEquipmentValue)}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Valor Médio</p>
                 </div>
               </div>
@@ -721,15 +721,15 @@ const Dashboard: React.FC = () => {
                     </div>
                   </div>
                   
-                  {/* Lista de Produtos da Categoria */}
-                  {category.products.length > 0 && (
+                  {/* Lista de Equipamentos da Categoria */}
+                  {category.equipment.length > 0 && (
                     <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
-                      <h5 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Produtos:</h5>
+                      <h5 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Equipamentos:</h5>
                       <div className="max-h-32 overflow-y-auto pr-1 space-y-1.5 scrollbar-thin">
-                        {category.products.map((product) => (
-                          <div key={product.id} className="flex justify-between items-center text-xs bg-white/50 dark:bg-gray-700/50 rounded-lg px-2 py-1.5">
-                            <span className="text-gray-700 dark:text-gray-300 truncate flex-1 mr-2">{product.name}</span>
-                            <span className="text-gray-800 dark:text-gray-100 font-medium whitespace-nowrap">{formatCurrency(product.totalValue || 0)}</span>
+                        {category.equipment.map((item) => (
+                          <div key={item.id} className="flex justify-between items-center text-xs bg-white/50 dark:bg-gray-700/50 rounded-lg px-2 py-1.5">
+                            <span className="text-gray-700 dark:text-gray-300 truncate flex-1 mr-2">{item.name}</span>
+                            <span className="text-gray-800 dark:text-gray-100 font-medium whitespace-nowrap">{formatCurrency(item.totalValue || 0)}</span>
                           </div>
                         ))}
                       </div>
@@ -741,17 +741,17 @@ const Dashboard: React.FC = () => {
           </div>
         );
 
-      case 'allProducts':
+      case 'allEquipment':
         return (
           <div className="space-y-3 sm:space-y-4">
             <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-              {products.length} produto(s) cadastrado(s) no sistema
+              {equipment.length} equipamento(s) cadastrado(s) no sistema
             </p>
             <div className="overflow-x-auto -mx-2 sm:mx-0">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-700/50">
                   <tr>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Produto</th>
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Equipamento</th>
                     <th className="hidden md:table-cell px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Categoria</th>
                     <th className="hidden sm:table-cell px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Qtd</th>
                     <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
@@ -760,7 +760,7 @@ const Dashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {products.map((product) => (
+                  {equipment.map((product) => (
                     <tr key={product.id}>
                       <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap">
                         <div>
@@ -891,16 +891,16 @@ const Dashboard: React.FC = () => {
           return (
             <div 
               key={stat.name} 
-              className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm p-3 sm:p-6 border border-gray-100 dark:border-gray-700 cursor-pointer hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-300 hover-lift card-interactive animate-fade-in-up"
+              className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card p-3 sm:p-6 border border-gray-100 dark:border-white/5 cursor-pointer hover:shadow-card-hover hover:border-egen-yellow/30 dark:hover:border-egen-yellow/20 transition-all duration-300 hover-lift card-interactive animate-fade-in-up"
               style={{ animationDelay: `${index * 0.05}s` }}
               onClick={() => setSelectedDetail(stat.detailKey)}
             >
               <div className="flex items-center justify-between">
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">{stat.name}</p>
+                  <p className="text-xs sm:text-sm font-medium text-egen-gray-mid dark:text-white/60 truncate">{stat.name}</p>
                   <p className={`text-xl sm:text-3xl font-bold ${stat.textColor} mt-1 sm:mt-2`}>{stat.value}</p>
                 </div>
-                <div className={`p-2 sm:p-4 rounded-xl sm:rounded-2xl ${stat.color} shadow-lg flex-shrink-0 ml-2`}>
+                <div className={`p-2 sm:p-4 rounded-card ${stat.color} shadow-lg flex-shrink-0 ml-2`}>
                   <Icon className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
                 </div>
               </div>
@@ -912,17 +912,17 @@ const Dashboard: React.FC = () => {
       {/* Botão para Toggle dos Gráficos */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg flex-shrink-0">
-            <LineChart className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+          <div className="p-1.5 sm:p-2 rounded-card bg-egen-navy shadow-lg flex-shrink-0">
+            <LineChart className="w-4 h-4 sm:w-5 sm:h-5 text-egen-yellow" />
           </div>
-          <h2 className="text-sm sm:text-lg font-semibold text-gray-800 dark:text-gray-200 truncate">Gráficos e Indicadores</h2>
+          <h2 className="text-sm sm:text-lg font-semibold text-egen-gray-dark dark:text-egen-dark-text truncate">Gráficos e Indicadores</h2>
         </div>
         <button
           onClick={() => setShowCharts(!showCharts)}
-          className={`flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-medium text-xs sm:text-sm transition-all duration-300 flex-shrink-0 ${
+          className={`flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium text-xs sm:text-sm transition-all duration-300 flex-shrink-0 ${
             showCharts 
-              ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-200 dark:hover:bg-indigo-900/70' 
-              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              ? 'bg-egen-navy/10 dark:bg-egen-yellow/10 text-egen-navy dark:text-egen-yellow hover:bg-egen-navy/20 dark:hover:bg-egen-yellow/20' 
+              : 'bg-gray-100 dark:bg-white/5 text-egen-gray-mid dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/10'
           }`}
         >
           {showCharts ? (
@@ -945,11 +945,11 @@ const Dashboard: React.FC = () => {
       {showCharts && (
       <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {/* Gráfico de Pizza - Status dos Produtos */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all duration-300">
+        {/* Gráfico de Pizza - Status dos Equipamentos */}
+        <div className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card p-4 sm:p-6 border border-gray-100 dark:border-white/5 hover:shadow-card-hover transition-all duration-300">
           <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <h3 className="text-sm sm:text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center">
-              <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-emerald-500 shadow-lg mr-2 sm:mr-3">
+            <h3 className="text-sm sm:text-lg font-semibold text-egen-gray-dark dark:text-egen-dark-text flex items-center">
+              <div className="p-1.5 sm:p-2 rounded-card bg-egen-green shadow-lg mr-2 sm:mr-3">
                 <PieChartIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
               Status do Estoque
@@ -999,11 +999,11 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Gráfico de Pizza - Distribuição por Categoria */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all duration-300">
+        <div className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card p-4 sm:p-6 border border-gray-100 dark:border-white/5 hover:shadow-card-hover transition-all duration-300">
           <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <h3 className="text-sm sm:text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center">
-              <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-purple-500 shadow-lg mr-2 sm:mr-3">
-                <Package className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            <h3 className="text-sm sm:text-lg font-semibold text-egen-gray-dark dark:text-egen-dark-text flex items-center">
+              <div className="p-1.5 sm:p-2 rounded-card bg-egen-navy shadow-lg mr-2 sm:mr-3">
+                <Package className="w-4 h-4 sm:w-5 sm:h-5 text-egen-yellow" />
               </div>
               Categorias
             </h3>
@@ -1032,7 +1032,7 @@ const Dashboard: React.FC = () => {
                       border: '1px solid #e5e7eb',
                       boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                     }}
-                    formatter={(value: number) => [`${value} produtos`, 'Quantidade']}
+                    formatter={(value: number) => [`${value} equipamentos`, 'Quantidade']}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -1058,11 +1058,11 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Gráfico de Área - Movimentações */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all duration-300 sm:col-span-2 lg:col-span-1">
+        <div className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card p-4 sm:p-6 border border-gray-100 dark:border-white/5 hover:shadow-card-hover transition-all duration-300 sm:col-span-2 lg:col-span-1">
           <div className="mb-3 sm:mb-4">
             <div className="flex items-center justify-between mb-2 sm:mb-3">
-              <h3 className="text-sm sm:text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center">
-                <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-blue-500 shadow-lg mr-2 sm:mr-3">
+              <h3 className="text-sm sm:text-lg font-semibold text-egen-gray-dark dark:text-egen-dark-text flex items-center">
+                <div className="p-1.5 sm:p-2 rounded-card bg-egen-blue shadow-lg mr-2 sm:mr-3">
                   <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
                 Movimentações
@@ -1073,8 +1073,8 @@ const Dashboard: React.FC = () => {
                 onClick={() => setMovementsPeriod(7)}
                 className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-medium rounded-lg transition-all ${
                   movementsPeriod === 7
-                    ? 'bg-blue-500 text-white shadow-sm'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    ? 'bg-egen-navy text-white shadow-sm dark:bg-egen-yellow dark:text-egen-navy'
+                    : 'bg-gray-100 dark:bg-white/5 text-egen-gray-mid dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/10'
                 }`}
               >
                 7d
@@ -1083,8 +1083,8 @@ const Dashboard: React.FC = () => {
                 onClick={() => setMovementsPeriod(15)}
                 className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-medium rounded-lg transition-all ${
                   movementsPeriod === 15
-                    ? 'bg-blue-500 text-white shadow-sm'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    ? 'bg-egen-navy text-white shadow-sm dark:bg-egen-yellow dark:text-egen-navy'
+                    : 'bg-gray-100 dark:bg-white/5 text-egen-gray-mid dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/10'
                 }`}
               >
                 15d
@@ -1093,8 +1093,8 @@ const Dashboard: React.FC = () => {
                 onClick={() => setMovementsPeriod(30)}
                 className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-medium rounded-lg transition-all ${
                   movementsPeriod === 30
-                    ? 'bg-blue-500 text-white shadow-sm'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    ? 'bg-egen-navy text-white shadow-sm dark:bg-egen-yellow dark:text-egen-navy'
+                    : 'bg-gray-100 dark:bg-white/5 text-egen-gray-mid dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/10'
                 }`}
               >
                 30d
@@ -1103,8 +1103,8 @@ const Dashboard: React.FC = () => {
                 onClick={() => setMovementsPeriod('custom')}
                 className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-medium rounded-lg transition-all ${
                   movementsPeriod === 'custom'
-                    ? 'bg-blue-500 text-white shadow-sm'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    ? 'bg-egen-navy text-white shadow-sm dark:bg-egen-yellow dark:text-egen-navy'
+                    : 'bg-gray-100 dark:bg-white/5 text-egen-gray-mid dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/10'
                 }`}
               >
                 Custom
@@ -1115,14 +1115,14 @@ const Dashboard: React.FC = () => {
                     type="date"
                     value={customStartDate}
                     onChange={(e) => setCustomStartDate(e.target.value)}
-                    className="flex-1 sm:flex-none px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 sm:flex-none px-2 py-1 text-xs border border-gray-300 dark:border-white/10 bg-white dark:bg-egen-dark-surface text-gray-900 dark:text-egen-dark-text rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-blue"
                   />
-                  <span className="text-xs text-gray-500 dark:text-gray-400">até</span>
+                  <span className="text-xs text-egen-gray-mid dark:text-white/60">até</span>
                   <input
                     type="date"
                     value={customEndDate}
                     onChange={(e) => setCustomEndDate(e.target.value)}
-                    className="flex-1 sm:flex-none px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 sm:flex-none px-2 py-1 text-xs border border-gray-300 dark:border-white/10 bg-white dark:bg-egen-dark-surface text-gray-900 dark:text-egen-dark-text rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-blue"
                   />
                 </div>
               )}
@@ -1179,15 +1179,15 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Gráfico de Barras - Valor por Categoria */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all duration-300">
+      <div className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card p-4 sm:p-6 border border-gray-100 dark:border-white/5 hover:shadow-card-hover transition-all duration-300">
         <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <h3 className="text-sm sm:text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center">
-            <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-indigo-500 shadow-lg mr-2 sm:mr-3">
-              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+          <h3 className="text-sm sm:text-lg font-semibold text-egen-gray-dark dark:text-egen-dark-text flex items-center">
+            <div className="p-1.5 sm:p-2 rounded-card bg-egen-navy shadow-lg mr-2 sm:mr-3">
+              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-egen-yellow" />
             </div>
             <span className="hidden xs:inline">Valor em Estoque por </span>Categoria
           </h3>
-          <span className="text-xs font-medium px-2 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300">
+          <span className="text-xs font-medium px-2 py-1 rounded-full bg-egen-navy/10 dark:bg-egen-yellow/10 text-egen-navy dark:text-egen-yellow">
             Top 6
           </span>
         </div>
@@ -1251,15 +1251,15 @@ const Dashboard: React.FC = () => {
           return (
             <div 
               key={stat.name} 
-              className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm p-3 sm:p-6 border border-gray-100 dark:border-gray-700 cursor-pointer hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-300 hover-lift card-interactive animate-fade-in-up"
+              className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card p-3 sm:p-6 border border-gray-100 dark:border-white/5 cursor-pointer hover:shadow-card-hover hover:border-egen-yellow/30 dark:hover:border-egen-yellow/20 transition-all duration-300 hover-lift card-interactive animate-fade-in-up"
               style={{ animationDelay: `${(index + 4) * 0.05}s` }}
               onClick={() => setSelectedDetail(stat.detailKey)}
             >
               <div className="flex items-center justify-between mb-2 sm:mb-4">
-                <div className={`p-2 sm:p-3 rounded-lg sm:rounded-xl ${stat.color} shadow-lg`}>
+                <div className={`p-2 sm:p-3 rounded-card ${stat.color} shadow-lg`}>
                   <Icon className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <div className="flex items-center space-x-1 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-gray-50 dark:bg-gray-700">
+                <div className="flex items-center space-x-1 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-gray-50 dark:bg-white/5">
                   {getTrendIcon(stat.change)}
                   <span className={`text-xs sm:text-sm font-medium ${getTrendColor(stat.change)}`}>
                     {formatPercentage(stat.change)}
@@ -1267,8 +1267,8 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
               <div>
-                <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">{stat.name}</p>
-                <p className="text-lg sm:text-2xl font-bold text-gray-800 dark:text-gray-100 mt-0.5 sm:mt-1">{stat.value}</p>
+                <p className="text-xs sm:text-sm font-medium text-egen-gray-mid dark:text-white/60">{stat.name}</p>
+                <p className="text-lg sm:text-2xl font-bold text-egen-gray-dark dark:text-egen-dark-text mt-0.5 sm:mt-1">{stat.value}</p>
                 <p className={`text-xs sm:text-sm mt-1 sm:mt-2 ${getTrendColor(stat.change)}`}>
                   {stat.change >= 0 ? '+' : ''}{stat.changeValue} <span className="hidden xs:inline">vs mês anterior</span>
                 </p>
@@ -1281,17 +1281,17 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Categories Chart */}
         <div
-          className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 dark:border-gray-700 cursor-pointer hover:shadow-lg hover:border-purple-200 dark:hover:border-purple-800 transition-all duration-300 hover-lift"
+          className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card p-4 sm:p-6 border border-gray-100 dark:border-white/5 cursor-pointer hover:shadow-card-hover transition-all duration-300 hover-lift"
           onClick={() => setSelectedDetail('categories')}
         >
           <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <h3 className="text-sm sm:text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center">
-              <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-purple-500 shadow-lg mr-2 sm:mr-3">
-                <Package className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            <h3 className="text-sm sm:text-lg font-semibold text-egen-gray-dark dark:text-egen-dark-text flex items-center">
+              <div className="p-1.5 sm:p-2 rounded-card bg-egen-navy shadow-lg mr-2 sm:mr-3">
+                <Package className="w-4 h-4 sm:w-5 sm:h-5 text-egen-yellow" />
               </div>
-              Produtos por Categoria
+              Equipamentos por Categoria
             </h3>
-            <span className="text-xs font-medium px-2 sm:px-3 py-1 rounded-full bg-purple-50 dark:bg-purple-900/50 text-purple-600 dark:text-purple-300">
+            <span className="text-xs font-medium px-2 sm:px-3 py-1 rounded-full bg-egen-navy/10 dark:bg-egen-yellow/10 text-egen-navy dark:text-egen-yellow">
               {Object.keys(dashboardData.allCategories).length} <span className="hidden xs:inline">categorias</span>
             </span>
           </div>
@@ -1310,7 +1310,7 @@ const Dashboard: React.FC = () => {
                   { bg: 'bg-teal-100 dark:bg-teal-900/30', bar: 'bg-teal-500', text: 'text-teal-700 dark:text-teal-300', dot: 'bg-teal-500' }
                 ];
                 const style = colorStyles[index % colorStyles.length];
-                const percentage = dashboardData.totalProducts > 0 ? (count / dashboardData.totalProducts) * 100 : 0;
+                const percentage = dashboardData.totalEquipment > 0 ? (count / dashboardData.totalEquipment) * 100 : 0;
 
                 return (
                   <div key={category} className={`flex items-center justify-between p-2 sm:p-2.5 rounded-lg sm:rounded-xl ${style.bg} hover:shadow-sm transition-all`}>
@@ -1338,12 +1338,12 @@ const Dashboard: React.FC = () => {
 
         {/* Solicitações por Departamento */}
         <div 
-          className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 dark:border-gray-700 cursor-pointer hover:shadow-lg hover:border-slate-300 dark:hover:border-slate-600 transition-all duration-300 hover-lift"
+          className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card p-4 sm:p-6 border border-gray-100 dark:border-white/5 cursor-pointer hover:shadow-card-hover hover:border-egen-yellow/30 dark:hover:border-egen-yellow/20 transition-all duration-300 hover-lift"
           onClick={() => setSelectedDetail('departmentRanking')}
         >
           <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <h3 className="text-sm sm:text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center">
-              <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-slate-700 shadow-lg mr-2 sm:mr-3">
+            <h3 className="text-sm sm:text-lg font-semibold text-egen-gray-dark dark:text-egen-dark-text flex items-center">
+              <div className="p-1.5 sm:p-2 rounded-card bg-egen-navy shadow-lg mr-2 sm:mr-3">
                 <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
               <span className="hidden xs:inline">Solicitações por </span>Departamento
@@ -1404,12 +1404,12 @@ const Dashboard: React.FC = () => {
 
       {/* Recent Movements */}
       <div 
-        className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 dark:border-gray-700 cursor-pointer hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-300 hover-lift"
+        className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card p-4 sm:p-6 border border-gray-100 dark:border-white/5 cursor-pointer hover:shadow-card-hover hover:border-egen-blue/30 dark:hover:border-egen-blue/20 transition-all duration-300 hover-lift"
         onClick={() => setSelectedDetail('recentMovements')}
       >
         <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <h3 className="text-sm sm:text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center">
-            <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-blue-500 shadow-lg mr-2 sm:mr-3">
+          <h3 className="text-sm sm:text-lg font-semibold text-egen-gray-dark dark:text-egen-dark-text flex items-center">
+            <div className="p-1.5 sm:p-2 rounded-card bg-egen-blue shadow-lg mr-2 sm:mr-3">
               <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
             Movimentações Recentes
@@ -1423,7 +1423,7 @@ const Dashboard: React.FC = () => {
             recentMovements.map((movement) => (
               <div key={movement.id} className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg sm:rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs sm:text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{movement.productName}</p>
+                  <p className="text-xs sm:text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{movement.equipmentName}</p>
                   <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
                     {movement.reason === 'sale' && 'Saída'}
                     {movement.reason === 'internal-consumption' && 'Consumo Int.'}
@@ -1451,35 +1451,35 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Top Value Products */}
         <div 
-          className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 dark:border-gray-700 cursor-pointer hover:shadow-lg hover:border-green-200 dark:hover:border-green-800 transition-all duration-300 hover-lift"
+          className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card p-4 sm:p-6 border border-gray-100 dark:border-white/5 cursor-pointer hover:shadow-card-hover hover:border-egen-green/30 dark:hover:border-egen-green/20 transition-all duration-300 hover-lift"
           onClick={() => setSelectedDetail('topValue')}
         >
           <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <h3 className="text-sm sm:text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center">
-              <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-green-500 shadow-lg mr-2 sm:mr-3">
+            <h3 className="text-sm sm:text-lg font-semibold text-egen-gray-dark dark:text-egen-dark-text flex items-center">
+              <div className="p-1.5 sm:p-2 rounded-card bg-egen-green shadow-lg mr-2 sm:mr-3">
                 <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
-              Produtos de Maior Valor
+              Equipamentos de Maior Valor
             </h3>
             <span className="text-xs font-medium px-2 sm:px-3 py-1 rounded-full bg-green-50 dark:bg-green-900/50 text-green-600 dark:text-green-300">
               Top 5
             </span>
           </div>
           <div className="space-y-2 max-h-52 sm:max-h-64 overflow-y-auto pr-1">
-            {dashboardData.topValueProducts.slice(0, 5).map((product, index) => (
-              <div key={product.id} className="flex items-center justify-between p-2 sm:p-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 rounded-lg sm:rounded-xl hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/50 dark:hover:to-emerald-900/50 transition-colors">
+            {dashboardData.topValueEquipment.slice(0, 5).map((item, index) => (
+              <div key={item.id} className="flex items-center justify-between p-2 sm:p-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 rounded-lg sm:rounded-xl hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/50 dark:hover:to-emerald-900/50 transition-colors">
                 <div className="flex items-center flex-1 min-w-0">
                   <span className="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-green-500 text-white text-[10px] sm:text-xs font-bold mr-2 sm:mr-3 flex-shrink-0">
                     {index + 1}
                   </span>
                   <div className="min-w-0">
-                    <p className="text-xs sm:text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{product.name}</p>
-                    <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{product.code}</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{item.name}</p>
+                    <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{item.code}</p>
                   </div>
                 </div>
                 <div className="text-right ml-3 sm:ml-4">
-                  <p className="text-xs sm:text-sm font-bold text-green-600 dark:text-green-400">{formatCurrency(product.totalValue || 0)}</p>
-                  <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{product.quantity} {product.unit}</p>
+                  <p className="text-xs sm:text-sm font-bold text-green-600 dark:text-green-400">{formatCurrency(item.totalValue || 0)}</p>
+                  <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{item.quantity} {item.unit}</p>
                 </div>
               </div>
             ))}
@@ -1487,36 +1487,36 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Low Stock Alert */}
-        {lowStockProducts.length > 0 && (
+        {lowStockEquipment.length > 0 && (
           <div 
-            className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 dark:border-gray-700 cursor-pointer hover:shadow-lg hover:border-orange-200 dark:hover:border-orange-800 transition-all duration-300 hover-lift"
+            className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card p-4 sm:p-6 border border-gray-100 dark:border-white/5 cursor-pointer hover:shadow-card-hover hover:border-egen-yellow/30 dark:hover:border-egen-yellow/20 transition-all duration-300 hover-lift"
             onClick={() => setSelectedDetail('lowStock')}
           >
             <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <h3 className="text-sm sm:text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center">
-                <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-orange-500 shadow-lg mr-2 sm:mr-3">
+              <h3 className="text-sm sm:text-lg font-semibold text-egen-gray-dark dark:text-egen-dark-text flex items-center">
+                <div className="p-1.5 sm:p-2 rounded-card bg-orange-500 shadow-lg mr-2 sm:mr-3">
                   <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
-                <span className="hidden xs:inline">Produtos com </span>Estoque Baixo
+                <span className="hidden xs:inline">Equipamentos com </span>Estoque Baixo
               </h3>
               <span className="text-xs font-medium px-2 sm:px-3 py-1 rounded-full bg-orange-50 dark:bg-orange-900/50 text-orange-600 dark:text-orange-300">
-                {lowStockProducts.length} <span className="hidden xs:inline">{lowStockProducts.length === 1 ? 'item' : 'itens'}</span>
+                {lowStockEquipment.length} <span className="hidden xs:inline">{lowStockEquipment.length === 1 ? 'item' : 'itens'}</span>
               </span>
             </div>
             <div className="space-y-2 max-h-52 sm:max-h-64 overflow-y-auto pr-1">
-              {lowStockProducts.slice(0, 10).map((product) => (
-                <div key={product.id} className="flex items-center justify-between p-2 sm:p-3 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/30 dark:to-amber-900/30 rounded-lg sm:rounded-xl hover:from-orange-100 hover:to-amber-100 dark:hover:from-orange-900/50 dark:hover:to-amber-900/50 transition-colors">
+              {lowStockEquipment.slice(0, 10).map((item) => (
+                <div key={item.id} className="flex items-center justify-between p-2 sm:p-3 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/30 dark:to-amber-900/30 rounded-lg sm:rounded-xl hover:from-orange-100 hover:to-amber-100 dark:hover:from-orange-900/50 dark:hover:to-amber-900/50 transition-colors">
                   <div className="flex items-center flex-1 min-w-0">
                     <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-orange-500 mr-2 sm:mr-3 animate-pulse flex-shrink-0"></div>
                     <div className="min-w-0">
-                      <p className="text-xs sm:text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{product.name}</p>
-                      <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{product.code}</p>
+                      <p className="text-xs sm:text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{item.name}</p>
+                      <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{item.code}</p>
                     </div>
                   </div>
                   <div className="text-right ml-3 sm:ml-4">
-                    <p className="text-xs sm:text-sm font-bold text-orange-600 dark:text-orange-400">{product.quantity} {product.unit}</p>
-                    <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Mín: {product.minStock}</p>
-                    <p className="text-[10px] sm:text-xs text-gray-400">{formatCurrency(product.totalValue || 0)}</p>
+                    <p className="text-xs sm:text-sm font-bold text-orange-600 dark:text-orange-400">{item.quantity} {item.unit}</p>
+                    <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Mín: {item.minStock}</p>
+                    <p className="text-[10px] sm:text-xs text-gray-400">{formatCurrency(item.totalValue || 0)}</p>
                   </div>
                 </div>
               ))}
@@ -1525,32 +1525,32 @@ const Dashboard: React.FC = () => {
         )}
 
         {/* Expiring Products */}
-        {expiringProducts.length > 0 && (
+        {expiringEquipment.length > 0 && (
           <div 
-            className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 border border-gray-100 dark:border-gray-700 cursor-pointer hover:shadow-lg hover:border-red-200 dark:hover:border-red-800 transition-all duration-300 hover-lift"
+            className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card p-4 sm:p-6 border border-gray-100 dark:border-white/5 cursor-pointer hover:shadow-card-hover hover:border-egen-red/30 dark:hover:border-egen-red/20 transition-all duration-300 hover-lift"
             onClick={() => setSelectedDetail('expiring')}
           >
             <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <h3 className="text-sm sm:text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center">
-                <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-red-500 shadow-lg mr-2 sm:mr-3">
+              <h3 className="text-sm sm:text-lg font-semibold text-egen-gray-dark dark:text-egen-dark-text flex items-center">
+                <div className="p-1.5 sm:p-2 rounded-card bg-egen-red shadow-lg mr-2 sm:mr-3">
                   <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
-                <span className="hidden xs:inline">Produtos </span>Próximos ao Vencimento
+                <span className="hidden xs:inline">Equipamentos </span>Próximos ao Vencimento
               </h3>
               <span className="text-xs font-medium px-2 sm:px-3 py-1 rounded-full bg-red-50 dark:bg-red-900/50 text-red-600 dark:text-red-300">
-                {expiringProducts.length} <span className="hidden xs:inline">{expiringProducts.length === 1 ? 'item' : 'itens'}</span>
+                {expiringEquipment.length} <span className="hidden xs:inline">{expiringEquipment.length === 1 ? 'item' : 'itens'}</span>
               </span>
             </div>
             <div className="space-y-2 max-h-52 sm:max-h-64 overflow-y-auto pr-1">
-              {expiringProducts.map((product) => {
+              {expiringEquipment.map((item) => {
                 const daysUntilExpiration = Math.ceil(
-                  (new Date(product.expirationDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+                  (new Date(item.expirationDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
                 );
                 const isExpired = daysUntilExpiration < 0;
                 const isCritical = daysUntilExpiration <= 7;
                 
                 return (
-                  <div key={product.id} className={`flex items-center justify-between p-2 sm:p-3 rounded-lg sm:rounded-xl transition-colors ${
+                  <div key={item.id} className={`flex items-center justify-between p-2 sm:p-3 rounded-lg sm:rounded-xl transition-colors ${
                     isExpired ? 'bg-gradient-to-r from-red-100 to-red-50 dark:from-red-900/40 dark:to-red-900/20' : 
                     isCritical ? 'bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/30 dark:to-orange-900/20' : 
                     'bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/30 dark:to-yellow-900/20'
@@ -1558,16 +1558,16 @@ const Dashboard: React.FC = () => {
                     <div className="flex items-center flex-1 min-w-0">
                       <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full mr-2 sm:mr-3 flex-shrink-0 ${isExpired || isCritical ? 'bg-red-500 animate-pulse' : 'bg-orange-500'}`}></div>
                       <div className="min-w-0">
-                        <p className="text-xs sm:text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{product.name}</p>
-                        <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{product.code}</p>
+                        <p className="text-xs sm:text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{item.name}</p>
+                        <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{item.code}</p>
                       </div>
                     </div>
                     <div className="text-right ml-3 sm:ml-4">
                       <p className={`text-xs sm:text-sm font-bold ${isExpired ? 'text-red-700 dark:text-red-400' : isCritical ? 'text-red-600 dark:text-red-400' : 'text-orange-600 dark:text-orange-400'}`}>
                         {isExpired ? `Vencido ${Math.abs(daysUntilExpiration)}d` : `${daysUntilExpiration}d`}
                       </p>
-                      <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{product.quantity} {product.unit}</p>
-                      <p className="text-[10px] sm:text-xs text-gray-400">{formatCurrency(product.totalValue || 0)}</p>
+                      <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{item.quantity} {item.unit}</p>
+                      <p className="text-[10px] sm:text-xs text-gray-400">{formatCurrency(item.totalValue || 0)}</p>
                     </div>
                   </div>
                 );
@@ -1579,20 +1579,20 @@ const Dashboard: React.FC = () => {
 
       {/* Resumo Financeiro */}
       <div 
-        className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/30 dark:via-indigo-900/30 dark:to-purple-900/30 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-blue-100 dark:border-blue-900/50 cursor-pointer hover:shadow-lg transition-all duration-300 hover-lift"
+        className="bg-gradient-to-br from-egen-navy/5 via-egen-blue/5 to-egen-yellow/5 dark:from-egen-navy/30 dark:via-egen-blue/20 dark:to-egen-yellow/10 rounded-card p-4 sm:p-6 border border-egen-navy/10 dark:border-white/5 cursor-pointer hover:shadow-card-hover transition-all duration-300 hover-lift"
         onClick={() => setSelectedDetail('financialStats')}
       >
         <div className="flex items-center justify-between mb-4 sm:mb-6">
-          <h3 className="text-sm sm:text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center">
-            <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 shadow-lg mr-2 sm:mr-3">
-              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+          <h3 className="text-sm sm:text-lg font-semibold text-egen-gray-dark dark:text-egen-dark-text flex items-center">
+            <div className="p-1.5 sm:p-2 rounded-card bg-egen-navy shadow-lg mr-2 sm:mr-3">
+              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-egen-yellow" />
             </div>
             Resumo Financeiro<span className="hidden sm:inline"> do Mês</span>
           </h3>
         </div>
         <div className="grid grid-cols-1 xs:grid-cols-3 gap-3 sm:gap-4">
-          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 border border-blue-100 dark:border-blue-900/50 text-center hover:bg-white/80 dark:hover:bg-gray-800/80 transition-colors">
-            <div className="inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-blue-500 shadow-lg mb-2 sm:mb-3">
+          <div className="bg-white/60 dark:bg-egen-dark-surface/60 backdrop-blur-sm rounded-card p-3 sm:p-4 border border-egen-blue/20 dark:border-white/5 text-center hover:bg-white/80 dark:hover:bg-egen-dark-surface/80 transition-colors">
+            <div className="inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-card bg-egen-blue shadow-lg mb-2 sm:mb-3">
               <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
             <p className="text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Valor em Estoque</p>
@@ -1604,12 +1604,12 @@ const Dashboard: React.FC = () => {
               </span>
             </div>
           </div>
-          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 border border-purple-100 dark:border-purple-900/50 text-center hover:bg-white/80 dark:hover:bg-gray-800/80 transition-colors">
-            <div className="inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-purple-500 shadow-lg mb-2 sm:mb-3">
-              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+          <div className="bg-white/60 dark:bg-egen-dark-surface/60 backdrop-blur-sm rounded-card p-3 sm:p-4 border border-egen-navy/20 dark:border-white/5 text-center hover:bg-white/80 dark:hover:bg-egen-dark-surface/80 transition-colors">
+            <div className="inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-card bg-egen-navy shadow-lg mb-2 sm:mb-3">
+              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-egen-yellow" />
             </div>
             <p className="text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Movimentações</p>
-            <p className="text-base sm:text-xl font-bold text-purple-600 dark:text-purple-400 mt-0.5 sm:mt-1">{formatCurrency(financialMetrics.currentMonth.movementsValue)}</p>
+            <p className="text-base sm:text-xl font-bold text-egen-navy dark:text-egen-yellow mt-0.5 sm:mt-1">{formatCurrency(financialMetrics.currentMonth.movementsValue)}</p>
             <div className="flex items-center justify-center mt-1.5 sm:mt-2 px-2 py-0.5 sm:py-1 rounded-full bg-gray-50 dark:bg-gray-700/50 w-fit mx-auto">
               {getTrendIcon(financialMetrics.trends.movementsValueChangePercent)}
               <span className={`text-[10px] sm:text-xs font-medium ml-1 ${getTrendColor(financialMetrics.trends.movementsValueChangePercent)}`}>
@@ -1617,8 +1617,8 @@ const Dashboard: React.FC = () => {
               </span>
             </div>
           </div>
-          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 border border-green-100 dark:border-green-900/50 text-center hover:bg-white/80 dark:hover:bg-gray-800/80 transition-colors">
-            <div className="inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-green-500 shadow-lg mb-2 sm:mb-3">
+          <div className="bg-white/60 dark:bg-egen-dark-surface/60 backdrop-blur-sm rounded-card p-3 sm:p-4 border border-egen-green/20 dark:border-white/5 text-center hover:bg-white/80 dark:hover:bg-egen-dark-surface/80 transition-colors">
+            <div className="inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-card bg-egen-green shadow-lg mb-2 sm:mb-3">
               <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
             <p className="text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Nº Movimentações</p>
@@ -1661,7 +1661,7 @@ const Dashboard: React.FC = () => {
             'blue'
           }
         >
-          {renderModalContent(selectedDetail, dashboardData, financialMetrics, products, movements, formatCurrency)}
+          {renderModalContent(selectedDetail, dashboardData, financialMetrics, equipment, movements, formatCurrency)}
         </DetailModal>
       )}
     </>

@@ -53,50 +53,48 @@ const Auth: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-300">
+    <div className="min-h-screen bg-egen-bg dark:bg-egen-dark-bg flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-300">
       {/* Animated gradient mesh background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Animated orbs */}
-        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-gradient-to-r from-blue-200/50 to-cyan-200/50 dark:from-blue-900/30 dark:to-cyan-900/30 rounded-full blur-3xl animate-blob"></div>
-        <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-gradient-to-r from-indigo-200/50 to-blue-200/50 dark:from-indigo-900/30 dark:to-blue-900/30 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-slate-200/30 to-blue-200/30 dark:from-slate-800/30 dark:to-blue-900/30 rounded-full blur-3xl animate-pulse-soft"></div>
+        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-gradient-to-r from-[#0D2A59]/20 to-[#6A93C7]/20 dark:from-[#0D2A59]/40 dark:to-[#6A93C7]/20 rounded-full blur-3xl animate-blob"></div>
+        <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-gradient-to-r from-[#F3B229]/15 to-[#0D2A59]/15 dark:from-[#F3B229]/10 dark:to-[#0D2A59]/30 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-[#6A93C7]/10 to-[#0D2A59]/10 dark:from-[#102140]/40 dark:to-[#0D2A59]/30 rounded-full blur-3xl animate-pulse-soft"></div>
         
         {/* Grid pattern overlay */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(30,58,138,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(30,58,138,0.03)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(59,130,246,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.05)_1px,transparent_1px)] bg-[size:64px_64px]"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(13,42,89,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(13,42,89,0.03)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(106,147,199,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(106,147,199,0.05)_1px,transparent_1px)] bg-[size:64px_64px]"></div>
       </div>
 
-      <div className="max-w-md w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-2xl rounded-3xl shadow-2xl shadow-slate-900/10 dark:shadow-black/30 p-8 animate-scale-in relative z-10 border border-slate-200/50 dark:border-gray-700/50">
+      <div className="max-w-md w-full bg-white/80 dark:bg-egen-dark-surface/80 backdrop-blur-2xl rounded-2xl shadow-card dark:shadow-black/30 p-8 animate-scale-in relative z-10 border border-slate-200/50 dark:border-white/5">
         {/* Subtle glow effect behind card */}
-        <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-slate-500/10 dark:from-blue-500/20 dark:via-indigo-500/20 dark:to-slate-500/20 rounded-3xl blur-xl -z-10"></div>
+        <div className="absolute -inset-1 bg-gradient-to-r from-[#0D2A59]/10 via-[#F3B229]/10 to-[#6A93C7]/10 dark:from-[#F3B229]/10 dark:via-[#0D2A59]/10 dark:to-[#6A93C7]/10 rounded-2xl blur-xl -z-10"></div>
         
         <div className="text-center mb-8">
-          {/* Modern logo container with rotating border */}
+          {/* Logo */}
           <div className="relative inline-flex items-center justify-center mb-6">
-            {/* Outer rotating ring */}
-            <div className="absolute w-28 h-28 rounded-full border-2 border-transparent animate-spin-slow" style={{ background: 'linear-gradient(white, white) padding-box, linear-gradient(to right, #1e3a8a, #3b82f6, #1e40af) border-box', animationDuration: '8s' }}></div>
+            <div className="absolute w-28 h-28 rounded-full border-2 border-transparent animate-spin-slow" style={{ background: 'linear-gradient(white, white) padding-box, linear-gradient(to right, #0D2A59, #F3B229, #6A93C7) border-box', animationDuration: '8s' }}></div>
             
-            {/* Logo background with glassmorphism */}
-            <div className="relative w-24 h-24 rounded-full bg-white dark:bg-gray-700 backdrop-blur-md border border-slate-200 dark:border-gray-600 flex items-center justify-center shadow-lg shadow-blue-900/10 dark:shadow-black/20">
+            <div className="relative w-24 h-24 rounded-full bg-white dark:bg-egen-dark-surface backdrop-blur-md border border-slate-200 dark:border-white/10 flex items-center justify-center shadow-card">
               <img
                 src="/LOGO.png"
-                alt="Logo"
-                className="w-16 h-16 object-contain hover:scale-110 transition-all duration-500 ease-out dark:brightness-110"
+                alt="EGEN Geradores"
+                className="w-16 h-16 object-contain hover:scale-110 transition-all duration-500 ease-out"
               />
             </div>
           </div>
           
           <h1 className="text-3xl font-bold mb-1">
-            <span className="bg-gradient-to-r from-blue-900 via-blue-700 to-indigo-800 dark:from-blue-400 dark:via-blue-300 dark:to-indigo-400 bg-clip-text text-transparent">
-              Flow LAB
+            <span className="text-egen-navy dark:text-egen-yellow">
+              EGEN Geradores
             </span>
           </h1>
-          <p className="text-slate-500 dark:text-gray-400 text-sm transition-all duration-300">
+          <p className="text-egen-gray-mid dark:text-white/60 text-sm transition-all duration-300">
             {isSignUp ? 'Criar nova conta' : 'Faça login para continuar'}
           </p>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-300 text-sm animate-shake flex items-center gap-2">
+          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm animate-shake flex items-center gap-2">
             <span className="flex-shrink-0 w-5 h-5 bg-red-100 dark:bg-red-800 rounded-full flex items-center justify-center text-red-500 dark:text-red-300 font-bold text-xs">!</span>
             {error}
           </div>
@@ -113,7 +111,7 @@ const Auth: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-slate-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-200 hover:border-slate-300 dark:hover:border-gray-500 bg-white/70 dark:bg-gray-700/70 backdrop-blur-sm text-slate-800 dark:text-gray-100 placeholder:text-slate-400 dark:placeholder:text-gray-500"
+              className="w-full px-4 py-3 border border-slate-200 dark:border-white/10 rounded-lg focus:ring-2 focus:ring-egen-blue/30 focus:border-egen-blue transition-all duration-200 hover:border-slate-300 dark:hover:border-white/20 bg-white/70 dark:bg-egen-dark-surface/70 backdrop-blur-sm text-slate-800 dark:text-egen-dark-text placeholder:text-slate-400 dark:placeholder:text-white/40"
               placeholder="seu@email.com"
             />
           </div>
@@ -129,7 +127,7 @@ const Auth: React.FC = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-slate-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-200 hover:border-slate-300 dark:hover:border-gray-500 bg-white/70 dark:bg-gray-700/70 backdrop-blur-sm text-slate-800 dark:text-gray-100 placeholder:text-slate-400 dark:placeholder:text-gray-500"
+                className="w-full px-4 py-3 border border-slate-200 dark:border-white/10 rounded-lg focus:ring-2 focus:ring-egen-blue/30 focus:border-egen-blue transition-all duration-200 hover:border-slate-300 dark:hover:border-white/20 bg-white/70 dark:bg-egen-dark-surface/70 backdrop-blur-sm text-slate-800 dark:text-egen-dark-text placeholder:text-slate-400 dark:placeholder:text-white/40"
                 placeholder="Seu nome completo"
               />
             </div>
@@ -146,7 +144,7 @@ const Auth: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 pr-11 border border-slate-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-200 hover:border-slate-300 dark:hover:border-gray-500 bg-white/70 dark:bg-gray-700/70 backdrop-blur-sm text-slate-800 dark:text-gray-100 placeholder:text-slate-400 dark:placeholder:text-gray-500"
+                className="w-full px-4 py-3 pr-11 border border-slate-200 dark:border-white/10 rounded-lg focus:ring-2 focus:ring-egen-blue/30 focus:border-egen-blue transition-all duration-200 hover:border-slate-300 dark:hover:border-white/20 bg-white/70 dark:bg-egen-dark-surface/70 backdrop-blur-sm text-slate-800 dark:text-egen-dark-text placeholder:text-slate-400 dark:placeholder:text-white/40"
                 placeholder="••••••••"
                 minLength={6}
               />
@@ -170,7 +168,7 @@ const Auth: React.FC = () => {
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-slate-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-200 hover:border-slate-300 dark:hover:border-gray-500 bg-white/70 dark:bg-gray-700/70 backdrop-blur-sm text-slate-800 dark:text-gray-100 cursor-pointer"
+                className="w-full px-4 py-3 border border-slate-200 dark:border-white/10 rounded-lg focus:ring-2 focus:ring-egen-blue/30 focus:border-egen-blue transition-all duration-200 hover:border-slate-300 dark:hover:border-white/20 bg-white/70 dark:bg-egen-dark-surface/70 backdrop-blur-sm text-slate-800 dark:text-egen-dark-text cursor-pointer"
               >
                 <option value="" className="text-slate-400 dark:text-gray-500">Selecione um departamento</option>
                 {DEPARTMENTS.map((dept) => (
@@ -185,20 +183,20 @@ const Auth: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="relative w-full py-3.5 px-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center font-semibold overflow-hidden group animate-fade-in-up shadow-lg shadow-blue-900/20 hover:shadow-xl hover:shadow-blue-900/30"
+            className="relative w-full py-3.5 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center font-semibold overflow-hidden group animate-fade-in-up shadow-lg shadow-egen-navy/20 hover:shadow-xl hover:shadow-egen-navy/30"
             style={{ animationDelay: '0.3s' }}
           >
             {/* Button gradient background */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-900 via-blue-700 to-indigo-800 transition-all duration-300 group-hover:scale-105"></div>
+            <div className="absolute inset-0 bg-egen-yellow transition-all duration-300 group-hover:brightness-110"></div>
             
             {/* Shimmer effect on hover */}
-            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.15)_50%,transparent_75%)] bg-[length:250%_250%] animate-shimmer"></div>
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%)] bg-[length:250%_250%] animate-shimmer"></div>
             
             {/* Button content */}
-            <span className="relative z-10 flex items-center text-white group-hover:text-blue-900 transition-colors duration-300">
+            <span className="relative z-10 flex items-center text-egen-navy font-bold">
               {loading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white group-hover:border-blue-900 border-t-transparent group-hover:border-t-transparent mr-2 transition-colors duration-300"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-egen-navy border-t-transparent mr-2"></div>
                   {isSignUp ? 'Criando conta...' : 'Entrando...'}
                 </>
               ) : (
@@ -219,7 +217,7 @@ const Auth: React.FC = () => {
               setName('');
               setError(null);
             }}
-            className="text-blue-700 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 text-sm font-medium transition-colors hover:underline underline-offset-4"
+            className="text-egen-blue dark:text-egen-blue hover:text-egen-navy dark:hover:text-egen-yellow text-sm font-medium transition-colors hover:underline underline-offset-4"
           >
             {isSignUp 
               ? 'Já tem uma conta? Faça login' 
@@ -234,7 +232,7 @@ const Auth: React.FC = () => {
                   setName('');
                   setError(null);
                 }}
-                className="text-slate-500 dark:text-gray-400 hover:text-blue-700 dark:hover:text-blue-400 text-sm transition-colors"
+                className="text-slate-500 dark:text-white/50 hover:text-egen-blue dark:hover:text-egen-yellow text-sm transition-colors"
               >
                 Esqueci minha senha
               </button>

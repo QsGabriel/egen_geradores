@@ -151,14 +151,14 @@ export interface QuotationAuditLog {
 }
 
 // ============================================
-// QUOTATION ITEM (Product/Service)
+// QUOTATION ITEM (Equipment/Service)
 // ============================================
 export interface QuotationItem {
   id: string;
   quotationId: string;
-  productId?: string;
-  productName: string;
-  productCode?: string;
+  equipmentId?: string;
+  equipmentName: string;
+  equipmentCode?: string;
   description?: string;
   quantity: number;
   unit: string;
@@ -211,7 +211,7 @@ export interface ProposalItem {
   id: string;
   proposalId: string;
   quotationItemId: string;
-  productName: string;
+  equipmentName: string;
   quantity: number;
   unitPrice: number;
   totalPrice: number;

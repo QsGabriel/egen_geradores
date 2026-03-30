@@ -24,7 +24,7 @@ interface CreateQuotationModalProps {
   linkedRequest?: {
     id: string;
     code: string;
-    items: { productName: string; quantity: number; unit?: string }[];
+    items: { equipmentName: string; quantity: number; unit?: string }[];
   };
 }
 
@@ -41,7 +41,7 @@ const DEPARTMENTS = Object.entries(DepartmentLabels).map(([value, label]) => ({
 }));
 
 interface ItemForm {
-  productName: string;
+  equipmentName: string;
   quantity: number;
   unit: string;
   category: string;
@@ -56,7 +56,7 @@ export const CreateQuotationModal: React.FC<CreateQuotationModalProps> = ({
   suppliers,
   linkedRequest,
 }) => {
-  const { products } = useInventory();
+  const { equipment } = useInventory();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<'info' | 'items' | 'suppliers' | 'review'>(linkedRequest ? 'suppliers' : 'info');
   
@@ -73,23 +73,23 @@ export const CreateQuotationModal: React.FC<CreateQuotationModalProps> = ({
   // Items
   const [items, setItems] = useState<ItemForm[]>(
     linkedRequest?.items.map(item => ({
-      productName: item.productName,
+      equipmentName: item.equipmentName,
       quantity: item.quantity,
       unit: item.unit || 'un',
       category: 'general',
     })) || []
   );
   const [newItem, setNewItem] = useState<ItemForm>({
-    productName: '',
+    equipmentName: '',
     quantity: 1,
     unit: 'un',
     category: 'general',
   });
   
-  // Product search state
-  const [productSearch, setProductSearch] = useState('');
+  // Equipment search state
+  const [equipmentSearch, setEquipmentSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'general' | 'technical'>('all');
-  const [selectedProduct, setSelectedProduct] = useState('');
+  const [selectedEquipment, setSelectedEquipment] = useState('');
   
   // Suppliers
   const [selectedSuppliers, setSelectedSuppliers] = useState<string[]>([]);
@@ -100,60 +100,60 @@ export const CreateQuotationModal: React.FC<CreateQuotationModalProps> = ({
          s.email.toLowerCase().includes(supplierSearch.toLowerCase())
   );
 
-  // Filter products based on search and category
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(productSearch.toLowerCase()) ||
-                         product.code.toLowerCase().includes(productSearch.toLowerCase());
-    const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
+  // Filter equipment based on search and category
+  const filteredEquipment = equipment.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(equipmentSearch.toLowerCase()) ||
+                         item.code.toLowerCase().includes(equipmentSearch.toLowerCase());
+    const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
 
-  // Check if search matches an exact product
-  const matchedProduct = products.find(
-    (p) => p.name.toLowerCase().trim() === productSearch.toLowerCase().trim()
+  // Check if search matches an exact equipment
+  const matchedEquipment = equipment.find(
+    (p) => p.name.toLowerCase().trim() === equipmentSearch.toLowerCase().trim()
   );
 
   const categories = ['general', 'technical'];
 
   const handleAddItem = () => {
-    if (newItem.productName.trim() && newItem.quantity > 0) {
+    if (newItem.equipmentName.trim() && newItem.quantity > 0) {
       setItems([...items, { ...newItem }]);
-      setNewItem({ productName: '', quantity: 1, unit: 'un', category: 'general' });
-      setProductSearch('');
-      setSelectedProduct('');
+      setNewItem({ equipmentName: '', quantity: 1, unit: 'un', category: 'general' });
+      setEquipmentSearch('');
+      setSelectedEquipment('');
     }
   };
 
   const handleAddItemFromInventory = () => {
-    if (selectedProduct) {
-      const product = products.find(p => p.id === selectedProduct);
-      if (product) {
+    if (selectedEquipment) {
+      const item = equipment.find(p => p.id === selectedEquipment);
+      if (item) {
         setItems([...items, {
-          productName: product.name,
+          equipmentName: item.name,
           quantity: newItem.quantity,
-          unit: product.unit || 'un',
-          category: product.category || 'general',
-          estimatedUnitPrice: product.unitPrice,
+          unit: item.unit || 'un',
+          category: item.category || 'general',
+          estimatedUnitPrice: item.unitPrice,
         }]);
-        setNewItem({ productName: '', quantity: 1, unit: 'un', category: 'general' });
-        setProductSearch('');
-        setSelectedProduct('');
+        setNewItem({ equipmentName: '', quantity: 1, unit: 'un', category: 'general' });
+        setEquipmentSearch('');
+        setSelectedEquipment('');
       }
     }
   };
 
-  const handleAddUnregisteredProduct = () => {
-    if (!productSearch.trim()) return;
+  const handleAddUnregisteredEquipment = () => {
+    if (!equipmentSearch.trim()) return;
     
     setItems([...items, {
-      productName: productSearch.trim(),
+      equipmentName: equipmentSearch.trim(),
       quantity: newItem.quantity,
       unit: newItem.unit,
       category: 'não cadastrado',
     }]);
-    setNewItem({ productName: '', quantity: 1, unit: 'un', category: 'general' });
-    setProductSearch('');
-    setSelectedProduct('');
+    setNewItem({ equipmentName: '', quantity: 1, unit: 'un', category: 'general' });
+    setEquipmentSearch('');
+    setSelectedEquipment('');
   };
 
   const handleRemoveItem = (index: number) => {
@@ -201,7 +201,7 @@ export const CreateQuotationModal: React.FC<CreateQuotationModalProps> = ({
       responseDeadline: responseDeadline || undefined,
       deliveryDeadline: deliveryDeadline || undefined,
       items: items.map(item => ({
-        productName: item.productName,
+        equipmentName: item.equipmentName,
         quantity: item.quantity,
         unit: item.unit,
         category: item.category,
@@ -413,16 +413,16 @@ export const CreateQuotationModal: React.FC<CreateQuotationModalProps> = ({
               <div className="bg-gray-50 rounded-xl p-4">
                 <h3 className="text-sm font-medium text-gray-700 mb-3">Adicionar Item</h3>
                 <div className="grid grid-cols-12 gap-3">
-                  {/* Product Search */}
+                  {/* Equipment Search */}
                   <div className="col-span-5">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                       <input
                         type="text"
-                        value={productSearch}
-                        onChange={(e) => setProductSearch(e.target.value)}
+                        value={equipmentSearch}
+                        onChange={(e) => setEquipmentSearch(e.target.value)}
                         className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm"
-                        placeholder="Buscar produto..."
+                        placeholder="Buscar equipamento..."
                       />
                     </div>
                   </div>
@@ -457,50 +457,50 @@ export const CreateQuotationModal: React.FC<CreateQuotationModalProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        if (matchedProduct) {
+                        if (matchedEquipment) {
                           handleAddItemFromInventory();
-                        } else if (productSearch.trim()) {
-                          handleAddUnregisteredProduct();
+                        } else if (equipmentSearch.trim()) {
+                          handleAddUnregisteredEquipment();
                         }
                       }}
-                      disabled={!productSearch.trim()}
+                      disabled={!equipmentSearch.trim()}
                       className={`w-full px-3 py-2 text-white text-sm font-medium rounded-lg disabled:opacity-50 flex items-center justify-center gap-1 ${
-                        matchedProduct
+                        matchedEquipment
                           ? 'bg-green-600 hover:bg-green-700'
                           : 'bg-amber-600 hover:bg-amber-700'
                       }`}
                     >
                       <Plus className="w-4 h-4" />
-                      {matchedProduct ? 'Adicionar' : 'Novo'}
+                      {matchedEquipment ? 'Adicionar' : 'Novo'}
                     </button>
                   </div>
                 </div>
 
-                {/* Product not found warning */}
-                {productSearch && !matchedProduct && (
+                {/* Equipment not found warning */}
+                {equipmentSearch && !matchedEquipment && (
                   <div className="mt-3 flex items-center p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
                     <AlertTriangle className="w-4 h-4 text-amber-500 mr-2 flex-shrink-0" />
                     <p className="text-xs text-amber-700">
-                      <span className="font-medium">Produto não encontrado.</span> Ao adicionar, será criado como "produto não cadastrado".
+                      <span className="font-medium">Equipamento não encontrado.</span> Ao adicionar, será criado como "equipamento não cadastrado".
                     </p>
                   </div>
                 )}
 
-                {/* Product dropdown */}
-                {productSearch && filteredProducts.length > 0 && (
+                {/* Equipment dropdown */}
+                {equipmentSearch && filteredEquipment.length > 0 && (
                   <div className="mt-3 max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg">
                     <div className="p-2 bg-gray-50 border-b border-gray-100 sticky top-0">
-                      <p className="text-xs text-gray-500 font-medium">{filteredProducts.length} produto(s) encontrado(s)</p>
+                      <p className="text-xs text-gray-500 font-medium">{filteredEquipment.length} equipamento(s) encontrado(s)</p>
                     </div>
-                    {filteredProducts.map((product) => (
+                    {filteredEquipment.map((eqItem) => (
                       <div
-                        key={product.id}
+                        key={eqItem.id}
                         onClick={() => {
-                          setSelectedProduct(product.id);
-                          setProductSearch(product.name);
+                          setSelectedEquipment(eqItem.id);
+                          setEquipmentSearch(eqItem.name);
                         }}
                         className={`p-3 cursor-pointer hover:bg-blue-50 border-b border-gray-50 last:border-b-0 transition-colors ${
-                          selectedProduct === product.id ? 'bg-blue-50 border-l-2 border-l-blue-500' : ''
+                          selectedEquipment === eqItem.id ? 'bg-blue-50 border-l-2 border-l-blue-500' : ''
                         }`}
                       >
                         <div className="flex justify-between items-center">
@@ -509,16 +509,16 @@ export const CreateQuotationModal: React.FC<CreateQuotationModalProps> = ({
                               <Package className="w-4 h-4 text-gray-500" />
                             </div>
                             <div>
-                              <p className="font-medium text-gray-800 text-sm">{product.name}</p>
-                              <p className="text-xs text-gray-500">{product.code} • {product.category}</p>
+                              <p className="font-medium text-gray-800 text-sm">{eqItem.name}</p>
+                              <p className="text-xs text-gray-500">{eqItem.code} • {eqItem.category}</p>
                             </div>
                           </div>
                           <div className="text-right">
                             <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                              product.quantity > 10 ? 'bg-green-100 text-green-700' :
-                              product.quantity > 0 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+                              eqItem.quantity > 10 ? 'bg-green-100 text-green-700' :
+                              eqItem.quantity > 0 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
                             }`}>
-                              {product.quantity} {product.unit}
+                              {eqItem.quantity} {eqItem.unit}
                             </span>
                           </div>
                         </div>
@@ -547,7 +547,7 @@ export const CreateQuotationModal: React.FC<CreateQuotationModalProps> = ({
                           <span className="text-xs font-bold text-blue-600">#{index + 1}</span>
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{item.productName}</p>
+                          <p className="text-sm font-medium text-gray-900">{item.equipmentName}</p>
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className={`text-xs px-1.5 py-0.5 rounded ${
                               item.category === 'não cadastrado'
@@ -703,7 +703,7 @@ export const CreateQuotationModal: React.FC<CreateQuotationModalProps> = ({
                 <div className="space-y-1">
                   {items.map((item, index) => (
                     <div key={index} className="flex justify-between text-sm">
-                      <span className="text-gray-600">{item.productName}</span>
+                      <span className="text-gray-600">{item.equipmentName}</span>
                       <span className="text-gray-900">{item.quantity} {item.unit}</span>
                     </div>
                   ))}

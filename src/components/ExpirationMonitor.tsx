@@ -8,7 +8,7 @@ import ConfirmDialog from './ConfirmDialog';
 import InputDialog from './InputDialog';
 
 const ExpirationMonitor: React.FC = () => {
-  const { products, writeOffProduct, requestReplenishment } = useInventory();
+  const { equipment, writeOffEquipment, requestReplenishment } = useInventory();
   const { notification, showSuccess, showError, hideNotification } = useNotification();
   const { confirmDialog, showConfirmDialog, hideConfirmDialog, handleConfirmDialogConfirm, inputDialog, showInputDialog, hideInputDialog, handleInputDialogConfirm } = useDialog();
   const [daysFilter, setDaysFilter] = useState(30);
@@ -30,50 +30,50 @@ const ExpirationMonitor: React.FC = () => {
     return { status: 'safe', days: diffDays, color: 'text-green-600' };
   };
 
-  const filteredProducts = products.filter(product => {
-    const expirationDate = new Date(product.expirationDate);
+  const filteredEquipment = equipment.filter(item => {
+    const expirationDate = new Date(item.expirationDate);
     const matchesDate = expirationDate <= filterDate;
-    const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
-    const hasStock = product.quantity > 0;
+    const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
+    const hasStock = item.quantity > 0;
     return matchesDate && matchesCategory && hasStock;
   }).sort((a, b) => new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime());
 
-  const expiredProducts = filteredProducts.filter(p => getExpirationStatus(p.expirationDate).status === 'expired');
-  const criticalProducts = filteredProducts.filter(p => getExpirationStatus(p.expirationDate).status === 'critical');
-  const warningProducts = filteredProducts.filter(p => getExpirationStatus(p.expirationDate).status === 'warning');
+  const expiredEquipment = filteredEquipment.filter(p => getExpirationStatus(p.expirationDate).status === 'expired');
+  const criticalEquipment = filteredEquipment.filter(p => getExpirationStatus(p.expirationDate).status === 'critical');
+  const warningEquipment = filteredEquipment.filter(p => getExpirationStatus(p.expirationDate).status === 'warning');
 
   const stats = [
     {
-      label: 'Produtos Vencidos',
-      value: expiredProducts.length,
+      label: 'Equipamentos Vencidos',
+      value: expiredEquipment.length,
       color: 'bg-red-500',
       textColor: 'text-red-600'
     },
     {
       label: 'Críticos (≤7 dias)',
-      value: criticalProducts.length,
+      value: criticalEquipment.length,
       color: 'bg-red-400',
       textColor: 'text-red-600'
     },
     {
       label: 'Atenção (≤30 dias)',
-      value: warningProducts.length,
+      value: warningEquipment.length,
       color: 'bg-orange-500',
       textColor: 'text-orange-600'
     },
     {
       label: 'Total Monitorados',
-      value: filteredProducts.length,
+      value: filteredEquipment.length,
       color: 'bg-blue-500',
       textColor: 'text-blue-600'
     }
   ];
 
-  const handleWriteOff = async (productId: string, productName: string) => {
+  const handleWriteOff = async (equipmentId: string, equipmentName: string) => {
     const reason = await showInputDialog(
       'Motivo da Baixa',
-      `Digite o motivo da baixa para "${productName}":`,
-      { placeholder: 'Ex: Produto vencido, danificado, etc.', required: true }
+      `Digite o motivo da baixa para "${equipmentName}":`,
+      { placeholder: 'Ex: Equipamento vencido, danificado, etc.', required: true }
     );
     
     if (!reason) return;
@@ -87,29 +87,29 @@ const ExpirationMonitor: React.FC = () => {
     if (!authorizedBy) return;
 
     try {
-      setLoading(productId);
-      await writeOffProduct(productId, reason, authorizedBy);
-      showSuccess('Produto dado baixa com sucesso!');
+      setLoading(equipmentId);
+      await writeOffEquipment(equipmentId, reason, authorizedBy);
+      showSuccess('Equipamento dado baixa com sucesso!');
     } catch (error) {
-      console.error('Erro ao dar baixa no produto:', error);
-      showError('Erro ao dar baixa no produto. Tente novamente.');
+      console.error('Erro ao dar baixa no equipamento:', error);
+      showError('Erro ao dar baixa no equipamento. Tente novamente.');
     } finally {
       setLoading(null);
     }
   };
 
-  const handleRequestReplenishment = async (productId: string, productName: string) => {
+  const handleRequestReplenishment = async (equipmentId: string, equipmentName: string) => {
     const requestedBy = await showInputDialog(
       'Solicitar Reposição',
-      `Digite seu nome para solicitar reposição de "${productName}":`,
+      `Digite seu nome para solicitar reposição de "${equipmentName}":`,
       { placeholder: 'Seu nome completo', required: true }
     );
     
     if (!requestedBy) return;
 
     try {
-      setLoading(productId);
-      await requestReplenishment(productId, requestedBy);
+      setLoading(equipmentId);
+      await requestReplenishment(equipmentId, requestedBy);
       showSuccess('Solicitação de reposição criada com sucesso!');
     } catch (error) {
       console.error('Erro ao solicitar reposição:', error);
@@ -162,7 +162,7 @@ const ExpirationMonitor: React.FC = () => {
       {/* Header */}
       <div className="animate-fade-in-up">
         <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent">Controle de Validade</h2>
-        <p className="text-gray-500 dark:text-gray-400">Monitoramento de produtos próximos ao vencimento</p>
+        <p className="text-gray-500 dark:text-gray-400">Monitoramento de equipamentos próximos ao vencimento</p>
       </div>
 
       {/* Stats */}
@@ -220,21 +220,21 @@ const ExpirationMonitor: React.FC = () => {
           <div className="flex items-end">
             <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
               <Filter className="w-4 h-4 mr-2" />
-              <span className="font-medium text-gray-700 dark:text-gray-300">{filteredProducts.length}</span>&nbsp;produto(s) encontrado(s)
+              <span className="font-medium text-gray-700 dark:text-gray-300">{filteredEquipment.length}</span>&nbsp;equipamento(s) encontrado(s)
             </div>
           </div>
         </div>
       </div>
 
-      {/* Products List */}
+      {/* Equipment List */}
       <div className="space-y-4">
-        {filteredProducts.map((product) => {
-          const expirationInfo = getExpirationStatus(product.expirationDate);
-          const isLoading = loading === product.id;
+        {filteredEquipment.map((item) => {
+          const expirationInfo = getExpirationStatus(item.expirationDate);
+          const isLoading = loading === item.id;
           
           return (
             <div 
-              key={product.id} 
+              key={item.id} 
               className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 hover:shadow-lg hover:border-blue-100 dark:hover:border-blue-900 transition-all duration-300 animate-fade-in-up"
             >
               <div className="flex items-start justify-between mb-4">
@@ -243,8 +243,8 @@ const ExpirationMonitor: React.FC = () => {
                     <Package className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{product.name}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{product.code}</p>
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{item.name}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{item.code}</p>
                   </div>
                 </div>
                 
@@ -275,44 +275,44 @@ const ExpirationMonitor: React.FC = () => {
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Categoria</p>
                   <p className="font-medium text-gray-800 dark:text-gray-200 capitalize">
-                    {product.category}
+                    {item.category}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Quantidade</p>
-                  <p className="font-medium text-gray-800 dark:text-gray-200">{product.quantity} {product.unit}</p>
+                  <p className="font-medium text-gray-800 dark:text-gray-200">{item.quantity} {item.unit}</p>
                 </div>
 
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Preço Unitário</p>
-                  <p className="font-medium text-gray-800 dark:text-gray-200">{formatCurrency(product.unitPrice)}</p>
+                  <p className="font-medium text-gray-800 dark:text-gray-200">{formatCurrency(item.unitPrice)}</p>
                 </div>
 
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Valor Total</p>
-                  <p className="font-medium text-gray-800 dark:text-gray-200">{formatCurrency(product.totalValue)}</p>
+                  <p className="font-medium text-gray-800 dark:text-gray-200">{formatCurrency(item.totalValue)}</p>
                 </div>
 
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Localização</p>
-                  <p className="font-medium text-gray-800 dark:text-gray-200">{product.location}</p>
+                  <p className="font-medium text-gray-800 dark:text-gray-200">{item.location}</p>
                 </div>
 
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Data de Validade</p>
                   <p className={`font-medium ${expirationInfo.color}`}>
-                    {product.expirationDate}
+                    {item.expirationDate}
                   </p>
                 </div>
               </div>
 
-              {/* Action Buttons for Critical/Expired Products */}
+              {/* Action Buttons for Critical/Expired Equipment */}
               {(expirationInfo.status === 'expired' || expirationInfo.status === 'critical') && (
                 <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
                   <div className="flex space-x-3">
                     <button
-                      onClick={() => handleWriteOff(product.id, product.name)}
+                      onClick={() => handleWriteOff(item.id, item.name)}
                       disabled={isLoading}
                       className="px-4 py-2.5 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl hover:from-red-600 hover:to-rose-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center font-medium shadow-md shadow-red-500/25 hover:shadow-lg hover:shadow-red-500/30"
                     >
@@ -329,7 +329,7 @@ const ExpirationMonitor: React.FC = () => {
                       )}
                     </button>
                     <button
-                      onClick={() => handleRequestReplenishment(product.id, product.name)}
+                      onClick={() => handleRequestReplenishment(item.id, item.name)}
                       disabled={isLoading}
                       className="px-4 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl hover:from-orange-600 hover:to-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center font-medium shadow-md shadow-orange-500/25 hover:shadow-lg hover:shadow-orange-500/30"
                     >
@@ -353,12 +353,12 @@ const ExpirationMonitor: React.FC = () => {
         })}
       </div>
 
-      {filteredProducts.length === 0 && (
+      {filteredEquipment.length === 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-12 text-center border border-gray-100 dark:border-gray-700 animate-fade-in">
           <Calendar className="w-12 h-12 mx-auto text-gray-400 dark:text-gray-500 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Nenhum produto encontrado</h3>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Nenhum equipamento encontrado</h3>
           <p className="text-gray-500 dark:text-gray-400">
-            Não há produtos com estoque próximos ao vencimento no período selecionado.
+            Não há equipamentos com estoque próximos ao vencimento no período selecionado.
           </p>
         </div>
       )}

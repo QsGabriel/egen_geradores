@@ -1,4 +1,4 @@
-export interface Product {
+export interface Equipment {
   id: string;
   name: string;
   code: string;
@@ -22,8 +22,8 @@ export interface Product {
 
 export interface StockMovement {
   id: string;
-  productId: string;
-  productName: string;
+  equipmentId: string;
+  equipmentName: string;
   type: 'out';
   reason: 'sale' | 'internal-transfer' | 'return' | 'internal-consumption' | 'manutencao' | 'other';
   quantity: number;
@@ -38,8 +38,8 @@ export interface StockMovement {
 
 export interface RequestItem {
   id: string;
-  productId: string | null;
-  productName: string;
+  equipmentId: string | null;
+  equipmentName: string;
   quantity: number;
   category: 'general' | 'technical' | string;
 }
@@ -66,10 +66,10 @@ export interface Request {
   attachments?: { url: string; name: string }[];
 }
 
-export interface ProductChangeLog {
+export interface EquipmentChangeLog {
   id: string;
-  productId: string;
-  productName: string;
+  equipmentId: string;
+  equipmentName: string;
   changedBy: string;
   changeReason: string;
   changeDate: string;
@@ -83,9 +83,9 @@ export interface ProductChangeLog {
 }
 
 export interface DashboardData {
-  totalProducts: number;
-  lowStockProducts: number;
-  expiringProducts: number;
+  totalEquipment: number;
+  lowStockEquipment: number;
+  expiringEquipment: number;
   recentMovements: number;
   categories: {
     general: number;
@@ -99,9 +99,9 @@ export interface DashboardData {
   monthlyMovementsValue: number;
   monthlyMovementsChange: number;
   monthlyMovementsChangePercent: number;
-  averageProductValue: number;
-  topValueProducts: Product[];
-  lowValueProducts: Product[];
+  averageEquipmentValue: number;
+  topValueEquipment: Equipment[];
+  lowValueEquipment: Equipment[];
   allCategories: Record<string, number>;
   allCategoryValues: Record<string, number>;
   categoryValues: {
@@ -180,11 +180,11 @@ export interface UserProfile {
 
 export interface RolePermissions {
   canViewDashboard: boolean;
-  canManageProducts: boolean;
-  canViewProducts: boolean;
-  canAddProducts: boolean;
-  canEditProducts: boolean;
-  canDeleteProducts: boolean;
+  canManageEquipment: boolean;
+  canViewEquipment: boolean;
+  canAddEquipment: boolean;
+  canEditEquipment: boolean;
+  canDeleteEquipment: boolean;
   canViewMovements: boolean;
   canAddMovements: boolean;
   canViewRequests: boolean;
@@ -193,7 +193,6 @@ export interface RolePermissions {
   canViewExpiration: boolean;
   canViewChangelog: boolean;
   canManageUsers: boolean;
-  canManageSuppliers: boolean;
   canManageQuotations: boolean;
   canConfigureRequestPeriods: boolean;
   // CRM permissions
@@ -207,27 +206,12 @@ export interface RolePermissions {
   canDeleteLeads: boolean;
 }
 
-// Supplier types
-export interface Supplier {
-  id: string;
-  name: string;
-  cnpj: string;
-  email: string;
-  phone: string;
-  address?: string;
-  contactPerson?: string;
-  products?: string[];
-  status: 'active' | 'inactive';
-  createdAt: string;
-  updatedAt: string;
-}
-
 // Quotation types
 export interface Quotation {
   id: string;
   requestId: string;
-  productId: string;
-  productName: string;
+  equipmentId: string;
+  equipmentName: string;
   requestedQuantity: number;
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
   selectedSupplierId?: string;
@@ -256,7 +240,7 @@ export interface QuotationItem {
 // Report types
 export interface RequestReport {
   id: string;
-  productName: string;
+  equipmentName: string;
   quantity: number;
   requestedBy: string;
   department: string;
@@ -265,15 +249,6 @@ export interface RequestReport {
   approvedBy?: string;
   approvalDate?: string;
   supplierName?: string;
-}
-
-export interface SupplierReport {
-  supplierId: string;
-  supplierName: string;
-  totalQuotations: number;
-  selectedQuotations: number;
-  averagePrice: number;
-  totalValue: number;
 }
 
 export interface DepartmentReport {
@@ -424,8 +399,8 @@ export interface MaintenanceRequestFormValues {
 export interface MaintenanceInventoryItem {
   id: string;
   maintenanceRequestId: string;
-  productId: string;
-  productName: string;
+  equipmentId: string;
+  equipmentName: string;
   movementId?: string;
   quantity: number;
   createdAt: string;

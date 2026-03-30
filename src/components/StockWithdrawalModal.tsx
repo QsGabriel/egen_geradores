@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import SignatureCanvas from 'react-signature-canvas';
 import { X, Check, Package, AlertTriangle, Loader2, CheckCircle2, XCircle, Info } from 'lucide-react';
 import { useNotification } from '../hooks/useNotification';
-import { RequestItem, Product } from '../types';
+import { RequestItem, Equipment } from '../types';
 
 interface WithdrawalItem extends RequestItem {
   currentStock: number;
@@ -18,7 +18,7 @@ interface StockWithdrawalModalProps {
   requestReason: string;
   approvedBy?: string;
   items: RequestItem[];
-  products: Product[];
+  equipment: Equipment[];
   onConfirm: (
     signature: string,
     receiverName: string,
@@ -33,7 +33,7 @@ const StockWithdrawalModal: React.FC<StockWithdrawalModalProps> = ({
   requestReason,
   approvedBy,
   items,
-  products,
+  equipment,
   onConfirm,
   onClose,
 }) => {
@@ -54,15 +54,15 @@ const StockWithdrawalModal: React.FC<StockWithdrawalModalProps> = ({
   // Preparar itens com informações de estoque
   const [withdrawalItems, setWithdrawalItems] = useState<WithdrawalItem[]>(() => {
     return items.map(item => {
-      const product = products.find(p => p.id === item.productId);
-      const currentStock = product?.quantity || 0;
-      const hasStock = product !== undefined && currentStock >= item.quantity;
+      const equip = equipment.find(p => p.id === item.equipmentId);
+      const currentStock = equip?.quantity || 0;
+      const hasStock = equip !== undefined && currentStock >= item.quantity;
       
       return {
         ...item,
         currentStock,
         hasStock,
-        willDeduct: hasStock && item.productId !== null, // Só deduz se tem estoque e é produto cadastrado
+        willDeduct: hasStock && item.equipmentId !== null, // Só deduz se tem estoque e é equipamento cadastrado
         isProcessed: false,
         processError: undefined
       };
@@ -71,8 +71,8 @@ const StockWithdrawalModal: React.FC<StockWithdrawalModalProps> = ({
 
   // Itens que serão baixados
   const itemsToDeduct = withdrawalItems.filter(item => item.willDeduct);
-  const itemsWithIssues = withdrawalItems.filter(item => !item.willDeduct && item.productId !== null);
-  const unregisteredItems = withdrawalItems.filter(item => item.productId === null);
+  const itemsWithIssues = withdrawalItems.filter(item => !item.willDeduct && item.equipmentId !== null);
+  const unregisteredItems = withdrawalItems.filter(item => item.equipmentId === null);
   
   // Verifica se todos os itens são não cadastrados (permite confirmar sem dedução de estoque)
   const allItemsUnregistered = unregisteredItems.length === withdrawalItems.length && withdrawalItems.length > 0;
@@ -221,7 +221,7 @@ const StockWithdrawalModal: React.FC<StockWithdrawalModalProps> = ({
                 <table className="w-full text-sm">
                   <thead className="bg-green-100/50">
                     <tr>
-                      <th className="px-4 py-2 text-left font-semibold text-green-800">Produto</th>
+                      <th className="px-4 py-2 text-left font-semibold text-green-800">Equipamento</th>
                       <th className="px-4 py-2 text-center font-semibold text-green-800">Qtd. Solicitada</th>
                       <th className="px-4 py-2 text-center font-semibold text-green-800">Estoque Atual</th>
                       <th className="px-4 py-2 text-center font-semibold text-green-800">Estoque Final</th>
@@ -231,7 +231,7 @@ const StockWithdrawalModal: React.FC<StockWithdrawalModalProps> = ({
                   <tbody className="divide-y divide-green-200">
                     {itemsToDeduct.map((item) => (
                       <tr key={item.id} className="hover:bg-green-100/30 transition-colors">
-                        <td className="px-4 py-3 font-medium text-gray-800">{item.productName}</td>
+                        <td className="px-4 py-3 font-medium text-gray-800">{item.equipmentName}</td>
                         <td className="px-4 py-3 text-center text-gray-700">{item.quantity}</td>
                         <td className="px-4 py-3 text-center text-gray-700">{item.currentStock}</td>
                         <td className="px-4 py-3 text-center font-semibold text-green-700">
@@ -259,7 +259,7 @@ const StockWithdrawalModal: React.FC<StockWithdrawalModalProps> = ({
                 <table className="w-full text-sm">
                   <thead className="bg-amber-100/50">
                     <tr>
-                      <th className="px-4 py-2 text-left font-semibold text-amber-800">Produto</th>
+                      <th className="px-4 py-2 text-left font-semibold text-amber-800">Equipamento</th>
                       <th className="px-4 py-2 text-center font-semibold text-amber-800">Qtd. Solicitada</th>
                       <th className="px-4 py-2 text-center font-semibold text-amber-800">Estoque Atual</th>
                       <th className="px-4 py-2 text-center font-semibold text-amber-800">Situação</th>
@@ -268,7 +268,7 @@ const StockWithdrawalModal: React.FC<StockWithdrawalModalProps> = ({
                   <tbody className="divide-y divide-amber-200">
                     {itemsWithIssues.map((item) => (
                       <tr key={item.id} className="hover:bg-amber-100/30 transition-colors">
-                        <td className="px-4 py-3 font-medium text-gray-800">{item.productName}</td>
+                        <td className="px-4 py-3 font-medium text-gray-800">{item.equipmentName}</td>
                         <td className="px-4 py-3 text-center text-gray-700">{item.quantity}</td>
                         <td className="px-4 py-3 text-center text-red-600 font-semibold">{item.currentStock}</td>
                         <td className="px-4 py-3 text-center">
@@ -298,7 +298,7 @@ const StockWithdrawalModal: React.FC<StockWithdrawalModalProps> = ({
                 <div className="flex flex-wrap gap-2">
                   {unregisteredItems.map((item) => (
                     <span key={item.id} className="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-full">
-                      {item.productName} ({item.quantity} un.)
+                      {item.equipmentName} ({item.quantity} un.)
                     </span>
                   ))}
                 </div>

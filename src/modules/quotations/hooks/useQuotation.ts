@@ -107,9 +107,9 @@ export const useQuotation = () => {
         items: (q.quotation_items || []).map((item: any) => ({
           id: item.id,
           quotationId: q.id,
-          productId: item.product_id,
-          productName: item.product_name || q.product_name,
-          productCode: item.product_code,
+          equipmentId: item.product_id,
+          equipmentName: item.product_name || q.product_name,
+          equipmentCode: item.product_code,
           description: item.description,
           quantity: item.quantity || q.requested_quantity,
           unit: item.unit || 'un',
@@ -304,7 +304,7 @@ export const useQuotation = () => {
       result = result.filter(q =>
         q.code.toLowerCase().includes(search) ||
         q.title.toLowerCase().includes(search) ||
-        q.items.some(i => i.productName.toLowerCase().includes(search))
+        q.items.some(i => i.equipmentName.toLowerCase().includes(search))
       );
     }
     if (filters.minAmount !== undefined) {
@@ -561,8 +561,8 @@ export const useQuotation = () => {
         description: newQuotation.description,
         status: 'draft',
         request_id: newQuotation.requestId || null,
-        product_id: newQuotation.items[0]?.productId || null,
-        product_name: newQuotation.items[0]?.productName || newQuotation.title,
+        product_id: newQuotation.items[0]?.equipmentId || null,
+        product_name: newQuotation.items[0]?.equipmentName || newQuotation.title,
         requested_quantity: newQuotation.items[0]?.quantity || 1,
         department: newQuotation.department,
         cost_center: newQuotation.costCenter,
@@ -586,8 +586,8 @@ export const useQuotation = () => {
       
       console.log('Quotation inserted successfully');
 
-      // Note: quotation_items are for supplier proposals, not products
-      // Products are stored directly in the quotations table (product_id, product_name, requested_quantity)
+      // Note: quotation_items are for supplier proposals, not equipment
+      // Equipment are stored directly in the quotations table (product_id, product_name, requested_quantity)
       // Supplier proposals (quotation_items) are created when suppliers submit their prices
 
       // Insert invited suppliers
@@ -703,7 +703,7 @@ export const useQuotation = () => {
       return q;
     }));
 
-    await addAuditLog(quotationId, 'item_added', {}, { itemId: newItem.id, itemName: item.productName });
+    await addAuditLog(quotationId, 'item_added', {}, { itemId: newItem.id, itemName: item.equipmentName });
     
     return newItem;
   }, [quotations, addAuditLog]);
@@ -736,7 +736,7 @@ export const useQuotation = () => {
       return q;
     }));
 
-    await addAuditLog(quotationId, 'item_removed', {}, { itemId, itemName: item?.productName });
+    await addAuditLog(quotationId, 'item_removed', {}, { itemId, itemName: item?.equipmentName });
   }, [quotations, addAuditLog]);
 
   // ============================================
@@ -864,7 +864,7 @@ export const useQuotation = () => {
         id: crypto.randomUUID(),
         proposalId: '',
         quotationItemId: item.quotationItemId,
-        productName: quotationItem?.productName || '',
+        equipmentName: quotationItem?.equipmentName || '',
         quantity: quotationItem?.quantity || 0,
         unitPrice: item.unitPrice,
         totalPrice: item.unitPrice * (quotationItem?.quantity || 0),

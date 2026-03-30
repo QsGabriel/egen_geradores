@@ -1,6 +1,6 @@
-import { Product, StockMovement, Request } from '../types';
+import { Equipment, StockMovement, Request } from '../types';
 
-export const mockProducts: Product[] = [
+export const mockEquipment: Equipment[] = [
   {
     id: '1',
     name: 'Luvas de Látex',
@@ -66,8 +66,8 @@ export const mockProducts: Product[] = [
 export const mockMovements: StockMovement[] = [
   {
     id: '1',
-    productId: '1',
-    productName: 'Luvas de Látex',
+    equipmentId: '1',
+    equipmentName: 'Luvas de Látex',
     type: 'out',
     reason: 'internal-consumption',
     quantity: 5,
@@ -77,8 +77,8 @@ export const mockMovements: StockMovement[] = [
   },
   {
     id: '2',
-    productId: '2',
-    productName: 'Reagente pH Buffer',
+    equipmentId: '2',
+    equipmentName: 'Reagente pH Buffer',
     type: 'out',
     reason: 'sale',
     quantity: 2,
@@ -92,8 +92,8 @@ export const mockMovements: StockMovement[] = [
 export const mockRequests: Request[] = [
   {
     id: 'REQ001',
-    productId: '2',
-    productName: 'Reagente pH Buffer',
+    equipmentId: '2',
+    equipmentName: 'Reagente pH Buffer',
     quantity: 2,
     reason: 'Venda para cliente externo',
     requestedBy: 'João Silva',
@@ -104,8 +104,8 @@ export const mockRequests: Request[] = [
   },
   {
     id: 'REQ002',
-    productId: '3',
-    productName: 'Papel de Filtro',
+    equipmentId: '3',
+    equipmentName: 'Papel de Filtro',
     quantity: 10,
     reason: 'Transferência para filial',
     requestedBy: 'Maria Costa',

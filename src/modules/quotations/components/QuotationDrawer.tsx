@@ -342,10 +342,10 @@ export const QuotationDrawer: React.FC<QuotationDrawerProps> = ({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-mono text-gray-400">#{index + 1}</span>
-                            <h4 className="font-medium text-gray-900 truncate">{item.productName}</h4>
+                            <h4 className="font-medium text-gray-900 truncate">{item.equipmentName}</h4>
                           </div>
-                          {item.productCode && (
-                            <p className="text-xs text-gray-500 mt-0.5">{item.productCode}</p>
+                          {item.equipmentCode && (
+                            <p className="text-xs text-gray-500 mt-0.5">{item.equipmentCode}</p>
                           )}
                           {item.description && (
                             <p className="text-sm text-gray-600 mt-2">{item.description}</p>

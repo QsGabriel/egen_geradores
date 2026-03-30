@@ -5,14 +5,14 @@ import { useNotification } from '../hooks/useNotification';
 import Notification from './Notification';
 
 const MovementHistory: React.FC = () => {
-  const { movements, products, addMovement } = useInventory();
+  const { movements, equipment, addMovement } = useInventory();
   const { notification, showSuccess, showError, hideNotification } = useNotification();
   const [showAddMovement, setShowAddMovement] = useState(false);
   const [filterReason, setFilterReason] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState('');
 
   const [newMovement, setNewMovement] = useState({
-    productId: '',
+    equipmentId: '',
     quantity: 0,
     reason: 'internal-consumption' as any,
     notes: '',
@@ -34,16 +34,16 @@ const MovementHistory: React.FC = () => {
 
   const handleSubmitMovement = async (e: React.FormEvent) => {
     e.preventDefault();
-    const product = products.find(p => p.id === newMovement.productId);
-    if (!product) {
-      showError('Produto não encontrado');
+    const item = equipment.find(p => p.id === newMovement.equipmentId);
+    if (!item) {
+      showError('Equipamento não encontrado');
       return;
     }
 
     try {
       await addMovement({
-        productId: newMovement.productId,
-        productName: product.name,
+        equipmentId: newMovement.equipmentId,
+        equipmentName: item.name,
         type: 'out',
         reason: newMovement.reason,
         quantity: newMovement.quantity,
@@ -55,7 +55,7 @@ const MovementHistory: React.FC = () => {
       });
 
       setNewMovement({
-        productId: '',
+        equipmentId: '',
         quantity: 0,
         reason: 'internal-consumption',
         notes: '',
@@ -83,7 +83,7 @@ const MovementHistory: React.FC = () => {
       <div className="flex justify-between items-center animate-fade-in-up">
         <div>
           <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent">Histórico de Movimentações</h2>
-          <p className="text-gray-500 dark:text-gray-400">Controle todas as saídas de produtos do estoque</p>
+          <p className="text-gray-500 dark:text-gray-400">Controle todas as saídas de equipamentos do estoque</p>
         </div>
         <button
           onClick={() => setShowAddMovement(!showAddMovement)}
@@ -100,17 +100,17 @@ const MovementHistory: React.FC = () => {
           <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Registrar Nova Saída</h3>
           <form onSubmit={handleSubmitMovement} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Produto *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Equipamento *</label>
               <select
-                value={newMovement.productId}
-                onChange={(e) => setNewMovement(prev => ({ ...prev, productId: e.target.value }))}
+                value={newMovement.equipmentId}
+                onChange={(e) => setNewMovement(prev => ({ ...prev, equipmentId: e.target.value }))}
                 required
                 className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-500 bg-gray-50/50 dark:bg-gray-700/50 text-gray-800 dark:text-gray-100 cursor-pointer"
               >
-                <option value="">Selecione um produto</option>
-                {products.filter(p => p.quantity > 0).map(product => (
-                  <option key={product.id} value={product.id}>
-                    {product.name} - {product.code} (Estoque: {product.quantity} {product.unit})
+                <option value="">Selecione um equipamento</option>
+                {equipment.filter(p => p.quantity > 0).map(item => (
+                  <option key={item.id} value={item.id}>
+                    {item.name} - {item.code} (Estoque: {item.quantity} {item.unit})
                   </option>
                 ))}
               </select>
@@ -230,7 +230,7 @@ const MovementHistory: React.FC = () => {
             <thead className="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-700 dark:to-slate-700">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Produto
+                  Equipamento
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Quantidade
@@ -257,7 +257,7 @@ const MovementHistory: React.FC = () => {
                       <Package className="w-5 h-5 text-gray-400 dark:text-gray-500 mr-3" />
                       <div>
                         <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {movement.productName}
+                          {movement.equipmentName}
                         </div>
                       </div>
                     </div>
@@ -300,7 +300,7 @@ const MovementHistory: React.FC = () => {
           <div className="p-12 text-center">
             <ArrowUpDown className="w-12 h-12 mx-auto text-gray-400 dark:text-gray-500 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Nenhuma movimentação encontrada</h3>
-            <p className="text-gray-500 dark:text-gray-400">Registre a primeira saída de produtos do estoque.</p>
+            <p className="text-gray-500 dark:text-gray-400">Registre a primeira saída de equipamentos do estoque.</p>
           </div>
         )}
       </div>

@@ -32,14 +32,14 @@ const DetailModal: React.FC<DetailModalProps> = ({
 
   const colorClasses: Record<string, { gradient: string; border: string; iconBg: string }> = {
     blue: {
-      gradient: "from-blue-500 to-indigo-500",
-      border: "border-blue-200",
-      iconBg: "bg-blue-500"
+      gradient: "from-egen-navy to-egen-blue",
+      border: "border-egen-blue/20",
+      iconBg: "bg-egen-blue"
     },
     green: {
-      gradient: "from-green-500 to-emerald-500",
-      border: "border-green-200",
-      iconBg: "bg-green-500"
+      gradient: "from-egen-green to-emerald-500",
+      border: "border-egen-green/20",
+      iconBg: "bg-egen-green"
     },
     orange: {
       gradient: "from-orange-500 to-amber-500",
@@ -47,14 +47,14 @@ const DetailModal: React.FC<DetailModalProps> = ({
       iconBg: "bg-orange-500"
     },
     red: {
-      gradient: "from-red-500 to-rose-500",
-      border: "border-red-200",
-      iconBg: "bg-red-500"
+      gradient: "from-egen-red to-rose-500",
+      border: "border-egen-red/20",
+      iconBg: "bg-egen-red"
     },
     purple: {
-      gradient: "from-purple-500 to-violet-500",
-      border: "border-purple-200",
-      iconBg: "bg-purple-500"
+      gradient: "from-egen-navy to-egen-navy",
+      border: "border-egen-navy/20",
+      iconBg: "bg-egen-navy"
     }
   };
 
@@ -66,7 +66,7 @@ const DetailModal: React.FC<DetailModalProps> = ({
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div 
-        className={`bg-white dark:bg-gray-800 rounded-2xl shadow-2xl flex flex-col animate-scale-in transition-all duration-300 w-full ${
+        className={`bg-white dark:bg-egen-dark-surface rounded-2xl shadow-2xl flex flex-col animate-scale-in transition-all duration-300 w-full ${
           isExpanded 
             ? 'sm:w-[95vw] h-[95vh]' 
             : 'max-w-[95vw] sm:max-w-[90vw] max-h-[90vh] sm:max-h-[85vh] sm:min-w-[400px]'
@@ -77,7 +77,7 @@ const DetailModal: React.FC<DetailModalProps> = ({
           {/* Background Gradient */}
           <div className={`absolute inset-0 bg-gradient-to-r ${colors.gradient} opacity-10 dark:opacity-20`}></div>
           
-          <div className="relative flex items-center justify-between px-4 py-3 sm:px-6 sm:py-5 border-b-2 border-gray-100 dark:border-gray-700">
+          <div className="relative flex items-center justify-between px-4 py-3 sm:px-6 sm:py-5 border-b-2 border-gray-100 dark:border-white/5">
             <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
               {icon && (
                 <div className={`p-2 sm:p-2.5 rounded-xl ${colors.iconBg} shadow-lg flex-shrink-0`}>
@@ -118,7 +118,7 @@ const DetailModal: React.FC<DetailModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-3 py-3 sm:px-6 sm:py-4 border-t-2 border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/50 rounded-b-2xl flex-shrink-0">
+        <div className="px-3 py-3 sm:px-6 sm:py-4 border-t-2 border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/5 rounded-b-2xl flex-shrink-0">
           <div className="flex items-center justify-between">
             <p className="text-xs text-gray-400 hidden sm:block">
               Pressione ESC para fechar

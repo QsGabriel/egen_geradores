@@ -22,8 +22,7 @@ const RequestManagement: React.FC = () => {
   const { user, userProfile } = useAuth();
   const { 
     requests, 
-    products, 
-    suppliers, 
+    equipment, 
     addRequest, 
     updateRequestStatus, 
     addMovement, 
@@ -66,10 +65,10 @@ const RequestManagement: React.FC = () => {
 
   const [viewSignature, setViewSignature] = useState<{name: string; signature: string} | null>(null);
 
-  // Estados para adicionar produtos
-  const [productSearch, setProductSearch] = useState('');
+  // Estados para adicionar equipamentos
+  const [equipmentSearch, setEquipmentSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'general' | 'technical'>('all');
-  const [selectedProduct, setSelectedProduct] = useState('');
+  const [selectedEquipment, setSelectedEquipment] = useState('');
   const [selectedQuantity, setSelectedQuantity] = useState(1);
   const [cursorPosition, setCursorPosition] = useState(0);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
@@ -191,12 +190,12 @@ useEffect(() => {
   };
 
 
-  // Filtrar produtos para busca
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(productSearch.toLowerCase()) ||
-                         product.code.toLowerCase().includes(productSearch.toLowerCase());
-    const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
-    const hasStock = product.quantity > 0;
+  // Filtrar equipamentos para busca
+  const filteredEquipment = equipment.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(equipmentSearch.toLowerCase()) ||
+                         item.code.toLowerCase().includes(equipmentSearch.toLowerCase());
+    const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
+    const hasStock = item.quantity > 0;
     return matchesSearch && matchesCategory && hasStock;
   });
 
@@ -219,7 +218,7 @@ useEffect(() => {
       (request.approvedBy && request.approvedBy.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (request.supplierName && request.supplierName.toLowerCase().includes(searchQuery.toLowerCase())) ||
       request.items.some(item => 
-        item.productName.toLowerCase().includes(searchQuery.toLowerCase())
+        item.equipmentName.toLowerCase().includes(searchQuery.toLowerCase())
       )
     );
     
@@ -254,26 +253,26 @@ useEffect(() => {
     setSelectedStatusFilters(new Set());
   };
 
-  // Adiciona produto existente
-  const addProductToRequest = () => {
-    if (!selectedProduct) return;
-    const product = products.find((p) => p.id === selectedProduct);
-    if (!product) return;
+  // Adiciona equipamento existente
+  const addEquipmentToRequest = () => {
+    if (!selectedEquipment) return;
+    const item = equipment.find((p) => p.id === selectedEquipment);
+    if (!item) return;
 
     const alreadyAdded = newRequest.items.some(
-      (item) => item.productId === product.id
+      (i) => i.equipmentId === item.id
     );
     if (alreadyAdded) {
-      showError('Produto já adicionado');
+      showError('Equipamento já adicionado');
       return;
     }
 
     const newItem: RequestItem = {
       id: Date.now().toString(),
-      productId: product.id,
-      productName: product.name,
+      equipmentId: item.id,
+      equipmentName: item.name,
       quantity: selectedQuantity,
-      category: product.category || 'não definida',
+      category: item.category || 'não definida',
     };
 
     setNewRequest((prev) => ({
@@ -281,33 +280,33 @@ useEffect(() => {
       items: [...prev.items, newItem],
     }));
 
-    setSelectedProduct('');
+    setSelectedEquipment('');
     setSelectedQuantity(1);
-    setProductSearch('');
+    setEquipmentSearch('');
   };
     
-  // Adiciona produto não cadastrado
-  const handleAddUnregisteredProduct = () => {
-    if (!productSearch.trim()) {
-      showError('Nome do produto inválido');
+  // Adiciona equipamento não cadastrado
+  const handleAddUnregisteredEquipment = () => {
+    if (!equipmentSearch.trim()) {
+      showError('Nome do equipamento inválido');
       return;
     }
 
     if (
       newRequest.items.some(
         (item) =>
-          item.productName.toLowerCase().trim() ===
-          productSearch.toLowerCase().trim()
+          item.equipmentName.toLowerCase().trim() ===
+          equipmentSearch.toLowerCase().trim()
       )
     ) {
-      showError('Produto já adicionado à solicitação');
+      showError('Equipamento já adicionado à solicitação');
       return;
     }
 
     const newItem: RequestItem = {
       id: Date.now().toString(),
-      productId: null,
-      productName: productSearch.trim(),
+      equipmentId: null,
+      equipmentName: equipmentSearch.trim(),
       quantity: selectedQuantity,
       category: 'não cadastrado',
     };
@@ -317,12 +316,12 @@ useEffect(() => {
       items: [...prev.items, newItem],
     }));
 
-    setSelectedProduct('');
+    setSelectedEquipment('');
     setSelectedQuantity(1);
-    setProductSearch('');
+    setEquipmentSearch('');
   };
 
-  const removeProductFromRequest = (itemId: string) => {
+  const removeEquipmentFromRequest = (itemId: string) => {
     setNewRequest(prev => ({
       ...prev,
       items: prev.items.filter(item => item.id !== itemId)
@@ -393,7 +392,7 @@ useEffect(() => {
     e.preventDefault();
     
     if (newRequest.items.length === 0) {
-      showError('Adicione pelo menos um produto à solicitação');
+      showError('Adicione pelo menos um equipamento à solicitação');
       return;
     }
 
@@ -407,7 +406,7 @@ useEffect(() => {
         requestDate: new Date().toISOString().split('T')[0],
         department: userProfile?.department || '',
         supplierId: newRequest.supplierId,
-        supplierName: newRequest.supplierId ? suppliers.find(s => s.id === newRequest.supplierId)?.name : undefined,
+        supplierName: undefined,
         status: 'pending'
       }, attachments);
 
@@ -530,27 +529,19 @@ const handleCompleteRequest = async (request: Request) => {
 
   const handleStartQuotation = async (request: Request) => {
     try {
-      // Verificar se há fornecedores ativos
-      const activeSuppliers = suppliers.filter(s => s.status === 'active');
-      
-      if (activeSuppliers.length === 0) {
-        showWarning('Nenhum fornecedor ativo encontrado. Cadastre fornecedores antes de criar cotações.');
-        return;
-      }
-
-      // Deduplicar itens por productId para evitar cotações duplicadas
+      // Deduplicar itens por equipmentId para evitar cotações duplicadas
       const uniqueItems = request.items.filter((item, index, self) =>
-        index === self.findIndex((i) => i.productId === item.productId)
+        index === self.findIndex((i) => i.equipmentId === item.equipmentId)
       );
 
       console.log(`Criando ${uniqueItems.length} cotação(ões) para requisição ${request.id}`);
 
-      // Criar UMA cotação para cada PRODUTO da requisição
+      // Criar UMA cotação para cada EQUIPAMENTO da requisição
       for (const item of uniqueItems) {
         await createQuotation({
           requestId: request.id,
-          productId: item.productId,
-          productName: item.productName,
+          equipmentId: item.equipmentId,
+          equipmentName: item.equipmentName,
           requestedQuantity: item.quantity
         });
       }
@@ -565,7 +556,7 @@ const handleCompleteRequest = async (request: Request) => {
   const generateReport = () => {
     const reportData = filteredRequests.map(request => ({
       id: request.id,
-      produtos: request.items.map(item => `${item.productName} (${item.quantity})`).join('; '),
+      produtos: request.items.map(item => `${item.equipmentName} (${item.quantity})`).join('; '),
       prioridade: priorityLabels[request.priority],
       solicitante: request.requestedBy,
       departamento: request.department || 'N/A',
@@ -593,8 +584,8 @@ const handleCompleteRequest = async (request: Request) => {
 
   const canApprove = userProfile?.role === 'admin' || userProfile?.role === 'operator';
   
-      const matchedProduct = products.find(
-        (p) => p.name.toLowerCase().trim() === productSearch.toLowerCase().trim()
+      const matchedEquipment = equipment.find(
+        (p) => p.name.toLowerCase().trim() === equipmentSearch.toLowerCase().trim()
       );
 
   const applyFormatting = (startTag: string, endTag: string) => {
@@ -802,11 +793,11 @@ const handleCompleteRequest = async (request: Request) => {
       <Package className="w-4 h-4 text-white" />
     </div>
     <div>
-      <h4 className="text-base font-semibold text-gray-800 dark:text-gray-100">Adicionar Produtos</h4>
+      <h4 className="text-base font-semibold text-gray-800 dark:text-gray-100">Adicionar Equipamentos</h4>
       <p className="text-xs text-gray-500 dark:text-gray-400">
         {newRequest.type === 'SM' 
-          ? 'Selecione produtos disponíveis no estoque' 
-          : 'Busque produtos cadastrados ou adicione novos'}
+          ? 'Selecione equipamentos disponíveis no estoque' 
+          : 'Busque equipamentos cadastrados ou adicione novos'}
       </p>
     </div>
   </div>
@@ -815,14 +806,14 @@ const handleCompleteRequest = async (request: Request) => {
     <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-12 gap-3 sm:gap-4">
       {/* Campo de busca */}
       <div className="col-span-2 lg:col-span-5">
-        <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-2">Buscar Produto</label>
+        <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-2">Buscar Equipamento</label>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
             type="text"
             placeholder="Nome ou código..."
-            value={productSearch}
-            onChange={(e) => setProductSearch(e.target.value)}
+            value={equipmentSearch}
+            onChange={(e) => setEquipmentSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-500 text-sm dark:text-gray-100 dark:placeholder-gray-400"
           />
         </div>
@@ -869,16 +860,16 @@ const handleCompleteRequest = async (request: Request) => {
         <button
           type="button"
           onClick={() => {
-            if (matchedProduct) {
-              setSelectedProduct(matchedProduct.id);
-              addProductToRequest();
+            if (matchedEquipment) {
+              setSelectedEquipment(matchedEquipment.id);
+              addEquipmentToRequest();
             } else if (newRequest.type === 'SC') {
-              handleAddUnregisteredProduct();
+              handleAddUnregisteredEquipment();
             }
           }}
-          disabled={!productSearch.trim() || (newRequest.type === 'SM' && !matchedProduct)}
+          disabled={!equipmentSearch.trim() || (newRequest.type === 'SM' && !matchedEquipment)}
           className={`w-full px-3 sm:px-4 py-2.5 text-white rounded-xl flex items-center justify-center transition-all duration-200 font-medium text-sm shadow-md disabled:opacity-50 disabled:cursor-not-allowed ${
-            matchedProduct 
+            matchedEquipment 
               ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 shadow-green-500/25 hover:shadow-lg hover:shadow-green-500/30' 
               : newRequest.type === 'SC'
                 ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-amber-500/25 hover:shadow-lg hover:shadow-amber-500/30'
@@ -886,45 +877,45 @@ const handleCompleteRequest = async (request: Request) => {
           }`}
         >
           <Plus className="w-4 h-4 sm:mr-1.5" />
-          <span className="hidden sm:inline">{matchedProduct ? 'Adicionar' : (newRequest.type === 'SC' ? 'Novo' : 'Buscar')}</span>
+          <span className="hidden sm:inline">{matchedEquipment ? 'Adicionar' : (newRequest.type === 'SC' ? 'Novo' : 'Buscar')}</span>
         </button>
       </div>
     </div>
     
     {/* Indicador de produto não cadastrado - apenas para SC */}
-    {productSearch && !matchedProduct && newRequest.type === 'SC' && (
+    {equipmentSearch && !matchedEquipment && newRequest.type === 'SC' && (
       <div className="mt-3 flex items-center p-2.5 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-lg">
         <AlertTriangle className="w-4 h-4 text-amber-500 dark:text-amber-400 mr-2 flex-shrink-0" />
         <p className="text-xs text-amber-700 dark:text-amber-300">
-          <span className="font-medium">Produto não encontrado.</span> Ao adicionar, será criado como "produto não cadastrado".
+          <span className="font-medium">Equipamento não encontrado.</span> Ao adicionar, será criado como "equipamento não cadastrado".
         </p>
       </div>
     )}
     
     {/* Indicador de produto obrigatório em estoque - apenas para SM */}
-    {productSearch && !matchedProduct && newRequest.type === 'SM' && (
+    {equipmentSearch && !matchedEquipment && newRequest.type === 'SM' && (
       <div className="mt-3 flex items-center p-2.5 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg">
         <Package className="w-4 h-4 text-blue-500 dark:text-blue-400 mr-2 flex-shrink-0" />
         <p className="text-xs text-blue-700 dark:text-blue-300">
-          <span className="font-medium">Produto não encontrado no estoque.</span> Solicitações de Material só permitem itens cadastrados.
+          <span className="font-medium">Equipamento não encontrado no estoque.</span> Solicitações de Material só permitem itens cadastrados.
         </p>
       </div>
     )}
             {/* Lista de produtos filtrados */}
-            {productSearch && filteredProducts.length > 0 && (
+            {equipmentSearch && filteredEquipment.length > 0 && (
               <div className="mt-3 max-h-48 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg">
                 <div className="p-2 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-100 dark:border-gray-600 sticky top-0">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{filteredProducts.length} produto(s) encontrado(s)</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{filteredEquipment.length} equipamento(s) encontrado(s)</p>
                 </div>
-                {filteredProducts.map((product) => (
+                {filteredEquipment.map((item) => (
                   <div
-                    key={product.id}
+                    key={item.id}
                     onClick={() => {
-                      setSelectedProduct(product.id);
-                      setProductSearch(product.name);
+                      setSelectedEquipment(item.id);
+                      setEquipmentSearch(item.name);
                     }}
                     className={`p-3 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/30 border-b border-gray-50 dark:border-gray-700 last:border-b-0 transition-colors duration-150 ${
-                      selectedProduct === product.id ? 'bg-blue-50 dark:bg-blue-900/30 border-l-2 border-l-blue-500' : ''
+                      selectedEquipment === item.id ? 'bg-blue-50 dark:bg-blue-900/30 border-l-2 border-l-blue-500' : ''
                     }`}
                   >
                     <div className="flex justify-between items-center">
@@ -933,16 +924,16 @@ const handleCompleteRequest = async (request: Request) => {
                           <Package className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                         </div>
                         <div>
-                          <p className="font-medium text-gray-800 dark:text-gray-100 text-sm">{product.name}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{product.code} • {product.category}</p>
+                          <p className="font-medium text-gray-800 dark:text-gray-100 text-sm">{item.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{item.code} • {item.category}</p>
                         </div>
                       </div>
                       <div className="text-right">
                         <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                          product.quantity > 10 ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' : 
-                          product.quantity > 0 ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300' : 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'
+                          item.quantity > 10 ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' : 
+                          item.quantity > 0 ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300' : 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'
                         }`}>
-                          {product.quantity} {product.unit}
+                          {item.quantity} {item.unit}
                         </span>
                       </div>
                     </div>
@@ -962,7 +953,7 @@ const handleCompleteRequest = async (request: Request) => {
                     <Check className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <h4 className="text-base font-semibold text-gray-800 dark:text-gray-100">Produtos Selecionados</h4>
+                    <h4 className="text-base font-semibold text-gray-800 dark:text-gray-100">Equipamentos Selecionados</h4>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{newRequest.items.length} item(ns) adicionado(s)</p>
                   </div>
                 </div>
@@ -981,7 +972,7 @@ const handleCompleteRequest = async (request: Request) => {
                         <span className="text-xs font-bold text-blue-600 dark:text-blue-400">{index + 1}</span>
                       </div>
                       <div>
-                        <p className="font-medium text-gray-800 dark:text-gray-100 text-sm">{item.productName}</p>
+                        <p className="font-medium text-gray-800 dark:text-gray-100 text-sm">{item.equipmentName}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className={`text-xs px-1.5 py-0.5 rounded ${
                             item.category === 'não cadastrado' 
@@ -996,9 +987,9 @@ const handleCompleteRequest = async (request: Request) => {
                       </div>
                     </div>
                     <button
-                      onClick={() => removeProductFromRequest(item.id)}
+                      onClick={() => removeEquipmentFromRequest(item.id)}
                       className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all duration-200 opacity-60 group-hover:opacity-100"
-                      title="Remover produto"
+                      title="Remover equipamento"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -1047,21 +1038,14 @@ const handleCompleteRequest = async (request: Request) => {
 
             <div>
               <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-2">Fornecedor Sugerido</label>
-              <select
-                value={newRequest.supplierId || ''}
-                onChange={(e) => setNewRequest(prev => ({ 
-                  ...prev, 
-                  supplierId: e.target.value === '' ? null : e.target.value 
-                }))}
-                className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-500 bg-gray-50/50 dark:bg-gray-700 cursor-pointer dark:text-gray-100"
-              >
-                <option value="">Selecione um fornecedor (opcional)</option>
-                {suppliers.filter(s => s.status === 'active').map(supplier => (
-                  <option key={supplier.id} value={supplier.id}>
-                    {supplier.name}
-                  </option>
-                ))}
-              </select>
+              <input
+                type="text"
+                value=""
+                readOnly
+                disabled
+                placeholder="Funcionalidade removida"
+                className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 bg-gray-100/80 dark:bg-gray-600 rounded-xl text-gray-600 dark:text-gray-300 cursor-not-allowed"
+              />
             </div>
 
             <div className="md:col-span-2">
@@ -1328,7 +1312,7 @@ const handleCompleteRequest = async (request: Request) => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Pesquisar por ID, solicitante, produto, departamento, motivo..."
+              placeholder="Pesquisar por ID, solicitante, equipamento, departamento, motivo..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-500 bg-gray-50/50 dark:bg-gray-700 text-sm dark:text-gray-100 dark:placeholder-gray-400"
@@ -1573,7 +1557,7 @@ const handleCompleteRequest = async (request: Request) => {
                 <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center shadow-sm shadow-blue-500/25 flex-shrink-0">
                   <Package className="w-3 h-3 text-white" />
                 </div>
-                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200">Produtos</h4>
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200">Equipamentos</h4>
                 <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs font-semibold rounded-full">
                   {request.items.length} item(ns)
                 </span>
@@ -1585,7 +1569,7 @@ const handleCompleteRequest = async (request: Request) => {
                       <span className="text-[10px] sm:text-xs font-bold text-blue-600 dark:text-blue-400">{idx + 1}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="text-xs sm:text-sm text-gray-800 dark:text-gray-200 font-medium truncate block">{item.productName}</span>
+                      <span className="text-xs sm:text-sm text-gray-800 dark:text-gray-200 font-medium truncate block">{item.equipmentName}</span>
                     </div>
                     <span className="ml-2 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-[10px] sm:text-xs font-semibold rounded-lg whitespace-nowrap flex-shrink-0">
                       {item.quantity} un.
@@ -1842,11 +1826,11 @@ const handleCompleteRequest = async (request: Request) => {
     
             // Criar movimentação para cada item (UMA ÚNICA VEZ)
             for (const item of showSignatureModal.items) {
-              const product = products.find(p => p.id === item.productId);
-              if (product) {
+              const equip = equipment.find(p => p.id === item.equipmentId);
+              if (equip) {
                 await addMovement({
-                  productId: item.productId,
-                  productName: item.productName,
+                  equipmentId: item.equipmentId,
+                  equipmentName: item.equipmentName,
                   type: 'out',
                   reason: 'sale',
                   quantity: item.quantity,
@@ -1854,8 +1838,8 @@ const handleCompleteRequest = async (request: Request) => {
                   requestId: showSignatureModal.id,
                   authorizedBy: showSignatureModal.approvedBy,
                   notes: `Solicitação: ${showSignatureModal.reason}`,
-                  unitPrice: product.unitPrice,
-                  totalValue: item.quantity * product.unitPrice,
+                  unitPrice: equip.unitPrice,
+                  totalValue: item.quantity * equip.unitPrice,
                 });
               }
             }
@@ -1879,7 +1863,7 @@ const handleCompleteRequest = async (request: Request) => {
         requestReason={showWithdrawalModal.reason}
         approvedBy={showWithdrawalModal.approvedBy}
         items={showWithdrawalModal.items}
-        products={products}
+        equipment={equipment}
         onClose={() => {
           setShowWithdrawalModal(null);
           setProcessingRequestId(null);
@@ -1921,17 +1905,17 @@ const handleCompleteRequest = async (request: Request) => {
             for (const item of itemsToDeduct) {
               try {
                 // Verificar estoque atual antes de deduzir
-                const product = products.find(p => p.id === item.productId);
-                if (!product) {
-                  onItemProcessed(item.id, false, 'Produto não encontrado');
-                  failedItems.push({ item: item.productName, error: 'Produto não encontrado' });
+                const equip = equipment.find(p => p.id === item.equipmentId);
+                if (!equip) {
+                  onItemProcessed(item.id, false, 'Equipamento não encontrado');
+                  failedItems.push({ item: item.equipmentName, error: 'Equipamento não encontrado' });
                   continue;
                 }
                 
                 // Criar movimentação
                 await addMovement({
-                  productId: item.productId!,
-                  productName: item.productName,
+                  equipmentId: item.equipmentId!,
+                  equipmentName: item.equipmentName,
                   type: 'out',
                   reason: 'sale',
                   quantity: item.quantity,
@@ -1939,20 +1923,20 @@ const handleCompleteRequest = async (request: Request) => {
                   requestId: showWithdrawalModal.id,
                   authorizedBy: showWithdrawalModal.approvedBy,
                   notes: `Solicitação: ${showWithdrawalModal.reason}`,
-                  unitPrice: product.unitPrice,
-                  totalValue: item.quantity * product.unitPrice,
+                  unitPrice: equip.unitPrice,
+                  totalValue: item.quantity * equip.unitPrice,
                 });
                 
-                processedItems.push(item.productName);
+                processedItems.push(item.equipmentName);
                 onItemProcessed(item.id, true);
                 
                 // Pequeno delay entre itens para evitar race conditions
                 await new Promise(resolve => setTimeout(resolve, 100));
                 
               } catch (itemError) {
-                console.error(`Erro ao processar item ${item.productName}:`, itemError);
+                console.error(`Erro ao processar item ${item.equipmentName}:`, itemError);
                 onItemProcessed(item.id, false, 'Erro ao processar');
-                failedItems.push({ item: item.productName, error: 'Falha na movimentação' });
+                failedItems.push({ item: item.equipmentName, error: 'Falha na movimentação' });
               }
             }
             

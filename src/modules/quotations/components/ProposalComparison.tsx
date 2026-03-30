@@ -92,7 +92,7 @@ export const ProposalComparison: React.FC<ProposalComparisonProps> = ({
 
         return {
           itemId: item.quotationItemId,
-          itemName: item.productName,
+          itemName: item.equipmentName,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           totalPrice: item.totalPrice,
@@ -278,8 +278,8 @@ export const ProposalComparison: React.FC<ProposalComparisonProps> = ({
                     key={item.id}
                     className="px-4 sm:px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider"
                   >
-                    <div className="truncate max-w-[120px]" title={item.productName}>
-                      {item.productName}
+                    <div className="truncate max-w-[120px]" title={item.equipmentName}>
+                      {item.equipmentName}
                     </div>
                     <div className="text-gray-400 font-normal">
                       {item.quantity} {item.unit}

@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Product, StockMovement, Request, DashboardData, FinancialMetrics, Supplier, Quotation, QuotationItem, ProductChangeLog } from '../types';
+import { Equipment, StockMovement, Request, DashboardData, FinancialMetrics, Quotation, QuotationItem, EquipmentChangeLog } from '../types';
 
 export const useInventory = () => {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [requests, setRequests] = useState<Request[]>([]);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [quotations, setQuotations] = useState<Quotation[]>([]);
-  const [changeLogs, setChangeLogs] = useState<ProductChangeLog[]>([]);
+  const [changeLogs, setChangeLogs] = useState<EquipmentChangeLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,10 +20,9 @@ export const useInventory = () => {
     try {
       setLoading(true);
       await Promise.all([
-        fetchProducts(),
+        fetchEquipment(),
         fetchMovements(),
         fetchRequests(),
-        fetchSuppliers(),
         fetchQuotations(),
         fetchChangeLogs()
       ]);
@@ -35,7 +33,7 @@ export const useInventory = () => {
     }
   };
 
-  const fetchProducts = async () => {
+  const fetchEquipment = async () => {
     const { data, error } = await supabase
       .from('products')
       .select('*')
@@ -43,29 +41,29 @@ export const useInventory = () => {
 
     if (error) throw error;
     
-    const formattedProducts: Product[] = data.map(product => ({
-      id: product.id,
-      name: product.name,
-      code: product.code,
-      category: product.category,
-      quantity: product.quantity,
-      unit: product.unit,
-      supplier: product.supplier,
-      batch: product.batch,
-      entryDate: product.entry_date,
-      expirationDate: product.expiration_date,
-      location: product.location,
-      minStock: product.min_stock,
-      status: product.status,
-      unitPrice: product.unit_price || 0,
-      totalValue: product.quantity * (product.unit_price || 0),
-      invoiceNumber: product.invoicenumber || '',
-      isWithholding: product.iswithholding || false,
-      supplierId: product.supplier_id || '',
-      supplierName: product.supplier_name || '',
+    const formatted: Equipment[] = data.map(item => ({
+      id: item.id,
+      name: item.name,
+      code: item.code,
+      category: item.category,
+      quantity: item.quantity,
+      unit: item.unit,
+      supplier: item.supplier,
+      batch: item.batch,
+      entryDate: item.entry_date,
+      expirationDate: item.expiration_date,
+      location: item.location,
+      minStock: item.min_stock,
+      status: item.status,
+      unitPrice: item.unit_price || 0,
+      totalValue: item.quantity * (item.unit_price || 0),
+      invoiceNumber: item.invoicenumber || '',
+      isWithholding: item.iswithholding || false,
+      supplierId: item.supplier_id || '',
+      supplierName: item.supplier_name || '',
     }));
 
-    setProducts(formattedProducts);
+    setEquipment(formatted);
   };
 
   const fetchChangeLogs = async () => {
@@ -76,10 +74,10 @@ export const useInventory = () => {
 
     if (error) throw error;
 
-    const formattedLogs: ProductChangeLog[] = data.map(log => ({
+    const formattedLogs: EquipmentChangeLog[] = data.map(log => ({
       id: log.id,
-      productId: log.product_id,
-      productName: log.product_name,
+      equipmentId: log.product_id,
+      equipmentName: log.product_name,
       changedBy: log.changed_by,
       changeReason: log.change_reason,
       changeDate: log.change_date,
@@ -91,13 +89,13 @@ export const useInventory = () => {
     setChangeLogs(formattedLogs);
   };
 
-  const addProductChangeLog = async (changeLog: Omit<ProductChangeLog, 'id' | 'createdAt'>) => {
+  const addEquipmentChangeLog = async (changeLog: Omit<EquipmentChangeLog, 'id' | 'createdAt'>) => {
     try {
       const { error } = await supabase
         .from('product_change_logs')
         .insert({
-          product_id: changeLog.productId,
-          product_name: changeLog.productName,
+          product_id: changeLog.equipmentId,
+          product_name: changeLog.equipmentName,
           changed_by: changeLog.changedBy,
           change_reason: changeLog.changeReason,
           field_changes: changeLog.fieldChanges,
@@ -113,14 +111,14 @@ export const useInventory = () => {
     }
   };
 
-  const deleteProduct = async (id: string) => {
+  const deleteEquipment = async (id: string) => {
   const { error } = await supabase
     .from('products')
     .delete()
     .eq('id', id);
 
   if (error) {
-    console.error('Erro ao excluir produto:', error);
+    console.error('Erro ao excluir equipamento:', error);
     throw error;
   }
 };
@@ -135,8 +133,8 @@ export const useInventory = () => {
 
     const formattedMovements: StockMovement[] = data.map(movement => ({
       id: movement.id,
-      productId: movement.product_id,
-      productName: movement.product_name,
+      equipmentId: movement.product_id,
+      equipmentName: movement.product_name,
       type: movement.type,
       reason: movement.reason,
       quantity: movement.quantity,
@@ -188,36 +186,6 @@ export const useInventory = () => {
     setRequests(formattedRequests);
   };
 
-  const fetchSuppliers = async () => {
-    const { data, error } = await supabase
-      .from('suppliers')
-      .select('*')
-      .order('name', { ascending: true });
-
-    if (error) throw error;
-
-    // Deduplicar fornecedores por ID (caso haja duplicatas no banco)
-    const uniqueData = data.filter((supplier, index, self) =>
-      index === self.findIndex((s) => s.id === supplier.id)
-    );
-
-    const formattedSuppliers: Supplier[] = uniqueData.map(supplier => ({
-      id: supplier.id,
-      name: supplier.name,
-      cnpj: supplier.cnpj,
-      email: supplier.email,
-      phone: supplier.phone,
-      address: supplier.address,
-      contactPerson: supplier.contactperson || supplier.contact_person,
-      products: supplier.products,
-      status: supplier.status,
-      createdAt: supplier.created_at,
-      updatedAt: supplier.updated_at
-    }));
-
-    setSuppliers(formattedSuppliers);
-  };
-
   const fetchQuotations = async () => {
     const { data: quotationsData, error: quotationsError } = await supabase
       .from('quotations')
@@ -236,8 +204,8 @@ export const useInventory = () => {
     const formattedQuotations: Quotation[] = quotationsData.map(quotation => ({
       id: quotation.id,
       requestId: quotation.request_id,
-      productId: quotation.product_id,
-      productName: quotation.product_name,
+      equipmentId: quotation.product_id,
+      equipmentName: quotation.product_name,
       requestedQuantity: quotation.requested_quantity,
       status: quotation.status,
       selectedSupplierId: quotation.selected_supplier_id,
@@ -275,7 +243,7 @@ export const useInventory = () => {
     const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
 
     // Calcular valor atual do inventário baseado nos dados reais
-    const currentInventoryValue = products.reduce((sum, product) => sum + product.totalValue, 0);
+    const currentInventoryValue = equipment.reduce((sum, item) => sum + item.totalValue, 0);
 
     // Movimentações do mês atual
     const currentMonthMovements = movements.filter(movement => {
@@ -321,10 +289,10 @@ export const useInventory = () => {
   };
 
   const getDashboardData = (): DashboardData => {
-    const totalProducts = products.length;
-    const lowStockProducts = products.filter(p => p.status === 'low-stock').length;
-    const expiringProducts = products.filter(p => {
-      if (p.quantity <= 0) return false; // Não exibir produtos sem estoque
+    const totalEquipment = equipment.length;
+    const lowStockEquipment = equipment.filter(p => p.status === 'low-stock').length;
+    const expiringEquipment = equipment.filter(p => {
+      if (p.quantity <= 0) return false; // Não exibir equipamentos sem estoque
       const expirationDate = new Date(p.expirationDate);
       const thirtyDaysFromNow = new Date();
       thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
@@ -337,45 +305,45 @@ export const useInventory = () => {
       return moveDate >= sevenDaysAgo;
     }).length;
 
-    // Agrupar produtos por categoria real do banco de dados
+    // Agrupar equipamentos por categoria real do banco de dados
     const categoryCount: Record<string, number> = {};
     const categoryValue: Record<string, number> = {};
 
-    products.forEach(p => {
+    equipment.forEach(p => {
       const cat = p.category || 'sem categoria';
       categoryCount[cat] = (categoryCount[cat] || 0) + 1;
       categoryValue[cat] = (categoryValue[cat] || 0) + p.totalValue;
     });
 
     const categories = {
-      general: products.filter(p => p.category === 'general').length,
-      technical: products.filter(p => p.category === 'technical').length
+      general: equipment.filter(p => p.category === 'general').length,
+      technical: equipment.filter(p => p.category === 'technical').length
     };
 
     const financialMetrics = getFinancialMetrics();
 
     // Calcular valores por categoria baseado nos dados reais
     const categoryValues = {
-      general: products
+      general: equipment
         .filter(p => p.category === 'general')
         .reduce((sum, p) => sum + p.totalValue, 0),
-      technical: products
+      technical: equipment
         .filter(p => p.category === 'technical')
         .reduce((sum, p) => sum + p.totalValue, 0)
     };
 
-    // Produtos com maior e menor valor baseado nos dados reais
-    const sortedByValue = [...products].sort((a, b) => b.totalValue - a.totalValue);
-    const topValueProducts = sortedByValue.slice(0, 5);
-    const lowValueProducts = sortedByValue.slice(-5).reverse();
+    // Equipamentos com maior e menor valor baseado nos dados reais
+    const sortedByValue = [...equipment].sort((a, b) => b.totalValue - a.totalValue);
+    const topValueEquipment = sortedByValue.slice(0, 5);
+    const lowValueEquipment = sortedByValue.slice(-5).reverse();
 
     const totalInventoryValue = financialMetrics.currentMonth.inventoryValue;
-    const averageProductValue = totalProducts > 0 ? totalInventoryValue / totalProducts : 0;
+    const averageEquipmentValue = totalEquipment > 0 ? totalInventoryValue / totalEquipment : 0;
 
     return {
-      totalProducts,
-      lowStockProducts,
-      expiringProducts,
+      totalEquipment,
+      lowStockEquipment,
+      expiringEquipment,
       recentMovements,
       categories,
       totalInventoryValue,
@@ -385,47 +353,47 @@ export const useInventory = () => {
       monthlyMovementsValue: financialMetrics.currentMonth.movementsValue,
       monthlyMovementsChange: financialMetrics.trends.movementsValueChange,
       monthlyMovementsChangePercent: financialMetrics.trends.movementsValueChangePercent,
-      averageProductValue,
-      topValueProducts,
-      lowValueProducts,
+      averageEquipmentValue,
+      topValueEquipment,
+      lowValueEquipment,
       categoryValues,
       allCategories: categoryCount,
       allCategoryValues: categoryValue
     };
   };
 
-  const addProduct = async (product: Omit<Product, 'id'>) => {
+  const addEquipment = async (item: Omit<Equipment, 'id'>) => {
     try {
       const { data, error } = await supabase
         .from('products')
         .insert({
-          name: product.name,
-          code: product.code,
-          category: product.category,
-          quantity: product.quantity,
-          unit: product.unit,
-          supplier: product.supplier,
-          batch: product.batch,
-          entry_date: product.entryDate,
-          expiration_date: product.expirationDate,
-          location: product.location,
-          min_stock: product.minStock,
-          unit_price: product.unitPrice,
-          invoicenumber: product.invoiceNumber,
-          iswithholding: product.isWithholding
+          name: item.name,
+          code: item.code,
+          category: item.category,
+          quantity: item.quantity,
+          unit: item.unit,
+          supplier: item.supplier,
+          batch: item.batch,
+          entry_date: item.entryDate,
+          expiration_date: item.expirationDate,
+          location: item.location,
+          min_stock: item.minStock,
+          unit_price: item.unitPrice,
+          invoicenumber: item.invoiceNumber,
+          iswithholding: item.isWithholding
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      await fetchProducts(); // Refresh products list
+      await fetchEquipment(); // Refresh equipment list
     } catch (err) {
-      throw new Error(err instanceof Error ? err.message : 'Failed to add product');
+      throw new Error(err instanceof Error ? err.message : 'Failed to add equipment');
     }
   };
 
-  const updateProduct = async (id: string, updates: Partial<Product>) => {
+  const updateEquipment = async (id: string, updates: Partial<Equipment>) => {
     try {
       const updateData: any = {};
       
@@ -452,9 +420,9 @@ export const useInventory = () => {
 
       if (error) throw error;
 
-      await fetchProducts(); // Refresh products list
+      await fetchEquipment(); // Refresh equipment list
     } catch (err) {
-      throw new Error(err instanceof Error ? err.message : 'Failed to update product');
+      throw new Error(err instanceof Error ? err.message : 'Failed to update equipment');
     }
   };
 
@@ -463,8 +431,8 @@ export const useInventory = () => {
       const { error } = await supabase
         .from('stock_movements')
         .insert({
-          product_id: movement.productId,
-          product_name: movement.productName,
+          product_id: movement.equipmentId,
+          product_name: movement.equipmentName,
           type: movement.type,
           reason: movement.reason,
           quantity: movement.quantity,
@@ -478,7 +446,7 @@ export const useInventory = () => {
       if (error) throw error;
 
       // Refresh data
-      await Promise.all([fetchMovements(), fetchProducts()]);
+      await Promise.all([fetchMovements(), fetchEquipment()]);
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Failed to add movement');
     }
@@ -563,77 +531,27 @@ export const useInventory = () => {
     }
   };
 
-  // Supplier functions
-  const addSupplier = async (supplier: Omit<Supplier, 'id' | 'createdAt' | 'updatedAt'>) => {
-    try {
-      const { error } = await supabase
-        .from('suppliers')
-        .insert({
-          name: supplier.name,
-          cnpj: supplier.cnpj,
-          email: supplier.email,
-          phone: supplier.phone,
-          address: supplier.address,
-          contact_person: supplier.contactPerson,
-          products: supplier.products,
-          status: supplier.status
-        });
-
-      if (error) throw error;
-
-      await fetchSuppliers();
-    } catch (err) {
-      throw new Error(err instanceof Error ? err.message : 'Failed to add supplier');
-    }
-  };
-
-  const updateSupplier = async (id: string, updates: Partial<Supplier>) => {
-    try {
-      const updateData: any = {};
-      
-      if (updates.name !== undefined) updateData.name = updates.name;
-      if (updates.cnpj !== undefined) updateData.cnpj = updates.cnpj;
-      if (updates.email !== undefined) updateData.email = updates.email;
-      if (updates.phone !== undefined) updateData.phone = updates.phone;
-      if (updates.address !== undefined) updateData.address = updates.address;
-      if (updates.contactPerson !== undefined) updateData.contact_person = updates.contactPerson;
-      if (updates.products !== undefined) updateData.products = updates.products;
-      if (updates.status !== undefined) updateData.status = updates.status;
-
-      const { error } = await supabase
-        .from('suppliers')
-        .update(updateData)
-        .eq('id', id);
-
-      if (error) throw error;
-
-      await fetchSuppliers();
-    } catch (err) {
-      throw new Error(err instanceof Error ? err.message : 'Failed to update supplier');
-    }
-  };
-
   // Quotation functions
   // Modelo: 1 quotation = 1 ou mais produtos sendo cotados
   // quotation_items = produtos/itens a serem cotados
   // quotation_proposals = respostas dos fornecedores (criadas quando respondem)
   const createQuotation = async (quotationData: {
     requestId: string;
-    productId: string;
-    productName: string;
+    equipmentId: string;
+    equipmentName: string;
     requestedQuantity: number;
   }) => {
     try {
-      // Verificar se já existe cotação para este request + produto
+      // Verificar se já existe cotação para este request + equipamento
       const { data: existingQuotation } = await supabase
         .from('quotations')
         .select('id')
         .eq('request_id', quotationData.requestId)
-        .eq('product_id', quotationData.productId)
+        .eq('product_id', quotationData.equipmentId)
         .maybeSingle();
 
       if (existingQuotation) {
-        console.log('Cotação já existe para este produto:', existingQuotation.id);
+        console.log('Cotação já existe para este equipamento:', existingQuotation.id);
         return existingQuotation;
       }
 
@@ -641,8 +559,8 @@ export const useInventory = () => {
         .from('quotations')
         .insert({
           request_id: quotationData.requestId,
-          product_id: quotationData.productId,
-          product_name: quotationData.productName,
+          product_id: quotationData.equipmentId,
+          product_name: quotationData.equipmentName,
           requested_quantity: quotationData.requestedQuantity,
           status: 'open',
           created_by: 'Sistema'
@@ -652,14 +570,12 @@ export const useInventory = () => {
 
       if (quotationError) throw quotationError;
 
-      // Criar ONE quotation_item para o produto sendo cotado
-      // Isso é necessário para o workflow avançar (requer hasItems)
       const { error: itemError } = await supabase
         .from('quotation_items')
         .insert({
           quotation_id: quotation.id,
-          product_id: quotationData.productId,
-          product_name: quotationData.productName,
+          product_id: quotationData.equipmentId,
+          product_name: quotationData.equipmentName,
           quantity: quotationData.requestedQuantity,
           unit: 'un',
           status: 'pending'
@@ -667,35 +583,9 @@ export const useInventory = () => {
 
       if (itemError) {
         console.error('Erro ao criar quotation_item:', itemError);
-        // Não falhar a criação da cotação, apenas logar
       }
 
-      // Convidar TODOS os fornecedores ativos para a cotação
-      // Isso é necessário para o workflow avançar (requer hasSuppliers)
-      const activeSuppliers = suppliers.filter(s => s.status === 'active');
-      if (activeSuppliers.length > 0) {
-        const invitations = activeSuppliers.map(supplier => ({
-          quotation_id: quotation.id,
-          supplier_id: supplier.id,
-          supplier_name: supplier.name,
-          supplier_email: supplier.email,
-          supplier_phone: supplier.phone || null,
-          status: 'invited'
-        }));
-
-        const { error: suppliersError } = await supabase
-          .from('quotation_invited_suppliers')
-          .insert(invitations);
-
-        if (suppliersError) {
-          console.error('Erro ao convidar fornecedores:', suppliersError);
-          // Não falhar a criação da cotação, apenas logar
-        } else {
-          console.log(`${activeSuppliers.length} fornecedores convidados para cotação ${quotation.id}`);
-        }
-      }
-
-      console.log(`Cotação ${quotation.id} criada com 1 item para produto: ${quotationData.productName}`);
+      console.log(`Cotação ${quotation.id} criada com 1 item para equipamento: ${quotationData.equipmentName}`);
 
       await fetchQuotations();
       return quotation;
@@ -787,51 +677,51 @@ export const useInventory = () => {
     }
   };
 
-  // Função para dar baixa em produto (zerar estoque)
-  const writeOffProduct = async (productId: string, reason: string, authorizedBy: string) => {
+  // Função para dar baixa em equipamento (zerar estoque)
+  const writeOffEquipment = async (equipmentId: string, reason: string, authorizedBy: string) => {
     try {
-      const product = products.find(p => p.id === productId);
-      if (!product) throw new Error('Produto não encontrado');
+      const item = equipment.find(p => p.id === equipmentId);
+      if (!item) throw new Error('Equipamento não encontrado');
 
       // Registrar movimentação de saída
       await addMovement({
-        productId: product.id,
-        productName: product.name,
+        equipmentId: item.id,
+        equipmentName: item.name,
         type: 'out',
         reason: 'other',
-        quantity: product.quantity,
+        quantity: item.quantity,
         date: new Date().toISOString().split('T')[0],
         authorizedBy,
         notes: `Baixa por ${reason}`,
-        unitPrice: product.unitPrice,
-        totalValue: product.quantity * product.unitPrice
+        unitPrice: item.unitPrice,
+        totalValue: item.quantity * item.unitPrice
       });
 
-      // Atualizar produto para quantidade zero
-      await updateProduct(productId, { quantity: 0 });
+      // Atualizar equipamento para quantidade zero
+      await updateEquipment(equipmentId, { quantity: 0 });
     } catch (err) {
-      throw new Error(err instanceof Error ? err.message : 'Failed to write off product');
+      throw new Error(err instanceof Error ? err.message : 'Failed to write off equipment');
     }
   };
 
   // Função para solicitar reposição automaticamente
-  const requestReplenishment = async (productId: string, requestedBy: string) => {
+  const requestReplenishment = async (equipmentId: string, requestedBy: string) => {
     try {
-      const product = products.find(p => p.id === productId);
-      if (!product) throw new Error('Produto não encontrado');
+      const item = equipment.find(p => p.id === equipmentId);
+      if (!item) throw new Error('Equipamento não encontrado');
 
       // Calcular quantidade sugerida (dobro do estoque mínimo)
-      const suggestedQuantity = Math.max(product.minStock * 2, 10);
+      const suggestedQuantity = Math.max(item.minStock * 2, 10);
 
       await addRequest({
         items: [{
           id: Date.now().toString(),
-          productId: product.id,
-          productName: product.name,
+          equipmentId: item.id,
+          equipmentName: item.name,
           quantity: suggestedQuantity,
-          category: product.category
+          category: item.category
         }],
-        reason: `Solicitação automática de reposição - Produto próximo ao vencimento. Estoque atual: ${product.quantity} ${product.unit}`,
+        reason: `Solicitação automática de reposição - Equipamento próximo ao vencimento. Estoque atual: ${item.quantity} ${item.unit}`,
         priority: 'priority',
         requestedBy,
         requestDate: new Date().toISOString().split('T')[0],
@@ -842,52 +732,31 @@ export const useInventory = () => {
       throw new Error(err instanceof Error ? err.message : 'Failed to request replenishment');
     }
   };
-  const deleteSupplier = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('suppliers')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        console.error('Erro ao excluir fornecedor:', error);
-        throw error;
-      }
-
-      await fetchSuppliers();
-    } catch (err) {
-      throw new Error(err instanceof Error ? err.message : 'Failed to delete supplier');
-    }
-  };
 
   return {
-    products,
+    equipment,
     movements,
     requests,
-    suppliers,
     quotations,
     changeLogs,
     loading,
     error,
     getDashboardData,
     getFinancialMetrics,
-    addProduct,
-    updateProduct,
+    addEquipment,
+    updateEquipment,
     addMovement,
     addRequest,
     updateRequestStatus,
-    addSupplier,
-    updateSupplier,
     createQuotation,
     updateQuotationItem,
     selectQuotationWinner,
-    writeOffProduct,
+    writeOffEquipment,
     requestReplenishment,
-    addProductChangeLog,
+    addEquipmentChangeLog,
     refreshData: fetchAllData,
-    deleteSupplier,
-    deleteProduct,
-    setProducts,
-    fetchProducts
+    deleteEquipment,
+    setEquipment,
+    fetchEquipment
   };
 };

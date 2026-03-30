@@ -159,7 +159,7 @@ export const AddProposalModal: React.FC<AddProposalModalProps> = ({
                               <Package className="w-4 h-4 text-blue-600" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium text-gray-900">{item.productName}</p>
+                              <p className="font-medium text-gray-900">{item.equipmentName}</p>
                               <p className="text-sm text-gray-500">
                                 {item.quantity} {item.unit}
                                 {item.estimatedUnitPrice && (

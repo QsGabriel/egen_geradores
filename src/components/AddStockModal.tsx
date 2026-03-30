@@ -32,7 +32,7 @@ const AddStockModal: React.FC<AddStockModalProps> = ({ isOpen, onClose, product,
         
         <div className="space-y-3 mb-5 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-xl border border-blue-100 dark:border-blue-800">
           <p className="text-gray-700 dark:text-gray-300">
-            <span className="font-semibold text-gray-800 dark:text-gray-200">Produto:</span> {product.name}
+            <span className="font-semibold text-gray-800 dark:text-gray-200">Equipamento:</span> {product.name}
           </p>
           <p className="text-gray-700 dark:text-gray-300">
             <span className="font-semibold text-gray-800 dark:text-gray-200">Quantidade atual:</span> 

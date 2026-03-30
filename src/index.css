@@ -1,6 +1,14 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  }
+}
 
 /* ========================================
    ANIMAÇÕES E TRANSIÇÕES GLOBAIS
@@ -63,7 +71,7 @@
 
   /* Hover com glow */
   .hover-glow:hover {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 0 20px rgba(106, 147, 199, 0.3);
   }
 
   /* Transição suave para todos os elementos interativos */
@@ -112,8 +120,8 @@
   }
   .card-interactive:hover {
     transform: translateY(-1px);
-    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
-    border-color: rgba(59, 130, 246, 0.3);
+    box-shadow: 0 10px 40px -10px rgba(13, 42, 89, 0.1);
+    border-color: rgba(106, 147, 199, 0.3);
   }
 
   /* Focus ring moderno */
@@ -121,9 +129,9 @@
     outline: none;
   }
   .focus-ring:focus-visible {
-    outline: 2px solid rgba(59, 130, 246, 0.5);
+    outline: 2px solid rgba(106, 147, 199, 0.5);
     outline-offset: 2px;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 0 0 3px rgba(106, 147, 199, 0.2);
   }
 
   /* Texto com gradiente */
@@ -346,25 +354,25 @@
 
 /* Scrollbar customizada - Dark Mode */
 .dark ::-webkit-scrollbar-track {
-  background: #1f2937;
+  background: #0D2A59;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: #4b5563;
+  background: #102140;
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: #6b7280;
+  background: #6A93C7;
 }
 
 /* Selection styling */
 ::selection {
-  background: rgba(59, 130, 246, 0.2);
+  background: rgba(243, 178, 41, 0.25);
   color: inherit;
 }
 
 .dark ::selection {
-  background: rgba(59, 130, 246, 0.4);
+  background: rgba(243, 178, 41, 0.4);
 }
 
 /* Smooth scroll */
@@ -384,8 +392,8 @@ input, select, textarea {
 
 input:focus, select:focus, textarea:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #6A93C7;
+  box-shadow: 0 0 0 2px rgba(106, 147, 199, 0.2);
 }
 
 /* Buttons com feedback visual */

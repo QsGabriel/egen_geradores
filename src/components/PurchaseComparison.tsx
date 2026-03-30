@@ -26,22 +26,22 @@ const PurchaseComparison: React.FC = () => {
   const currentKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
   const previousKey = `${previousYear}-${String(previousMonth + 1).padStart(2, '0')}`;
 
-  const dataByProduct: Record<string, { name: string; current: number; previous: number }> = {};
+  const dataByEquipment: Record<string, { name: string; current: number; previous: number }> = {};
 
   movements.forEach(mov => {
     if (mov.type !== 'in') return;
     const key = getMonthYear(mov.date);
-    if (!dataByProduct[mov.productId]) {
-      dataByProduct[mov.productId] = {
-        name: mov.productName,
+    if (!dataByEquipment[mov.equipmentId]) {
+      dataByEquipment[mov.equipmentId] = {
+        name: mov.equipmentName,
         current: 0,
         previous: 0
       };
     }
     if (key === currentKey) {
-      dataByProduct[mov.productId].current += mov.totalValue;
+      dataByEquipment[mov.equipmentId].current += mov.totalValue;
     } else if (key === previousKey) {
-      dataByProduct[mov.productId].previous += mov.totalValue;
+      dataByEquipment[mov.equipmentId].previous += mov.totalValue;
     }
   });
 
@@ -49,7 +49,7 @@ const PurchaseComparison: React.FC = () => {
     const doc = new jsPDF();
     doc.text('Comparativo de Compras - Mês Atual vs Mês Anterior', 14, 16);
 
-    const rows = Object.values(dataByProduct).map(item => ([
+    const rows = Object.values(dataByEquipment).map(item => ([
       item.name,
       formatCurrency(item.previous),
       formatCurrency(item.current),
@@ -58,7 +58,7 @@ const PurchaseComparison: React.FC = () => {
 
     autoTable(doc, {
       startY: 20,
-      head: [['Produto', 'Mês Anterior', 'Mês Atual', 'Diferença']],
+      head: [['Equipamento', 'Mês Anterior', 'Mês Atual', 'Diferença']],
       body: rows,
     });
 
@@ -82,14 +82,14 @@ const PurchaseComparison: React.FC = () => {
         <table className="min-w-full text-sm text-left">
           <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
             <tr>
-              <th className="px-4 py-2">Produto</th>
+              <th className="px-4 py-2">Equipamento</th>
               <th className="px-4 py-2">Mês Anterior</th>
               <th className="px-4 py-2">Mês Atual</th>
               <th className="px-4 py-2">Diferença</th>
             </tr>
           </thead>
           <tbody>
-            {Object.values(dataByProduct).map((item, idx) => (
+            {Object.values(dataByEquipment).map((item, idx) => (
               <tr key={idx} className="border-b border-gray-100 dark:border-gray-700">
                 <td className="px-4 py-2 text-gray-800 dark:text-gray-100">{item.name}</td>
                 <td className="px-4 py-2 text-gray-600 dark:text-gray-300">{formatCurrency(item.previous)}</td>
@@ -99,7 +99,7 @@ const PurchaseComparison: React.FC = () => {
                 </td>
               </tr>
             ))}
-            {Object.keys(dataByProduct).length === 0 && (
+            {Object.keys(dataByEquipment).length === 0 && (
               <tr>
                 <td colSpan={4} className="text-center py-4 text-gray-500 dark:text-gray-400">Sem dados de compras nos dois meses.</td>
               </tr>
