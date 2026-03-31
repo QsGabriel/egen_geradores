@@ -1,0 +1,548 @@
+/**
+ * EGEN System - Document Preview Styles
+ * Estilos para preview A4 de propostas e contratos
+ */
+
+/* ============================================
+   A4 DOCUMENT CONTAINER
+   ============================================ */
+
+.document-preview-container {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: #525659;
+  padding: 20px;
+}
+
+.document-preview-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+/* ============================================
+   A4 PAGE BASE
+   ============================================ */
+
+.proposal-document {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #111111;
+  background: white;
+  width: 210mm;
+  margin: 0 auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.page {
+  position: relative;
+  width: 100%;
+  min-height: 297mm;
+  box-sizing: border-box;
+  page-break-after: always;
+  background: white;
+}
+
+.page:last-child {
+  page-break-after: auto;
+}
+
+.content-page {
+  padding: 15mm 20mm;
+}
+
+/* ============================================
+   COVER PAGE
+   ============================================ */
+
+.cover-page {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  overflow: hidden;
+}
+
+.cover-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+.cover-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  padding-top: 15mm;
+  text-align: center;
+}
+
+.cover-title {
+  color: #FFFFFF;
+  font-size: 28pt;
+  font-weight: 700;
+  letter-spacing: 2px;
+  margin: 0;
+  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.cover-subtitle {
+  margin-top: 10mm;
+}
+
+.cover-id {
+  color: #F3B229;
+  font-size: 14pt;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 5px 15px;
+  border-radius: 5px;
+}
+
+/* ============================================
+   PAGE HEADER
+   ============================================ */
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10mm;
+  border-bottom: 2px solid #0D2A59;
+  margin-bottom: 10mm;
+}
+
+.header-logo-img {
+  height: 15mm;
+  width: auto;
+}
+
+.header-info {
+  text-align: right;
+}
+
+.header-doc-id {
+  font-size: 12pt;
+  font-weight: 600;
+  color: #0D2A59;
+}
+
+.header-date {
+  font-size: 10pt;
+  color: #666666;
+}
+
+/* ============================================
+   SECTION TITLES
+   ============================================ */
+
+.section-title {
+  font-size: 14pt;
+  font-weight: 700;
+  color: #0D2A59;
+  margin-bottom: 5mm;
+  padding-bottom: 2mm;
+  border-bottom: 1px solid #6A93C7;
+}
+
+.section-subtitle {
+  font-size: 10pt;
+  color: #666666;
+  margin-bottom: 5mm;
+}
+
+.subsection-title {
+  font-size: 12pt;
+  font-weight: 600;
+  color: #0D2A59;
+  margin-top: 8mm;
+  margin-bottom: 4mm;
+}
+
+/* ============================================
+   CLIENT SECTION
+   ============================================ */
+
+.client-section {
+  margin-bottom: 10mm;
+}
+
+.client-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3mm 10mm;
+}
+
+.client-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.client-field.full-width {
+  grid-column: 1 / -1;
+}
+
+.field-label {
+  font-size: 9pt;
+  color: #666666;
+  margin-bottom: 1mm;
+}
+
+.field-value {
+  font-size: 11pt;
+  color: #111111;
+  font-weight: 500;
+}
+
+/* ============================================
+   INTRO SECTION
+   ============================================ */
+
+.intro-section {
+  margin-top: 10mm;
+  position: relative;
+  z-index: 2;
+}
+
+.intro-section p,
+.intro-continuation p {
+  font-size: 11pt;
+  line-height: 1.6;
+  text-align: justify;
+  margin-bottom: 3mm;
+}
+
+.generator-image-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+  margin: 8mm 0;
+  padding: 5mm 0;
+  background: linear-gradient(to bottom, transparent 0%, rgba(243, 178, 41, 0.05) 30%, rgba(243, 178, 41, 0.08) 50%, rgba(243, 178, 41, 0.05) 70%, transparent 100%);
+}
+
+.generator-image {
+  max-width: 70%;
+  height: auto;
+  max-height: 80mm;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.15));
+}
+
+.intro-continuation {
+  position: relative;
+  z-index: 2;
+}
+
+/* ============================================
+   TABLES
+   ============================================ */
+
+.items-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10pt;
+  margin-bottom: 5mm;
+}
+
+.items-table th {
+  background-color: #0D2A59;
+  color: white;
+  padding: 3mm 2mm;
+  text-align: left;
+  font-weight: 600;
+}
+
+.items-table td {
+  padding: 2mm;
+  border-bottom: 1px solid #E5E7EB;
+  vertical-align: top;
+}
+
+.items-table .item-row:nth-child(even) {
+  background-color: #F9FAFB;
+}
+
+.items-table .col-desc {
+  width: 40%;
+}
+
+.items-table .col-qty,
+.items-table .col-unit,
+.items-table .col-total {
+  text-align: right;
+  width: 12%;
+}
+
+.items-table .col-franquia,
+.items-table .col-periodo {
+  width: 13%;
+}
+
+.items-table .col-obs {
+  width: 30%;
+  font-size: 9pt;
+  color: #666666;
+}
+
+.items-table .extras {
+  color: #6A93C7;
+  font-style: italic;
+}
+
+.items-table .obs {
+  color: #888888;
+  font-size: 9pt;
+}
+
+.items-table .total-row td {
+  background-color: #F3F4F6;
+  font-weight: 600;
+  border-top: 2px solid #0D2A59;
+}
+
+.items-table .total-label {
+  text-align: right;
+  padding-right: 5mm;
+}
+
+.items-table .total-value {
+  text-align: right;
+  color: #0D2A59;
+}
+
+.items-table .empty-row td {
+  text-align: center;
+  color: #999999;
+  font-style: italic;
+  padding: 5mm;
+}
+
+.items-table.compact th,
+.items-table.compact td {
+  padding: 2mm;
+}
+
+/* ============================================
+   RESPONSIBILITIES TABLE
+   ============================================ */
+
+.responsibilities-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10pt;
+}
+
+.responsibilities-table th {
+  background-color: #6A93C7;
+  color: white;
+  padding: 2mm;
+  text-align: left;
+}
+
+.responsibilities-table td {
+  padding: 2mm;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.responsibilities-table tr:nth-child(even) {
+  background-color: #F9FAFB;
+}
+
+/* ============================================
+   TOTAIS SECTION
+   ============================================ */
+
+.totais-section {
+  margin-top: 10mm;
+}
+
+.totais-box {
+  background-color: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 3mm;
+  padding: 5mm;
+}
+
+.total-line {
+  display: flex;
+  justify-content: space-between;
+  padding: 2mm 0;
+  font-size: 11pt;
+}
+
+.total-line.subtotal {
+  border-top: 1px solid #E5E7EB;
+  margin-top: 2mm;
+  padding-top: 4mm;
+}
+
+.total-line.desconto {
+  color: #7AC15F;
+}
+
+.total-line.final {
+  border-top: 2px solid #0D2A59;
+  margin-top: 2mm;
+  padding-top: 4mm;
+  font-weight: 700;
+  font-size: 14pt;
+}
+
+.total-line .highlight {
+  color: #0D2A59;
+}
+
+/* ============================================
+   CONDITIONS SECTION
+   ============================================ */
+
+.condicoes-section {
+  font-size: 10pt;
+}
+
+.condicoes-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3mm 10mm;
+  margin-bottom: 8mm;
+}
+
+.condicao-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.condicao-label {
+  font-size: 9pt;
+  color: #666666;
+  margin-bottom: 1mm;
+}
+
+.condicao-value {
+  font-size: 10pt;
+  color: #111111;
+  font-weight: 500;
+}
+
+/* ============================================
+   FOOTER / SIGNATURES
+   ============================================ */
+
+.footer-section {
+  margin-top: auto;
+}
+
+.signatures-grid {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 20mm;
+  margin-bottom: 20mm;
+}
+
+.signature-box {
+  text-align: center;
+  width: 70mm;
+}
+
+.signature-line {
+  border-top: 1px solid #111111;
+  margin-bottom: 3mm;
+}
+
+.signature-label {
+  font-size: 10pt;
+  font-weight: 600;
+  margin: 0;
+}
+
+.signature-sublabel {
+  font-size: 9pt;
+  color: #666666;
+  margin: 0;
+}
+
+.footer-info {
+  text-align: center;
+  margin-top: 10mm;
+}
+
+.footer-text {
+  font-size: 9pt;
+  color: #666666;
+  margin: 1mm 0;
+}
+
+.document-footer {
+  position: absolute;
+  bottom: 15mm;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+
+.footer-contact p {
+  font-size: 9pt;
+  color: #666666;
+  margin: 1mm 0;
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+  .document-preview-container {
+    padding: 0;
+    background: white;
+  }
+
+  .proposal-document {
+    width: 100%;
+    box-shadow: none;
+    margin: 0;
+  }
+
+  .page {
+    height: 100vh;
+    page-break-after: always;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+/* ============================================
+   SCALE FOR SCREEN PREVIEW
+   ============================================ */
+
+.preview-scale-50 .proposal-document {
+  transform: scale(0.5);
+  transform-origin: top center;
+}
+
+.preview-scale-75 .proposal-document {
+  transform: scale(0.75);
+  transform-origin: top center;
+}
+
+.preview-scale-100 .proposal-document {
+  transform: scale(1);
+}
+
+/* ============================================
+   DARK MODE ADJUSTMENTS (for editor only)
+   ============================================ */
+
+.dark .document-preview-container {
+  background-color: #1F2937;
+}

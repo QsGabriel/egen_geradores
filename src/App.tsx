@@ -7,6 +7,7 @@ import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import UserManagement from './components/UserManagement';
 import { CrmPage } from './modules/crm';
+import { SalesQuotationPage } from './modules/quotations/components/proposal';
 import ResetPassword from './components/ResetPassword';
 import Home from './components/Home';
 
@@ -60,10 +61,26 @@ const AuthenticatedApp: React.FC = () => {
           }
         />
         <Route
-          path="/crm"
+          path="/crm/*"
           element={
             <ProtectedRoute permission="canViewClients" userRole={userRole}>
               <CrmPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/propostas"
+          element={
+            <ProtectedRoute permission="canManageQuotations" userRole={userRole}>
+              <SalesQuotationPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/propostas/:id"
+          element={
+            <ProtectedRoute permission="canManageQuotations" userRole={userRole}>
+              <SalesQuotationPage />
             </ProtectedRoute>
           }
         />

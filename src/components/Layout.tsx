@@ -10,6 +10,9 @@ import {
   Users,
   Shield,
   Briefcase,
+  FileText,
+  UserCircle,
+  Building2,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { hasPermission, getRoleLabel } from '../utils/permissions';
@@ -43,10 +46,30 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       permission: 'canViewDashboard'
     },
     { 
-      name: 'Comercial / CRM', 
+      name: 'Comercial', 
       href: '/crm', 
       icon: Briefcase,
-      permission: 'canViewClients'
+      permission: 'canViewClients',
+      subItems: [
+        {
+          name: 'Clientes',
+          href: '/crm/clients',
+          icon: Building2,
+          permission: 'canViewClients'
+        },
+        {
+          name: 'Leads',
+          href: '/crm/leads',
+          icon: UserCircle,
+          permission: 'canViewLeads'
+        },
+        {
+          name: 'Propostas',
+          href: '/propostas',
+          icon: FileText,
+          permission: 'canManageQuotations'
+        },
+      ]
     },
     { 
       name: 'Usuários', 

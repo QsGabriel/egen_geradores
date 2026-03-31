@@ -15,3 +15,6 @@ export { ProposalComparison } from './ProposalComparison';
 export { ApprovalTimeline } from './ApprovalTimeline';
 export { AuditLogTimeline } from './AuditLogTimeline';
 export { MetricsDashboard } from './MetricsDashboard';
+
+// Proposal/Document Engine Components
+export * from './proposal';

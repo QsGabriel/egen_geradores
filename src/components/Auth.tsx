@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { LogIn, UserPlus, Eye, EyeOff, Sun, Moon, Loader2 } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { LogIn, UserPlus, Eye, EyeOff, Sun, Moon, Loader2, Check, X, Mail, Lock, AlertCircle } from 'lucide-react';
 import {
   motion,
   AnimatePresence,
@@ -70,6 +70,315 @@ const shakeVariants = {
 };
 
 /* ================================================
+   Shimmer Footer Component
+   ================================================ */
+
+const ShimmerFooter: React.FC<{ isDark: boolean }> = ({ isDark }) => (
+  <div className="absolute bottom-0 left-0 right-0 h-1.5 overflow-hidden z-30">
+    {/* Base gradient layer with smooth transition */}
+    <div
+      className={`absolute inset-0 transition-all duration-500 ${
+        isDark
+          ? 'bg-gradient-to-r from-[#07152D] via-[#0D2A59] to-[#07152D]'
+          : 'bg-gradient-to-r from-[#F5F7FA] via-[#0D2A59]/10 to-[#F5F7FA]'
+      }`}
+    />
+    
+    {/* Animated shimmer layer - uses CSS animation for smooth theme transitions */}
+    <div
+      className="absolute inset-0 animate-shimmer-slide"
+      style={{
+        background: `linear-gradient(
+          90deg,
+          transparent 0%,
+          transparent 20%,
+          rgba(243, 178, 41, 0.5) 30%,
+          rgba(106, 147, 199, 0.6) 50%,
+          rgba(243, 178, 41, 0.5) 70%,
+          transparent 80%,
+          transparent 100%
+        )`,
+        backgroundSize: '200% 100%',
+      }}
+    />
+    
+    {/* Secondary subtle shimmer for depth */}
+    <div
+      className="absolute inset-0 opacity-50 animate-shimmer-slide-slow"
+      style={{
+        background: `linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(13, 42, 89, 0.25) 25%,
+          rgba(122, 193, 95, 0.25) 50%,
+          rgba(13, 42, 89, 0.25) 75%,
+          transparent 100%
+        )`,
+        backgroundSize: '300% 100%',
+      }}
+    />
+    
+    {/* Glow effect on top with smooth transition */}
+    <div
+      className={`absolute inset-x-0 -top-2 h-3 blur-sm transition-all duration-500 ${
+        isDark
+          ? 'bg-gradient-to-r from-transparent via-[#F3B229]/20 to-transparent'
+          : 'bg-gradient-to-r from-transparent via-[#F3B229]/30 to-transparent'
+      }`}
+    />
+  </div>
+);
+
+/* ================================================
+   Email Validation
+   ================================================ */
+
+const validateEmail = (email: string): { isValid: boolean; message: string } => {
+  if (!email) return { isValid: false, message: '' };
+  
+  // Basic format check
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return { isValid: false, message: 'Formato de email inválido' };
+  }
+  
+  // Check for common typos
+  const commonDomains = ['gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'icloud.com'];
+  const domain = email.split('@')[1]?.toLowerCase();
+  
+  // Check for obvious typos in common domains
+  const typoPatterns: Record<string, string> = {
+    'gmial.com': 'gmail.com',
+    'gmal.com': 'gmail.com',
+    'gmail.co': 'gmail.com',
+    'gmil.com': 'gmail.com',
+    'hotmal.com': 'hotmail.com',
+    'hotmial.com': 'hotmail.com',
+    'outloo.com': 'outlook.com',
+    'outlok.com': 'outlook.com',
+  };
+  
+  if (typoPatterns[domain]) {
+    return { isValid: false, message: `Você quis dizer @${typoPatterns[domain]}?` };
+  }
+  
+  return { isValid: true, message: 'Email válido' };
+};
+
+interface EmailValidationBadgeProps {
+  email: string;
+  isDark: boolean;
+  touched: boolean;
+}
+
+const EmailValidationBadge: React.FC<EmailValidationBadgeProps> = ({ email, isDark, touched }) => {
+  const validation = validateEmail(email);
+  
+  if (!touched || !email) return null;
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -5 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -5 }}
+      className="mt-2 flex items-center gap-2"
+    >
+      <motion.div
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        className={`w-5 h-5 rounded-full flex items-center justify-center ${
+          validation.isValid
+            ? 'bg-[#7AC15F]/20 text-[#7AC15F]'
+            : 'bg-[#E5484D]/20 text-[#E5484D]'
+        }`}
+      >
+        {validation.isValid ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+      </motion.div>
+      <span
+        className={`text-xs font-medium ${
+          validation.isValid
+            ? 'text-[#7AC15F]'
+            : 'text-[#E5484D]'
+        }`}
+      >
+        {validation.message}
+      </span>
+    </motion.div>
+  );
+};
+
+/* ================================================
+   Password Strength Validation
+   ================================================ */
+
+interface PasswordRequirement {
+  label: string;
+  test: (password: string) => boolean;
+}
+
+const passwordRequirements: PasswordRequirement[] = [
+  { label: 'Mínimo 6 caracteres', test: (p) => p.length >= 6 },
+  { label: 'Letra maiúscula', test: (p) => /[A-Z]/.test(p) },
+  { label: 'Letra minúscula', test: (p) => /[a-z]/.test(p) },
+  { label: 'Número', test: (p) => /\d/.test(p) },
+  { label: 'Caractere especial (!@#$...)', test: (p) => /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/`~]/.test(p) },
+];
+
+const calculatePasswordStrength = (password: string): { score: number; label: string; color: string } => {
+  if (!password) return { score: 0, label: '', color: '' };
+  
+  const passedRequirements = passwordRequirements.filter(req => req.test(password)).length;
+  const percentage = (passedRequirements / passwordRequirements.length) * 100;
+  
+  if (percentage <= 20) return { score: percentage, label: 'Muito fraca', color: '#E5484D' };
+  if (percentage <= 40) return { score: percentage, label: 'Fraca', color: '#F3B229' };
+  if (percentage <= 60) return { score: percentage, label: 'Média', color: '#F3B229' };
+  if (percentage <= 80) return { score: percentage, label: 'Boa', color: '#6A93C7' };
+  return { score: percentage, label: 'Excelente', color: '#7AC15F' };
+};
+
+interface PasswordStrengthIndicatorProps {
+  password: string;
+  isDark: boolean;
+  touched: boolean;
+  showRequirements: boolean;
+}
+
+const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
+  password,
+  isDark,
+  touched,
+  showRequirements,
+}) => {
+  const strength = calculatePasswordStrength(password);
+  
+  if (!touched || !password) return null;
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: 'auto' }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.3 }}
+      className="mt-3 space-y-3"
+    >
+      {/* Strength bar */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Lock className={`w-3.5 h-3.5 ${isDark ? 'text-white/40' : 'text-slate-400'}`} />
+            <span className={`text-xs font-medium ${isDark ? 'text-white/60' : 'text-slate-500'}`}>
+              Força da senha
+            </span>
+          </div>
+          <motion.span
+            key={strength.label}
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="text-xs font-semibold"
+            style={{ color: strength.color }}
+          >
+            {strength.label}
+          </motion.span>
+        </div>
+        
+        {/* Progress bar */}
+        <div
+          className={`h-1.5 rounded-full overflow-hidden ${
+            isDark ? 'bg-white/10' : 'bg-slate-200'
+          }`}
+        >
+          <motion.div
+            className="h-full rounded-full"
+            initial={{ width: 0 }}
+            animate={{ width: `${strength.score}%` }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+            style={{ backgroundColor: strength.color }}
+          />
+        </div>
+      </div>
+      
+      {/* Requirements checklist */}
+      {showRequirements && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className={`p-3 rounded-lg border ${
+            isDark
+              ? 'bg-white/5 border-white/10'
+              : 'bg-slate-50 border-slate-200'
+          }`}
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {passwordRequirements.map((req, index) => {
+              const passed = req.test(password);
+              return (
+                <motion.div
+                  key={req.label}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="flex items-center gap-2"
+                >
+                  <motion.div
+                    initial={false}
+                    animate={{
+                      scale: passed ? [1, 1.2, 1] : 1,
+                      backgroundColor: passed
+                        ? 'rgba(122, 193, 95, 0.2)'
+                        : isDark
+                        ? 'rgba(255, 255, 255, 0.1)'
+                        : 'rgba(0, 0, 0, 0.05)',
+                    }}
+                    transition={{ duration: 0.2 }}
+                    className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
+                  >
+                    <AnimatePresence mode="wait">
+                      {passed ? (
+                        <motion.div
+                          key="check"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          exit={{ scale: 0 }}
+                        >
+                          <Check className="w-2.5 h-2.5 text-[#7AC15F]" />
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="empty"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          exit={{ scale: 0 }}
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            isDark ? 'bg-white/30' : 'bg-slate-300'
+                          }`}
+                        />
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                  <span
+                    className={`text-xs transition-colors duration-200 ${
+                      passed
+                        ? 'text-[#7AC15F] font-medium'
+                        : isDark
+                        ? 'text-white/40'
+                        : 'text-slate-400'
+                    }`}
+                  >
+                    {req.label}
+                  </span>
+                </motion.div>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
+    </motion.div>
+  );
+};
+
+/* ================================================
    Floating-label input
    ================================================ */
 
@@ -83,6 +392,10 @@ interface FloatingInputProps {
   minLength?: number;
   isDark: boolean;
   children?: React.ReactNode; // right-side adornment
+  onBlur?: () => void;
+  onFocus?: () => void;
+  hasError?: boolean;
+  hasSuccess?: boolean;
 }
 
 const FloatingInput: React.FC<FloatingInputProps> = ({
@@ -95,10 +408,28 @@ const FloatingInput: React.FC<FloatingInputProps> = ({
   minLength,
   isDark,
   children,
+  onBlur,
+  onFocus,
+  hasError,
+  hasSuccess,
 }) => {
   const [focused, setFocused] = useState(false);
   const active = focused || value.length > 0;
-  const accentColor = isDark ? '#F3B229' : '#6A93C7';
+  
+  // Determine accent color based on validation state
+  let accentColor = isDark ? '#F3B229' : '#6A93C7';
+  if (hasError && !focused) accentColor = '#E5484D';
+  if (hasSuccess && !focused) accentColor = '#7AC15F';
+
+  const handleFocus = () => {
+    setFocused(true);
+    onFocus?.();
+  };
+
+  const handleBlur = () => {
+    setFocused(false);
+    onBlur?.();
+  };
 
   return (
     <motion.div className="relative" variants={fadeSlideUp}>
@@ -119,8 +450,8 @@ const FloatingInput: React.FC<FloatingInputProps> = ({
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
         required={required}
         minLength={minLength}
         className={`
@@ -132,7 +463,7 @@ const FloatingInput: React.FC<FloatingInputProps> = ({
           ${children ? 'pr-11' : ''}
         `}
         style={{
-          borderColor: focused ? accentColor : undefined,
+          borderColor: focused ? accentColor : (hasError ? '#E5484D' : (hasSuccess ? '#7AC15F' : undefined)),
           boxShadow: focused ? `0 0 0 2.5px ${accentColor}25` : 'none',
         }}
       />
@@ -286,41 +617,187 @@ const Auth: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [themeRotation, setThemeRotation] = useState(0);
+  
+  // Validation states
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
+  
+  // Computed validation states
+  const emailValidation = useMemo(() => validateEmail(email), [email]);
+  const passwordStrength = useMemo(() => calculatePasswordStrength(password), [password]);
+  const isFormValid = useMemo(() => {
+    if (isSignUp) {
+      return emailValidation.isValid && 
+             password.length >= 6 && 
+             name.trim().length > 0 && 
+             department.length > 0;
+    }
+    return email.length > 0 && password.length > 0;
+  }, [isSignUp, emailValidation.isValid, password, name, department, email]);
 
   // Track direction for form slide: +1 = forward (login→signup), -1 = backward
   const [slideDir, setSlideDir] = useState(1);
   // Key for AnimatePresence to detect form change
   const formKey = isForgotPassword ? 'forgot' : isSignUp ? 'signup' : 'login';
 
+  /**
+   * Traduz mensagens de erro do Supabase Auth para português
+   */
+  const translateAuthError = (errorMessage: string, isSignUpContext: boolean): string => {
+    const msg = errorMessage.toLowerCase();
+    
+    // Credenciais inválidas
+    if (msg.includes('invalid login credentials') || msg.includes('invalid credentials')) {
+      return isSignUpContext
+        ? 'Falha ao criar conta. Verifique se o email é válido e a senha tem pelo menos 6 caracteres.'
+        : 'Email ou senha incorretos. Verifique suas credenciais e tente novamente.';
+    }
+    
+    // Email não confirmado
+    if (msg.includes('email not confirmed') || msg.includes('email_not_confirmed')) {
+      return 'Por favor, confirme seu email antes de fazer login. Verifique sua caixa de entrada e spam.';
+    }
+    
+    // Senha muito curta
+    if (msg.includes('password should be at least') || msg.includes('password is too short')) {
+      return 'A senha deve ter pelo menos 6 caracteres.';
+    }
+    
+    // Senha muito fraca
+    if (msg.includes('weak password') || msg.includes('password is too weak')) {
+      return 'A senha é muito fraca. Use letras maiúsculas, minúsculas, números e símbolos.';
+    }
+    
+    // Email inválido
+    if (msg.includes('invalid email') || msg.includes('unable to validate email')) {
+      return 'Por favor, insira um endereço de email válido.';
+    }
+    
+    // Usuário já cadastrado
+    if (msg.includes('user already registered') || msg.includes('email already registered') || msg.includes('already exists')) {
+      return 'Este email já está cadastrado. Tente fazer login ou use outro email.';
+    }
+    
+    // Rate limiting / muitas tentativas
+    if (msg.includes('rate limit') || msg.includes('too many requests') || msg.includes('request rate limit')) {
+      return 'Muitas tentativas. Por favor, aguarde alguns minutos antes de tentar novamente.';
+    }
+    
+    // Conta desabilitada ou banida
+    if (msg.includes('user is banned') || msg.includes('account disabled') || msg.includes('user disabled')) {
+      return 'Esta conta foi desabilitada. Entre em contato com o administrador.';
+    }
+    
+    // Signup desabilitado
+    if (msg.includes('signups not allowed') || msg.includes('signup is disabled')) {
+      return 'Novos cadastros estão temporariamente desabilitados. Tente novamente mais tarde.';
+    }
+    
+    // Token expirado ou inválido
+    if (msg.includes('token expired') || msg.includes('invalid token') || msg.includes('otp has expired')) {
+      return 'O link expirou. Por favor, solicite um novo.';
+    }
+    
+    // Erro de rede / conexão
+    if (msg.includes('network') || msg.includes('fetch') || msg.includes('connection') || msg.includes('timeout')) {
+      return 'Erro de conexão. Verifique sua internet e tente novamente.';
+    }
+    
+    // Email não encontrado (para reset de senha)
+    if (msg.includes('user not found') || msg.includes('no user found')) {
+      return 'Nenhuma conta encontrada com este email.';
+    }
+    
+    // Credenciais antigas / sessão expirada
+    if (msg.includes('refresh_token') || msg.includes('session') || msg.includes('jwt expired')) {
+      return 'Sua sessão expirou. Por favor, faça login novamente.';
+    }
+    
+    // Campos obrigatórios
+    if (msg.includes('provide') && (msg.includes('email') || msg.includes('password'))) {
+      return 'Por favor, preencha todos os campos obrigatórios.';
+    }
+
+    // Confirmação de email necessária (pode não ser um erro, mas uma confirmação)
+    if (msg.includes('confirmation') || msg.includes('verify your email')) {
+      return 'Verifique seu email para confirmar o cadastro.';
+    }
+    
+    // Erro genérico - mantém a mensagem original se não reconhecida
+    return `Erro: ${errorMessage}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccessMsg(null);
+
+    // Validação básica no frontend
+    if (!email.trim()) {
+      setError('Por favor, insira seu email.');
+      setLoading(false);
+      return;
+    }
+
+    if (!password) {
+      setError('Por favor, insira sua senha.');
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('A senha deve ter pelo menos 6 caracteres.');
+      setLoading(false);
+      return;
+    }
+
+    if (isSignUp && !name.trim()) {
+      setError('Por favor, insira seu nome completo.');
+      setLoading(false);
+      return;
+    }
+
+    if (isSignUp && !department) {
+      setError('Por favor, selecione seu departamento.');
+      setLoading(false);
+      return;
+    }
 
     try {
-      const { error } = isSignUp
-        ? await signUp(email, password, name, department)
-        : await signIn(email, password);
-
-      if (error) {
-        let msg = error.message;
-        if (error.message.includes('Invalid login credentials')) {
-          msg = isSignUp
-            ? 'Falha ao criar conta. Verifique se o email é válido e a senha tem pelo menos 6 caracteres.'
-            : 'Email ou senha incorretos. Verifique suas credenciais e tente novamente.';
-        } else if (error.message.includes('Email not confirmed')) {
-          msg = 'Por favor, confirme seu email antes de fazer login.';
-        } else if (error.message.includes('Password should be at least')) {
-          msg = 'A senha deve ter pelo menos 6 caracteres.';
-        } else if (error.message.includes('Invalid email')) {
-          msg = 'Por favor, insira um endereço de email válido.';
-        } else if (error.message.includes('User already registered')) {
-          msg = 'Este email já está cadastrado. Tente fazer login ou use outro email.';
+      if (isSignUp) {
+        const { data, error } = await signUp(email, password, name, department);
+        
+        if (error) {
+          setError(translateAuthError(error.message, true));
+          return;
         }
-        setError(msg);
+        
+        // Cadastro bem-sucedido - verificar se precisa confirmar email
+        if (data?.user && !data.session) {
+          // Usuário criado, mas sem sessão = precisa confirmar email
+          setSuccessMsg('Conta criada com sucesso! Verifique seu email para confirmar o cadastro. Não esqueça de checar a pasta de spam.');
+          setEmail('');
+          setPassword('');
+          setName('');
+          setDepartment('');
+        } else if (data?.user && data.session) {
+          // Cadastro instantâneo sem necessidade de confirmação (quando desabilitado no Supabase)
+          // Sucesso - o usuário será redirecionado automaticamente pelo useAuth
+        }
+      } else {
+        const { error } = await signIn(email, password);
+        
+        if (error) {
+          setError(translateAuthError(error.message, false));
+        }
+        // Sucesso - o usuário será redirecionado automaticamente pelo useAuth
       }
-    } catch {
-      setError('Ocorreu um erro inesperado. Tente novamente.');
+    } catch (err) {
+      // Erro inesperado (ex: exceção JavaScript)
+      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+      setError(translateAuthError(errorMessage, isSignUp));
     } finally {
       setLoading(false);
     }
@@ -331,13 +808,27 @@ const Auth: React.FC = () => {
     setLoading(true);
     setError(null);
     setSuccessMsg(null);
-    const { error } = await resetPassword(email);
-    if (error) {
-      setError('Erro ao enviar email de recuperação.');
-    } else {
-      setSuccessMsg('Instruções de redefinição enviadas para seu email.');
+
+    // Validação básica
+    if (!email.trim()) {
+      setError('Por favor, insira seu email.');
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+
+    try {
+      const { error } = await resetPassword(email);
+      if (error) {
+        setError(translateAuthError(error.message, false));
+      } else {
+        setSuccessMsg('Instruções de redefinição de senha foram enviadas para seu email. Verifique também a pasta de spam.');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+      setError(translateAuthError(errorMessage, false));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const switchMode = (toSignUp: boolean) => {
@@ -348,6 +839,10 @@ const Auth: React.FC = () => {
     setDepartment('');
     setError(null);
     setSuccessMsg(null);
+    // Reset validation states
+    setEmailTouched(false);
+    setPasswordTouched(false);
+    setPasswordFocused(false);
   };
 
   const goForgotPassword = () => {
@@ -355,6 +850,9 @@ const Auth: React.FC = () => {
     setIsForgotPassword(true);
     setError(null);
     setSuccessMsg(null);
+    setEmailTouched(false);
+    setPasswordTouched(false);
+    setPasswordFocused(false);
   };
 
   const leaveForgotPassword = () => {
@@ -362,6 +860,9 @@ const Auth: React.FC = () => {
     setIsForgotPassword(false);
     setError(null);
     setSuccessMsg(null);
+    setEmailTouched(false);
+    setPasswordTouched(false);
+    setPasswordFocused(false);
   };
 
   const handleToggleTheme = () => {
@@ -373,7 +874,7 @@ const Auth: React.FC = () => {
 
   /* ---- Render ---- */
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row overflow-hidden">
+    <div className="relative min-h-screen flex flex-col lg:flex-row overflow-hidden">
       {/* ============================================= */}
       {/* LEFT — Branding Panel                         */}
       {/* ============================================= */}
@@ -424,36 +925,25 @@ const Auth: React.FC = () => {
           />
         ))}
 
-        <div className="relative z-10 flex flex-col items-center gap-8 px-12">
+        <div className="relative z-10 flex flex-col items-center gap-6 px-12">
           <motion.img
-            src="/LOGO-DM.png"
+            src="/LOGO-LOGIN.png"
             alt="EGEN Geradores"
-            className="w-48 h-48 object-contain drop-shadow-2xl"
+            className="w-72 h-auto object-contain drop-shadow-2xl"
             draggable={false}
             variants={logo}
             initial="hidden"
             animate="visible"
           />
-          <div className="text-center space-y-3">
-            <motion.h1
-              className="text-white text-4xl font-bold tracking-tight"
-              variants={brandText}
-              custom={0}
-              initial="hidden"
-              animate="visible"
-            >
-              EGEN Geradores
-            </motion.h1>
-            <motion.p
-              className="text-white/60 text-lg font-medium tracking-wide"
-              variants={brandText}
-              custom={1}
-              initial="hidden"
-              animate="visible"
-            >
-              Sua energia sob controle.
-            </motion.p>
-          </div>
+          <motion.p
+            className="text-white/60 text-lg font-medium tracking-wide text-center"
+            variants={brandText}
+            custom={0}
+            initial="hidden"
+            animate="visible"
+          >
+            Energia onde e quando precisar.
+          </motion.p>
         </div>
 
         {/* Bottom accent line */}
@@ -517,9 +1007,8 @@ const Auth: React.FC = () => {
         </div>
 
         {/* Mobile branding strip */}
-        <div className="lg:hidden flex items-center justify-center gap-3 py-8 bg-[#0D2A59]">
-          <img src="/LOGO-DM.png" alt="EGEN" className="w-12 h-12 object-contain" draggable={false} />
-          <span className="text-white text-xl font-bold tracking-tight">EGEN Geradores</span>
+        <div className="lg:hidden flex items-center justify-center py-6 bg-[#0D2A59]">
+          <img src="/LOGO-LOGIN.png" alt="EGEN Geradores" className="h-16 w-auto object-contain" draggable={false} />
         </div>
 
         {/* Centered form wrapper */}
@@ -644,15 +1133,34 @@ const Auth: React.FC = () => {
                     animate="visible"
                     className="space-y-5"
                   >
-                    <FloatingInput
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={setEmail}
-                      label="Email"
-                      required
-                      isDark={isDark}
-                    />
+                    {/* Email field with validation */}
+                    <div>
+                      <FloatingInput
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(v) => {
+                          setEmail(v);
+                          if (!emailTouched) setEmailTouched(true);
+                        }}
+                        onBlur={() => setEmailTouched(true)}
+                        label="Email"
+                        required
+                        isDark={isDark}
+                        hasError={isSignUp && emailTouched && email.length > 0 && !emailValidation.isValid}
+                        hasSuccess={isSignUp && emailTouched && email.length > 0 && emailValidation.isValid}
+                      />
+                      {/* Email validation badge - only on signup */}
+                      <AnimatePresence>
+                        {isSignUp && (
+                          <EmailValidationBadge
+                            email={email}
+                            isDark={isDark}
+                            touched={emailTouched}
+                          />
+                        )}
+                      </AnimatePresence>
+                    </div>
 
                     <AnimatePresence>
                       {isSignUp && (
@@ -675,28 +1183,51 @@ const Auth: React.FC = () => {
                       )}
                     </AnimatePresence>
 
-                    <FloatingInput
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={setPassword}
-                      label="Senha"
-                      required
-                      minLength={6}
-                      isDark={isDark}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md transition-colors ${
-                          isDark
-                            ? 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                            : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
-                        }`}
+                    {/* Password field with strength indicator */}
+                    <div>
+                      <FloatingInput
+                        id="password"
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(v) => {
+                          setPassword(v);
+                          if (!passwordTouched) setPasswordTouched(true);
+                        }}
+                        onFocus={() => setPasswordFocused(true)}
+                        onBlur={() => {
+                          setPasswordTouched(true);
+                          setPasswordFocused(false);
+                        }}
+                        label="Senha"
+                        required
+                        minLength={6}
+                        isDark={isDark}
                       >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </FloatingInput>
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md transition-colors ${
+                            isDark
+                              ? 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                              : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
+                          }`}
+                        >
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </FloatingInput>
+                      
+                      {/* Password strength indicator - only on signup */}
+                      <AnimatePresence>
+                        {isSignUp && (
+                          <PasswordStrengthIndicator
+                            password={password}
+                            isDark={isDark}
+                            touched={passwordTouched}
+                            showRequirements={passwordFocused || (passwordTouched && password.length > 0 && password.length < 6)}
+                          />
+                        )}
+                      </AnimatePresence>
+                    </div>
 
                     <AnimatePresence>
                       {isSignUp && (
@@ -737,6 +1268,7 @@ const Auth: React.FC = () => {
                       label={isSignUp ? 'Criar Conta' : 'Entrar'}
                       loadingLabel={isSignUp ? 'Criando conta...' : 'Entrando...'}
                       icon={isSignUp ? <UserPlus className="w-4 h-4" /> : <LogIn className="w-4 h-4" />}
+                      disabled={isSignUp && !isFormValid}
                     />
                   </motion.form>
                 )}
@@ -776,8 +1308,8 @@ const Auth: React.FC = () => {
                           : 'bg-[#6A93C7]/5 border-[#6A93C7]/15 text-[#0D2A59]'
                       }`}
                     >
-                      <strong>Nota:</strong> Após criar sua conta, você poderá acessar o sistema de
-                      Compras e Estoque.
+                      <strong>Nota:</strong> Após criar sua conta, você receberá um email de confirmação.
+                      Clique no link enviado para ativar sua conta e acessar o sistema.
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -786,6 +1318,9 @@ const Auth: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Shimmer Footer Animation */}
+      <ShimmerFooter isDark={isDark} />
     </div>
   );
 };
