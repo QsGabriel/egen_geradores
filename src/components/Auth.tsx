@@ -64,6 +64,8 @@ const formSlide = {
 
 const shakeVariants = {
   shake: {
+    opacity: 1,
+    y: 0,
     x: [0, -8, 8, -6, 6, -3, 3, 0],
     transition: { duration: 0.5 },
   },
@@ -1053,22 +1055,17 @@ const Auth: React.FC = () => {
                 </motion.div>
 
                 {/* Error message with shake */}
-                <AnimatePresence>
+                <AnimatePresence mode="wait">
                   {error && (
                     <motion.div
+                      key={error}
                       initial={{ opacity: 0, y: -8 }}
                       animate="shake"
                       exit={{ opacity: 0, y: -8, transition: { duration: 0.2 } }}
                       variants={shakeVariants}
-                      onAnimationComplete={() => {
-                        /* shake fires once, then stays visible */
-                      }}
                       className="p-3.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-start gap-2.5"
-                      style={{ opacity: 1 }}
                     >
-                      <span className="shrink-0 mt-0.5 w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center text-xs font-bold">
-                        !
-                      </span>
+                      <AlertCircle className="shrink-0 mt-0.5 w-4 h-4" />
                       <span>{error}</span>
                     </motion.div>
                   )}
@@ -1227,6 +1224,23 @@ const Auth: React.FC = () => {
                           />
                         )}
                       </AnimatePresence>
+
+                      {/* Login mode: password hint */}
+                      <AnimatePresence>
+                        {!isSignUp && passwordTouched && password.length > 0 && password.length < 6 && (
+                          <motion.p
+                            key="pw-hint"
+                            initial={{ opacity: 0, y: -4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -4 }}
+                            transition={{ duration: 0.2 }}
+                            className="mt-1.5 text-xs text-red-400 flex items-center gap-1"
+                          >
+                            <AlertCircle className="w-3 h-3" />
+                            A senha deve ter pelo menos 6 caracteres.
+                          </motion.p>
+                        )}
+                      </AnimatePresence>
                     </div>
 
                     <AnimatePresence>
@@ -1294,10 +1308,11 @@ const Auth: React.FC = () => {
                   </motion.p>
                 )}
 
-                {/* Sign-up info note */}
-                <AnimatePresence>
-                  {isSignUp && (
+                {/* Info notes */}
+                <AnimatePresence mode="wait">
+                  {isSignUp ? (
                     <motion.div
+                      key="signup-note"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10 }}
@@ -1308,10 +1323,28 @@ const Auth: React.FC = () => {
                           : 'bg-[#6A93C7]/5 border-[#6A93C7]/15 text-[#0D2A59]'
                       }`}
                     >
-                      <strong>Nota:</strong> Após criar sua conta, você receberá um email de confirmação.
-                      Clique no link enviado para ativar sua conta e acessar o sistema.
+                      <strong>📧 Confirme seu e-mail:</strong> Após criar sua conta, você receberá um e-mail de confirmação.
+                      Clique no link enviado para ativar sua conta antes de fazer login.
+                      Verifique também a pasta de spam.
                     </motion.div>
-                  )}
+                  ) : !isForgotPassword ? (
+                    <motion.div
+                      key="login-note"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      transition={{ duration: 0.3 }}
+                      className={`p-4 rounded-lg text-xs leading-relaxed border ${
+                        isDark
+                          ? 'bg-[#0D2A59]/60 border-[#6A93C7]/20 text-[#6A93C7]'
+                          : 'bg-[#6A93C7]/5 border-[#6A93C7]/15 text-[#0D2A59]'
+                      }`}
+                    >
+                      <strong>⚠️ Problemas para entrar?</strong> Verifique se você confirmou seu e-mail de
+                      cadastro. O link de confirmação é enviado automaticamente após o registro.
+                      Cheque sua caixa de entrada e a pasta de spam.
+                    </motion.div>
+                  ) : null}
                 </AnimatePresence>
               </motion.div>
             </AnimatePresence>
