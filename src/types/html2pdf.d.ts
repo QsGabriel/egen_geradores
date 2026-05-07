@@ -1,4 +1,12 @@
 /**
+ * CSS module side-effect import declarations
+ */
+declare module '*.css' {
+  const content: Record<string, string>;
+  export default content;
+}
+
+/**
  * Type declarations for html2pdf.js
  */
 declare module 'html2pdf.js' {
@@ -18,6 +26,7 @@ declare module 'html2pdf.js' {
       backgroundColor?: string;
       windowWidth?: number;
       windowHeight?: number;
+      scrollY?: number;
     };
     jsPDF?: {
       unit?: 'pt' | 'mm' | 'cm' | 'in' | string;

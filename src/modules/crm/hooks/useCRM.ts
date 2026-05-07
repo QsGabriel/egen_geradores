@@ -50,6 +50,9 @@ export function useCRM() {
       contractsCount: r.contracts_count || 0,
       quotationsCount: r.quotations_count || 0,
       lastInteraction: r.last_interaction,
+      contacts: Array.isArray(r.contacts) ? r.contacts : [],
+      locationUrl: r.location_url || '',
+      classification: r.classification || '',
       createdAt: r.created_at,
       updatedAt: r.updated_at,
     }));
@@ -74,6 +77,7 @@ export function useCRM() {
       source: r.source || '',
       status: r.status,
       notes: r.notes || '',
+      contacts: Array.isArray(r.contacts) ? r.contacts : [],
       convertedClientId: r.converted_client_id,
       convertedAt: r.converted_at,
       createdAt: r.created_at,
@@ -139,6 +143,9 @@ export function useCRM() {
       state: data.state,
       notes: data.notes,
       client_status: data.clientStatus,
+      contacts: data.contacts ?? [],
+      location_url: data.locationUrl || null,
+      classification: data.classification || null,
     });
     if (err) throw err;
 
@@ -163,6 +170,9 @@ export function useCRM() {
     if (data.state !== undefined) updateData.state = data.state;
     if (data.notes !== undefined) updateData.notes = data.notes;
     if (data.clientStatus !== undefined) updateData.client_status = data.clientStatus;
+    if (data.contacts !== undefined) updateData.contacts = data.contacts;
+    if (data.locationUrl !== undefined) updateData.location_url = data.locationUrl || null;
+    if (data.classification !== undefined) updateData.classification = data.classification || null;
 
     const { error: err } = await supabase
       .from('clients')
@@ -203,6 +213,7 @@ export function useCRM() {
       source: data.source,
       status: data.status,
       notes: data.notes,
+      contacts: data.contacts ?? [],
     });
     if (err) throw err;
 
@@ -218,6 +229,7 @@ export function useCRM() {
     if (data.source !== undefined) updateData.source = data.source;
     if (data.status !== undefined) updateData.status = data.status;
     if (data.notes !== undefined) updateData.notes = data.notes;
+    if (data.contacts !== undefined) updateData.contacts = data.contacts;
 
     const { error: err } = await supabase
       .from('leads')
@@ -330,6 +342,70 @@ export function useCRM() {
   };
 
   // ============================================
+  // LEAD IMPORT (importação em massa)
+  // ============================================
+
+  const IMPORT_BATCH_SIZE = 200;
+
+  const importLeads = async (
+    rows: LeadFormData[],
+    onProgress?: (done: number, total: number) => void,
+  ): Promise<{ imported: number; errors: string[] }> => {
+    const errors: string[] = [];
+    let imported = 0;
+
+    // Validate and prepare payloads
+    type IndexedRecord = { index: number; payload: Record<string, unknown> };
+    const valid: IndexedRecord[] = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row.name?.trim()) {
+        errors.push(`Linha ${i + 2}: campo "Nome" é obrigatório.`);
+        continue;
+      }
+      valid.push({
+        index: i,
+        payload: {
+          name: row.name.trim(),
+          company: row.company?.trim() || '',
+          phone: row.phone?.trim() || '',
+          email: row.email?.trim() || '',
+          source: row.source?.trim() || '',
+          status: row.status || 'new',
+          notes: row.notes?.trim() || '',
+          contacts: row.contacts ?? [],
+        },
+      });
+    }
+
+    // Insert in batches to handle high volumes efficiently
+    for (let b = 0; b < valid.length; b += IMPORT_BATCH_SIZE) {
+      const batch = valid.slice(b, b + IMPORT_BATCH_SIZE);
+      try {
+        const { error: err } = await supabase
+          .from('leads')
+          .insert(batch.map(r => r.payload));
+        if (err) {
+          batch.forEach(r =>
+            errors.push(`Linha ${r.index + 2} (${rows[r.index].name}): ${err.message}`),
+          );
+        } else {
+          imported += batch.length;
+        }
+      } catch {
+        batch.forEach(r =>
+          errors.push(`Linha ${r.index + 2}: erro inesperado.`),
+        );
+      }
+      onProgress?.(Math.min(b + IMPORT_BATCH_SIZE, valid.length), valid.length);
+    }
+
+    if (imported > 0) await fetchLeads();
+    return { imported, errors };
+  };
+
+  // ============================================
   // RETURN
   // ============================================
 
@@ -352,6 +428,7 @@ export function useCRM() {
     updateLeadStatus,
     deleteLead,
     convertLeadToClient,
+    importLeads,
 
     // History operations
     addHistoryEntry,

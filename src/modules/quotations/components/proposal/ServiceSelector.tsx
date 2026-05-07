@@ -1,13 +1,26 @@
 /**
- * EGEN System - Service Selector
- * Componente para seleção de serviços com integração à tabela de preços
+ * EGEN System - Spot Item Selector (Itens Spot / Sob Demanda)
+ * Gerencia itens Spot: Frete, Instalação, Manutenção Pontual e Personalizado
  */
-import React, { useMemo } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, Briefcase, Calculator } from 'lucide-react';
-import { useQuotationStore, selectServicos } from '../../stores/quotationStore';
-import { usePricing } from '../../../pricing';
-import type { ProposalServico } from '../../types/proposal';
+import { Plus, Trash2, Truck, Wrench, PackageOpen, Calculator } from 'lucide-react';
+import { useQuotationStore, selectItensSpot } from '../../stores/quotationStore';
+import type { ProposalItemSpot, ItemTipoSpot } from '../../types/proposal';
+import { ItemTipoSpotLabels } from '../../types/proposal';
+
+// ============================================
+// HELPERS
+// ============================================
+
+const TIPO_ICONS: Record<ItemTipoSpot, React.ReactNode> = {
+  frete: <Truck className="w-4 h-4" />,
+  instalacao: <PackageOpen className="w-4 h-4" />,
+  manutencao_pontual: <Wrench className="w-4 h-4" />,
+  personalizado: <Plus className="w-4 h-4" />,
+};
+
+const QUICK_ADD_TYPES: ItemTipoSpot[] = ['frete', 'instalacao', 'manutencao_pontual', 'personalizado'];
 
 // ============================================
 // TYPES
@@ -22,62 +35,22 @@ interface ServiceSelectorProps {
 // ============================================
 
 export function ServiceSelector({ className = '' }: ServiceSelectorProps) {
-  const servicos = useQuotationStore(selectServicos);
-  const { addServico, updateServico, removeServico, recalculateTotals,current } = useQuotationStore();
-  const { accessories, formatCurrency, loading: pricingLoading } = usePricing();
+  const itensSpot = useQuotationStore(selectItensSpot);
+  const { addItemSpot, updateItemSpot, removeItemSpot, recalculateTotals } = useQuotationStore();
 
-  // Get period from current quotation for price lookup
-  const currentPeriod = current?.equipamentos[0]?.periodoLocacao || 'mensal';
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
-  // Available services from pricing table
-  const availableServices = useMemo(() => {
-    return accessories.filter(a => a.category === 'servico' || a.category === 'deslocamento');
-  }, [accessories]);
-
-  // Handle adding new service
-  const handleAddServico = (presetCode?: string) => {
-    if (presetCode) {
-      const serviceData = accessories.find(a => a.itemCode === presetCode);
-      if (serviceData) {
-        const periodPriceMap: Record<string, number | null> = {
-          mensal: serviceData.priceMonthly,
-          quinzenal: serviceData.priceBiweekly,
-          semanal: serviceData.priceWeekly,
-        };
-        addServico({
-          codigo: serviceData.itemCode,
-          descricao: serviceData.itemName,
-          valorUnitario: periodPriceMap[currentPeriod] ?? 0,
-        });
-      }
-    } else {
-      addServico();
-    }
-    recalculateTotals();
+  const handleAddItem = (tipo: ItemTipoSpot = 'personalizado') => {
+    addItemSpot({
+      tipo,
+      descricao: tipo === 'personalizado' ? '' : ItemTipoSpotLabels[tipo],
+    });
   };
 
-  // Handle field update
-  const handleFieldUpdate = (id: string, field: keyof ProposalServico, value: any) => {
-    updateServico(id, { [field]: value });
+  const handleFieldUpdate = (id: string, field: keyof ProposalItemSpot, value: any) => {
+    updateItemSpot(id, { [field]: value });
     recalculateTotals();
-  };
-
-  // Handle service selection from dropdown
-  const handleServiceSelect = (id: string, codigo: string) => {
-    const serviceData = accessories.find(a => a.itemCode === codigo);
-    if (serviceData) {
-      const periodPriceMap: Record<string, number | null> = {
-        mensal: serviceData.priceMonthly,
-        quinzenal: serviceData.priceBiweekly,
-        semanal: serviceData.priceWeekly,
-      };
-      updateServico(id, {
-        codigo: serviceData.itemCode,
-        descricao: serviceData.itemName,
-        valorUnitario: periodPriceMap[currentPeriod] ?? 0,
-      });
-      recalculateTotals();
-    }
   };
 
   return (
@@ -85,11 +58,11 @@ export function ServiceSelector({ className = '' }: ServiceSelectorProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-          <Briefcase className="w-5 h-5 text-egen-blue" />
-          Serviços
+          <Truck className="w-5 h-5 text-blue-500" />
+          Itens Spot (Sob Demanda)
         </h3>
         <button
-          onClick={() => handleAddServico()}
+          onClick={() => handleAddItem('personalizado')}
           className="flex items-center gap-2 px-3 py-1.5 text-sm bg-egen-navy text-white rounded-lg hover:bg-egen-navy/90 transition-colors"
         >
           <Plus className="w-4 h-4" />
@@ -97,149 +70,144 @@ export function ServiceSelector({ className = '' }: ServiceSelectorProps) {
         </button>
       </div>
 
-      {/* Quick Add Buttons */}
+      {/* Quick-add */}
       <div className="flex flex-wrap gap-2">
-        {availableServices.slice(0, 6).map((service, idx) => (
+        {QUICK_ADD_TYPES.map((tipo) => (
           <button
-            key={`quick-${service.itemCode}-${idx}`}
-            onClick={() => handleAddServico(service.itemCode)}
-            className="px-3 py-1.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            key={tipo}
+            onClick={() => handleAddItem(tipo)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
           >
-            + {service.itemName}
+            <Plus className="w-3 h-3" />
+            {ItemTipoSpotLabels[tipo]}
           </button>
         ))}
       </div>
 
-      {/* Service List */}
+      {/* Items List */}
       <AnimatePresence mode="popLayout">
-        {servicos.length === 0 ? (
+        {itensSpot.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="text-center py-8 text-gray-500 dark:text-gray-400 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg"
           >
-            <Briefcase className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p>Nenhum serviço adicionado</p>
+            <Truck className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <p>Nenhum item spot adicionado</p>
             <button
-              onClick={() => handleAddServico()}
+              onClick={() => handleAddItem('frete')}
               className="mt-2 text-sm text-egen-navy dark:text-egen-yellow hover:underline"
             >
-              Adicionar serviço
+              Adicionar item
             </button>
           </motion.div>
         ) : (
-          servicos.map((serv, index) => (
+          itensSpot.map((item, index) => (
             <motion.div
-              key={serv.id}
+              key={item.id}
               layout
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, x: -100 }}
               className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
             >
-              <div className="flex items-start gap-4">
-                {/* Service Info */}
-                <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
-                  {/* Código/Tipo */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                      Tipo
-                    </label>
-                    <select
-                      value={serv.codigo}
-                      onChange={(e) => handleServiceSelect(serv.id, e.target.value)}
-                      className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
-                    >
-                      <option value="">Personalizado</option>
-                      {availableServices.map((s, idx) => (
-                        <option key={`opt-${s.itemCode}-${idx}`} value={s.itemCode}>
-                          {s.itemName}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                {/* Tipo */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                    Tipo
+                  </label>
+                  <select
+                    value={item.tipo}
+                    onChange={(e) => handleFieldUpdate(item.id, 'tipo', e.target.value as ItemTipoSpot)}
+                    className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+                  >
+                    {QUICK_ADD_TYPES.map((t) => (
+                      <option key={t} value={t}>{ItemTipoSpotLabels[t]}</option>
+                    ))}
+                  </select>
+                </div>
 
-                  {/* Descrição */}
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                      Descrição
-                    </label>
-                    <input
-                      type="text"
-                      value={serv.descricao}
-                      onChange={(e) => handleFieldUpdate(serv.id, 'descricao', e.target.value)}
-                      placeholder="Descrição do serviço"
-                      className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
-                    />
-                  </div>
+                {/* Descrição */}
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                    Descrição
+                  </label>
+                  <input
+                    type="text"
+                    value={item.descricao}
+                    onChange={(e) => handleFieldUpdate(item.id, 'descricao', e.target.value)}
+                    placeholder={ItemTipoSpotLabels[item.tipo]}
+                    className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+                  />
+                </div>
 
-                  {/* Quantidade */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                      Qtd
-                    </label>
+                {/* Quantidade */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                    Qtd
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={item.quantidade}
+                    onChange={(e) => handleFieldUpdate(item.id, 'quantidade', parseInt(e.target.value) || 1)}
+                    className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+                  />
+                </div>
+
+                {/* Valor Unit. */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                    Valor Unit.
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">R$</span>
                     <input
                       type="number"
-                      min={1}
-                      value={serv.quantidade}
-                      onChange={(e) => handleFieldUpdate(serv.id, 'quantidade', parseInt(e.target.value) || 1)}
-                      className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+                      step="0.01"
+                      value={item.valorUnitario}
+                      onChange={(e) => handleFieldUpdate(item.id, 'valorUnitario', parseFloat(e.target.value) || 0)}
+                      className="w-full pl-10 pr-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
                     />
                   </div>
                 </div>
+              </div>
 
-                {/* Price and Actions */}
-                <div className="flex items-center gap-3">
-                  {/* Valor Unitário */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                      Valor Unit.
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">R$</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={serv.valorUnitario}
-                        onChange={(e) => handleFieldUpdate(serv.id, 'valorUnitario', parseFloat(e.target.value) || 0)}
-                        className="w-28 pl-10 pr-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
-                      />
-                    </div>
+              {/* Second row: observações + total + delete */}
+              <div className="mt-3 grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                <div className="md:col-span-3">
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                    Observações
+                  </label>
+                  <input
+                    type="text"
+                    value={item.observacoes}
+                    onChange={(e) => handleFieldUpdate(item.id, 'observacoes', e.target.value)}
+                    placeholder="Campo livre..."
+                    className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+                  />
+                </div>
+
+                {/* Total */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Total</label>
+                  <div className="px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-sm font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                    <Calculator className="w-4 h-4" />
+                    {formatCurrency(item.valorTotal)}
                   </div>
+                </div>
 
-                  {/* Valor Total */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                      Total
-                    </label>
-                    <div className="px-3 py-2 bg-egen-navy/10 dark:bg-egen-yellow/10 rounded-lg text-sm font-semibold text-egen-navy dark:text-egen-yellow flex items-center gap-2 min-w-[100px]">
-                      <Calculator className="w-4 h-4" />
-                      {formatCurrency(serv.valorTotal)}
-                    </div>
-                  </div>
-
-                  {/* Delete */}
+                {/* Delete */}
+                <div className="flex justify-end">
                   <button
-                    onClick={() => removeServico(serv.id)}
-                    className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors mt-5"
+                    onClick={() => removeItemSpot(item.id)}
+                    className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
-
-              {/* Observações */}
-              {serv.observacoes && (
-                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-                  <input
-                    type="text"
-                    value={serv.observacoes}
-                    onChange={(e) => handleFieldUpdate(serv.id, 'observacoes', e.target.value)}
-                    placeholder="Observações..."
-                    className="w-full px-3 py-2 text-sm text-gray-500 bg-transparent border-none focus:outline-none"
-                  />
-                </div>
-              )}
             </motion.div>
           ))
         )}

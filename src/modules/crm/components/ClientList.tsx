@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Users,
   Plus,
@@ -13,16 +14,19 @@ import {
   Search,
   FileText,
   History,
+  UserCircle2,
 } from 'lucide-react';
 import { useCRM } from '../hooks/useCRM';
 import { useNotification } from '../../../hooks/useNotification';
 import { useDialog } from '../../../hooks/useDialog';
 import Notification from '../../../components/Notification';
 import ConfirmDialog from '../../../components/ConfirmDialog';
-import type { Client, ClientFormData, ClientStatus } from '../types';
+import type { Client, ClientFormData, ClientStatus, ContactPerson } from '../types';
 import {
   CLIENT_STATUS_LABELS,
   CLIENT_STATUS_COLORS,
+  EMPTY_CONTACT,
+  CLIENT_CLASSIFICATIONS,
 } from '../types';
 
 const EMPTY_FORM: ClientFormData = {
@@ -35,7 +39,10 @@ const EMPTY_FORM: ClientFormData = {
   city: '',
   state: '',
   notes: '',
+  locationUrl: '',
+  classification: '',
   clientStatus: 'active',
+  contacts: [],
 };
 
 interface ClientListProps {
@@ -58,6 +65,26 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
     setFormData(EMPTY_FORM);
     setEditing(null);
     setShowForm(false);
+  };
+
+  // ── Contacts helpers ─────────────────────────────────────────────────────
+
+  const addContact = () => {
+    setFormData(prev => ({ ...prev, contacts: [...prev.contacts, { ...EMPTY_CONTACT }] }));
+  };
+
+  const removeContact = (idx: number) => {
+    setFormData(prev => ({
+      ...prev,
+      contacts: prev.contacts.filter((_, i) => i !== idx),
+    }));
+  };
+
+  const updateContact = (idx: number, field: keyof ContactPerson, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      contacts: prev.contacts.map((c, i) => (i === idx ? { ...c, [field]: value } : c)),
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -92,7 +119,10 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
       city: client.city,
       state: client.state,
       notes: client.notes,
+      locationUrl: client.locationUrl ?? '',
+      classification: client.classification ?? '',
       clientStatus: client.clientStatus,
+      contacts: client.contacts ?? [],
     });
     setEditing(client);
     setShowForm(true);
@@ -203,11 +233,14 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
         </select>
       </div>
 
-      {/* Modal Form */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+      {/* Modal Form — React portal para posicionamento correto */}
+      {showForm && createPortal(
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 9999 }}
+          className="flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+        >
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 shrink-0">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                 {editing ? 'Editar Cliente' : 'Novo Cliente'}
               </h3>
@@ -215,7 +248,8 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
                 <X className="h-5 w-5 text-gray-500" />
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+              {/* Dados principais */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome / Razão Social *</label>
@@ -250,8 +284,21 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
                     ))}
                   </select>
                 </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Classificação</label>
+                  <select
+                    value={formData.classification}
+                    onChange={(e) => setFormData({ ...formData, classification: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500"
+                  >
+                    <option value="">Selecione a classificação...</option>
+                    {CLIENT_CLASSIFICATIONS.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome do Contato</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome do Contato Principal</label>
                   <input
                     type="text"
                     value={formData.contactName}
@@ -261,7 +308,7 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Telefone</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Telefone Principal</label>
                   <input
                     type="text"
                     value={formData.contactPhone}
@@ -271,7 +318,7 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">E-mail</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">E-mail Principal</label>
                   <input
                     type="email"
                     value={formData.contactEmail}
@@ -312,16 +359,104 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
                   />
                 </div>
                 <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1.5">
+                    <MapPin className="h-4 w-4 text-yellow-500" /> Localização (Google Maps)
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.locationUrl}
+                    onChange={(e) => setFormData({ ...formData, locationUrl: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500"
+                    placeholder="https://maps.google.com/..."
+                  />
+                </div>
+                <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Observações</label>
                   <textarea
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    rows={3}
+                    rows={2}
                     className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500"
                     placeholder="Informações adicionais sobre o cliente..."
                   />
                 </div>
               </div>
+
+              {/* Contatos múltiplos */}
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                    <UserCircle2 className="h-4 w-4 text-yellow-500" />
+                    Contatos Adicionais
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={addContact}
+                    className="inline-flex items-center gap-1 text-xs px-3 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
+                  >
+                    <Plus className="h-3.5 w-3.5" /> Adicionar Contato
+                  </button>
+                </div>
+
+                {formData.contacts.length === 0 && (
+                  <p className="text-xs text-gray-400 dark:text-gray-500 italic">
+                    Clique em "Adicionar Contato" para incluir contatos adicionais.
+                  </p>
+                )}
+
+                {formData.contacts.map((contact, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                        Contato {idx + 1}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeContact(idx)}
+                        className="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded text-red-400 transition-colors"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <div>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-0.5">Nome</label>
+                        <input
+                          type="text"
+                          value={contact.name}
+                          onChange={(e) => updateContact(idx, 'name', e.target.value)}
+                          className="w-full px-2.5 py-1.5 text-xs border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500"
+                          placeholder="Nome"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-0.5">Telefone</label>
+                        <input
+                          type="text"
+                          value={contact.phone}
+                          onChange={(e) => updateContact(idx, 'phone', e.target.value)}
+                          className="w-full px-2.5 py-1.5 text-xs border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500"
+                          placeholder="(00) 00000-0000"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-0.5">E-mail</label>
+                        <input
+                          type="email"
+                          value={contact.email}
+                          onChange={(e) => updateContact(idx, 'email', e.target.value)}
+                          className="w-full px-2.5 py-1.5 text-xs border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500"
+                          placeholder="email@empresa.com"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <button
                   type="button"
@@ -340,7 +475,8 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Client Table */}
@@ -352,6 +488,7 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
                 <th className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Cliente</th>
                 <th className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Documento</th>
                 <th className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Contato</th>
+                <th className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Classificação</th>
                 <th className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Cidade/UF</th>
                 <th className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Status</th>
                 <th className="text-right px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Ações</th>
@@ -360,7 +497,7 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {filteredClients.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-400 dark:text-gray-500">
+                  <td colSpan={7} className="px-6 py-12 text-center text-gray-400 dark:text-gray-500">
                     {searchTerm || statusFilter !== 'all'
                       ? 'Nenhum cliente encontrado com os filtros aplicados.'
                       : 'Nenhum cliente cadastrado ainda.'}
@@ -371,10 +508,15 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
                   <tr key={client.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="font-medium text-gray-900 dark:text-white">{client.name}</div>
-                      {client.contactEmail && (
-                        <div className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
-                          <Mail className="h-3 w-3" /> {client.contactEmail}
-                        </div>
+                      {client.locationUrl && (
+                        <a
+                          href={client.locationUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-yellow-600 dark:text-yellow-400 hover:underline mt-0.5"
+                        >
+                          <MapPin className="h-3 w-3" /> Ver no mapa
+                        </a>
                       )}
                     </td>
                     <td className="px-6 py-4 text-gray-600 dark:text-gray-300 font-mono text-xs">
@@ -391,6 +533,19 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
                           <Phone className="h-3 w-3" /> {client.contactPhone}
                         </div>
                       )}
+                      {client.contactEmail && (
+                        <div className="flex items-center gap-1 text-gray-400 text-xs mt-0.5">
+                          <Mail className="h-3 w-3" /> {client.contactEmail}
+                        </div>
+                      )}
+                      {(client.contacts?.length ?? 0) > 0 && (
+                        <div className="text-xs text-gray-400 mt-0.5 italic">
+                          +{client.contacts.length} contato{client.contacts.length > 1 ? 's' : ''}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-gray-600 dark:text-gray-300 text-xs">
+                      {client.classification || '—'}
                     </td>
                     <td className="px-6 py-4 text-gray-600 dark:text-gray-300 text-xs">
                       {client.city || client.state

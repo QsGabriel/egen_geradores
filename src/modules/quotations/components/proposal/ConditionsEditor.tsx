@@ -130,12 +130,28 @@ export function ConditionsEditor({ className = '' }: ConditionsEditorProps) {
             onChange={handleChange}
             type="select"
             options={[
-              'Boleto - 15 dias',
-              'Boleto - 30 dias',
-              'Boleto - 28/35/42 dias',
+              'Boleto',
               'Pix',
               'Cartão de Crédito',
               'Depósito Bancário',
+              'Transferência',
+            ]}
+          />
+          <ConditionField
+            label="Prazo de Pagamento"
+            field="prazoPagamento"
+            value={condicoes.prazoPagamento}
+            onChange={handleChange}
+            type="select"
+            options={[
+              'À vista',
+              '01 dia',
+              '14 dias',
+              '21 dias',
+              '30 dias',
+              '60 dias',
+              '90 dias',
+              '120 dias',
             ]}
           />
           <ConditionField
@@ -192,6 +208,7 @@ export function ConditionsEditor({ className = '' }: ConditionsEditorProps) {
             type="select"
             options={[
               'Data da saída dos equipamentos',
+              'Data da instalação',
               'Data de início de utilização',
               'Data de entrega',
             ]}
@@ -204,6 +221,7 @@ export function ConditionsEditor({ className = '' }: ConditionsEditorProps) {
             type="select"
             options={[
               'Data do retorno',
+              'Data de desinstalação',
               'Data de desmobilização',
               'Data de desligamento',
             ]}
@@ -222,7 +240,7 @@ export function ConditionsEditor({ className = '' }: ConditionsEditorProps) {
             value={condicoes.periodoOrcado}
             onChange={handleChange}
             type="select"
-            options={['Semanal', 'Quinzenal', 'Mensal', 'Trimestral']}
+            options={['Diária', 'Semanal', 'Quinzenal', 'Mensal', 'Indicado nas observações']}
           />
         </div>
       </div>
@@ -240,7 +258,7 @@ export function ConditionsEditor({ className = '' }: ConditionsEditorProps) {
             value={condicoes.transporteEnvio}
             onChange={handleChange}
             type="select"
-            options={['Orçado', 'Incluso', 'Por conta do cliente', 'CIF', 'FOB']}
+            options={['Não orçado', 'Orçado', 'Incluso', 'CIF', 'FOB']}
           />
           <ConditionField
             label="Transporte (Retirada)"
@@ -248,7 +266,7 @@ export function ConditionsEditor({ className = '' }: ConditionsEditorProps) {
             value={condicoes.transporteRetirada}
             onChange={handleChange}
             type="select"
-            options={['Orçado', 'Incluso', 'Por conta do cliente', 'CIF', 'FOB']}
+            options={['Não orçado', 'Orçado', 'Incluso', 'CIF', 'FOB']}
           />
           <ConditionField
             label="Carga/Descarga (Mobilização)"
@@ -256,7 +274,7 @@ export function ConditionsEditor({ className = '' }: ConditionsEditorProps) {
             value={condicoes.cargaDescargaMobilizacao}
             onChange={handleChange}
             type="select"
-            options={['Orçado', 'Incluso', 'Por conta do cliente', 'Não orçado']}
+            options={['Não orçado', 'Orçado', 'Incluso']}
           />
           <ConditionField
             label="Carga/Descarga (Desmobilização)"
@@ -264,7 +282,7 @@ export function ConditionsEditor({ className = '' }: ConditionsEditorProps) {
             value={condicoes.cargaDescargaDesmobilizacao}
             onChange={handleChange}
             type="select"
-            options={['Orçado', 'Incluso', 'Por conta do cliente', 'Não orçado']}
+            options={['Não orçado', 'Orçado', 'Incluso']}
           />
           <ConditionField
             label="Instalação"
@@ -272,7 +290,7 @@ export function ConditionsEditor({ className = '' }: ConditionsEditorProps) {
             value={condicoes.instalacao}
             onChange={handleChange}
             type="select"
-            options={['Sim', 'Não', 'Orçado', 'Não incluso']}
+            options={['Incluso', 'Orçado', 'Não orçado']}
           />
         </div>
       </div>
@@ -290,7 +308,7 @@ export function ConditionsEditor({ className = '' }: ConditionsEditorProps) {
             value={condicoes.manutencaoPreventiva}
             onChange={handleChange}
             type="select"
-            options={['Incluso', 'Orçado sob demanda', 'Não incluso', 'A cada 250h']}
+            options={['Não orçado', 'Orçado', 'Incluso']}
           />
           <ConditionField
             label="Combustível"
@@ -298,7 +316,7 @@ export function ConditionsEditor({ className = '' }: ConditionsEditorProps) {
             value={condicoes.combustivel}
             onChange={handleChange}
             type="select"
-            options={['Não Incluso', 'Incluso', 'Por conta do cliente']}
+            options={['Não orçado', 'Orçado', 'Incluso']}
           />
           <ConditionField
             label="Emissão de ART"
@@ -306,7 +324,7 @@ export function ConditionsEditor({ className = '' }: ConditionsEditorProps) {
             value={condicoes.emissaoArt}
             onChange={handleChange}
             type="select"
-            options={['Não incluso', 'Incluso', 'Sob demanda']}
+            options={['Não orçado', 'Orçado', 'Incluso']}
           />
           <ConditionField
             label="Telemetria"
@@ -314,7 +332,7 @@ export function ConditionsEditor({ className = '' }: ConditionsEditorProps) {
             value={condicoes.telemetria}
             onChange={handleChange}
             type="select"
-            options={['Não incluso', 'Incluso', 'Opcional']}
+            options={['Não orçado', 'Orçado', 'Incluso']}
           />
           <ConditionField
             label="Dimensionamento"
@@ -322,7 +340,7 @@ export function ConditionsEditor({ className = '' }: ConditionsEditorProps) {
             value={condicoes.dimensionamento}
             onChange={handleChange}
             type="select"
-            options={['Locatária', 'EGEN', 'Conjunto']}
+            options={['Locatária', 'EGEN', 'Em conjunto', 'N.A.']}
           />
           <ConditionField
             label="Definição de Escopo"
@@ -330,7 +348,7 @@ export function ConditionsEditor({ className = '' }: ConditionsEditorProps) {
             value={condicoes.definicaoEscopo}
             onChange={handleChange}
             type="select"
-            options={['Locatária', 'EGEN', 'Conjunto']}
+            options={['Locatária', 'EGEN', 'Em conjunto', 'N.A.']}
           />
         </div>
       </div>
@@ -348,7 +366,7 @@ export function ConditionsEditor({ className = '' }: ConditionsEditorProps) {
             value={condicoes.seguro}
             onChange={handleChange}
             type="select"
-            options={['Incluso', 'Não Incluso', 'Opcional']}
+            options={['Incluso', 'Não incluso', 'Orçado', 'Opcional']}
           />
           <ConditionField
             label="Impostos"
@@ -356,7 +374,7 @@ export function ConditionsEditor({ className = '' }: ConditionsEditorProps) {
             value={condicoes.impostos}
             onChange={handleChange}
             type="select"
-            options={['Incluso', 'Não Incluso']}
+            options={['Incluso', 'Não incluso', 'Vide observações']}
           />
         </div>
       </div>

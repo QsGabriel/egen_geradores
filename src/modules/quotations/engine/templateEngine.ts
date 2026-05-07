@@ -27,17 +27,23 @@ export const PLACEHOLDERS = {
   CLIENTE_CIDADE_UF: '{{cliente.cidadeUf}}',
   
   // Tabelas
-  EQUIPAMENTOS_TABLE: '{{equipamentos.table}}',
-  SERVICOS_TABLE: '{{servicos.table}}',
+  ITENS_PERIODICOS_TABLE: '{{itensPeriodicos.table}}',
+  ITENS_SPOT_TABLE: '{{itensSpot.table}}',
   HORAS_EXCEDENTES_TABLE: '{{horasExcedentes.table}}',
   
   // Totais
-  TOTAL_EQUIPAMENTOS: '{{totais.equipamentos}}',
-  TOTAL_SERVICOS: '{{totais.servicos}}',
+  TOTAL_PERIODICOS: '{{totais.periodicos}}',
+  TOTAL_SPOT: '{{totais.spot}}',
   TOTAL_GERAL: '{{totais.geral}}',
   DESCONTO_PERCENT: '{{totais.descontoPercent}}',
   DESCONTO_VALOR: '{{totais.descontoValor}}',
   TOTAL_FINAL: '{{totais.final}}',
+  SUBTOTAL_PERIODICOS_ROW: '{{totais.subtotalPeriodicosRow}}',
+  SUBTOTAL_SPOT_ROW: '{{totais.subtotalSpotRow}}',
+  SOMA_GERAL_SECTION: '{{totais.somaGeralSection}}',
+  
+  // Observações
+  OBSERVACOES_GERAIS: '{{observacoesGerais}}',
   
   // Condições
   CONDICOES_SECTION: '{{condicoes.section}}',
@@ -170,16 +176,18 @@ export const TEMPLATE_INTRO = `
 `;
 
 /**
- * Seção de equipamentos (Página 3)
+ * Seção de Escopo de Fornecimento (Periódicos + Spot + Horas Excedentes)
  */
-export const TEMPLATE_EQUIPAMENTOS = `
+export const TEMPLATE_ESCOPO = `
 <section class="page content-page">
-  ${TEMPLATE_HEADER}
+  ${PLACEHOLDERS.DOCUMENT_ID.replace('{{', '')}<!-- header injected by renderer -->
   
-  <div class="equipamentos-section">
-    <h2 class="section-title">EQUIPAMENTOS</h2>
-    <p class="section-subtitle">Grupos geradores propostos para atender à sua demanda:</p>
+  <div class="escopo-section">
+    <h2 class="section-title">ESCOPO DE FORNECIMENTO</h2>
+    <p class="section-subtitle">Preços e condições comerciais de equipamentos e serviços:</p>
     
+    <!-- TABLE 1: Equipamentos e Acessórios (Itens Periódicos) -->
+    <h3 class="subsection-title">Equipamentos e Acessórios</h3>
     <table class="items-table">
       <thead>
         <tr>
@@ -192,21 +200,38 @@ export const TEMPLATE_EQUIPAMENTOS = `
         </tr>
       </thead>
       <tbody>
-        ${PLACEHOLDERS.EQUIPAMENTOS_TABLE}
+        ${PLACEHOLDERS.ITENS_PERIODICOS_TABLE}
       </tbody>
       <tfoot>
-        <tr class="total-row">
-          <td colspan="5" class="total-label">SUBTOTAL EQUIPAMENTOS</td>
-          <td class="total-value">${PLACEHOLDERS.TOTAL_EQUIPAMENTOS}</td>
-        </tr>
+        ${PLACEHOLDERS.SUBTOTAL_PERIODICOS_ROW}
       </tfoot>
     </table>
-  </div>
-  
-  <div class="horas-excedentes-section">
-    <h2 class="section-title">HORAS EXCEDENTES</h2>
-    <p class="section-subtitle">Valores para utilização além da franquia contratada:</p>
-    
+
+    <!-- TABLE 2: Serviços (Itens Spot) -->
+    <h3 class="subsection-title">Serviços</h3>
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th class="col-desc">Descrição</th>
+          <th class="col-qty">Qtd</th>
+          <th class="col-unit">Valor Unit.</th>
+          <th class="col-total">Valor Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${PLACEHOLDERS.ITENS_SPOT_TABLE}
+      </tbody>
+      <tfoot>
+        ${PLACEHOLDERS.SUBTOTAL_SPOT_ROW}
+      </tfoot>
+    </table>
+
+    <!-- Soma Geral (Option B: unified total) -->
+    ${PLACEHOLDERS.SOMA_GERAL_SECTION}
+
+    <!-- TABLE 3: Horas Excedentes (separate, excluded from main totals) -->
+    <h3 class="subsection-title">Horas Excedentes</h3>
+    <p class="section-note">Os valores de horas excedentes não estão incluídos nos totais acima.</p>
     <table class="items-table compact">
       <thead>
         <tr>
@@ -219,66 +244,21 @@ export const TEMPLATE_EQUIPAMENTOS = `
         ${PLACEHOLDERS.HORAS_EXCEDENTES_TABLE}
       </tbody>
     </table>
-  </div>
-</section>
-`;
 
-/**
- * Seção de serviços (Página 4)
- */
-export const TEMPLATE_SERVICOS = `
-<section class="page content-page">
-  ${TEMPLATE_HEADER}
-  
-  <div class="servicos-section">
-    <h2 class="section-title">SERVIÇOS INCLUSOS</h2>
-    <p class="section-subtitle">Serviços contemplados nesta proposta:</p>
-    
-    <table class="items-table">
-      <thead>
-        <tr>
-          <th class="col-desc">Descrição</th>
-          <th class="col-qty">Qtd</th>
-          <th class="col-unit">Valor Unit.</th>
-          <th class="col-total">Valor Total</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${PLACEHOLDERS.SERVICOS_TABLE}
-      </tbody>
-      <tfoot>
-        <tr class="total-row">
-          <td colspan="3" class="total-label">SUBTOTAL SERVIÇOS</td>
-          <td class="total-value">${PLACEHOLDERS.TOTAL_SERVICOS}</td>
-        </tr>
-      </tfoot>
-    </table>
-  </div>
-  
-  <div class="totais-section">
-    <h2 class="section-title">RESUMO FINANCEIRO</h2>
+    <!-- Desconto e Total Final -->
     <div class="totais-box">
-      <div class="total-line">
-        <span class="total-label">Total Equipamentos:</span>
-        <span class="total-value">${PLACEHOLDERS.TOTAL_EQUIPAMENTOS}</span>
-      </div>
-      <div class="total-line">
-        <span class="total-label">Total Serviços:</span>
-        <span class="total-value">${PLACEHOLDERS.TOTAL_SERVICOS}</span>
-      </div>
-      <div class="total-line subtotal">
-        <span class="total-label">Subtotal:</span>
-        <span class="total-value">${PLACEHOLDERS.TOTAL_GERAL}</span>
-      </div>
       <div class="total-line desconto">
         <span class="total-label">Desconto (${PLACEHOLDERS.DESCONTO_PERCENT}%):</span>
         <span class="total-value">- ${PLACEHOLDERS.DESCONTO_VALOR}</span>
       </div>
       <div class="total-line final">
-        <span class="total-label">VALOR TOTAL:</span>
+        <span class="total-label">VALOR TOTAL ORÇADO:</span>
         <span class="total-value highlight">${PLACEHOLDERS.TOTAL_FINAL}</span>
       </div>
     </div>
+
+    <!-- Observações Gerais -->
+    ${PLACEHOLDERS.OBSERVACOES_GERAIS}
   </div>
 </section>
 `;

@@ -18,6 +18,8 @@ import {
   AlertCircle,
   Calculator,
   Percent,
+  AlignLeft,
+  LayoutList,
 } from 'lucide-react';
 import { useQuotationStore } from '../../stores/quotationStore';
 import { ClientSelector } from './ClientSelector';
@@ -110,20 +112,22 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
   const isDirty = useQuotationStore((state) => state.isDirty);
   
   // Get individual totals to avoid object reference issues
-  const totalEquipamentos = useQuotationStore((state) => state.current?.totalEquipamentos ?? 0);
-  const totalServicos = useQuotationStore((state) => state.current?.totalServicos ?? 0);
+  const totalPeriodicos = useQuotationStore((state) => state.current?.totalPeriodicos ?? 0);
+  const totalSpot = useQuotationStore((state) => state.current?.totalSpot ?? 0);
   const totalGeral = useQuotationStore((state) => state.current?.totalGeral ?? 0);
   const descontoValor = useQuotationStore((state) => state.current?.descontoValor ?? 0);
   const totalComDesconto = useQuotationStore((state) => state.current?.totalComDesconto ?? 0);
+  const itensPeriodicos = useQuotationStore((state) => state.current?.itensPeriodicos ?? []);
+  const itensSpot = useQuotationStore((state) => state.current?.itensSpot ?? []);
   
   // Memoize totals object
   const totals = useMemo(() => ({
-    equipamentos: totalEquipamentos,
-    servicos: totalServicos,
+    periodicos: totalPeriodicos,
+    spot: totalSpot,
     geral: totalGeral,
     desconto: descontoValor,
     final: totalComDesconto,
-  }), [totalEquipamentos, totalServicos, totalGeral, descontoValor, totalComDesconto]);
+  }), [totalPeriodicos, totalSpot, totalGeral, descontoValor, totalComDesconto]);
   
   const {
     createNew,
@@ -132,6 +136,8 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
     setValidade,
     setDescontoPercent,
     setNotasInternas,
+    setObservacoesGerais,
+    setExibirTotaisPorTabela,
     saveDraft,
     updateCliente,
   } = useQuotationStore();
@@ -390,17 +396,17 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
           </div>
         </AccordionSection>
 
-        {/* Equipamentos */}
+        {/* Itens Periódicos */}
         <AccordionSection
           id="equipamentos"
-          title="Equipamentos"
+          title="Itens Periódicos"
           icon={<Zap className="w-5 h-5" />}
           isOpen={openSections.includes('equipamentos')}
           onToggle={() => toggleSection('equipamentos')}
           badge={
-            current.equipamentos.length > 0 ? (
+            itensPeriodicos.length > 0 ? (
               <span className="text-xs px-2 py-0.5 bg-egen-navy/10 dark:bg-egen-yellow/20 text-egen-navy dark:text-egen-yellow rounded">
-                {current.equipamentos.length} item(s)
+                {itensPeriodicos.length} item(s)
               </span>
             ) : null
           }
@@ -408,17 +414,17 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
           <EquipmentSelector />
         </AccordionSection>
 
-        {/* Serviços */}
+        {/* Itens Spot */}
         <AccordionSection
           id="servicos"
-          title="Serviços"
+          title="Itens Spot (Sob Demanda)"
           icon={<Briefcase className="w-5 h-5" />}
           isOpen={openSections.includes('servicos')}
           onToggle={() => toggleSection('servicos')}
           badge={
-            current.servicos.length > 0 ? (
-              <span className="text-xs px-2 py-0.5 bg-egen-blue/10 dark:bg-egen-blue/20 text-egen-blue rounded">
-                {current.servicos.length} item(s)
+            itensSpot.length > 0 ? (
+              <span className="text-xs px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded">
+                {itensSpot.length} item(s)
               </span>
             ) : null
           }
@@ -435,6 +441,23 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
           onToggle={() => toggleSection('condicoes')}
         >
           <ConditionsEditor />
+        </AccordionSection>
+
+        {/* Observações Gerais */}
+        <AccordionSection
+          id="observacoes"
+          title="Observações Gerais"
+          icon={<AlignLeft className="w-5 h-5" />}
+          isOpen={openSections.includes('observacoes')}
+          onToggle={() => toggleSection('observacoes')}
+        >
+          <textarea
+            value={current.observacoesGerais}
+            onChange={(e) => setObservacoesGerais(e.target.value)}
+            placeholder="Observações gerais que aparecerão na proposta final..."
+            rows={5}
+            className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+          />
         </AccordionSection>
 
         {/* Notas Internas */}
@@ -482,17 +505,31 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
           </div>
 
           {/* Totals */}
+          <div className="flex items-center gap-4">
+            {/* Totais por tabela toggle */}
+            <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 dark:text-gray-400">
+              <LayoutList className="w-4 h-4" />
+              <span>Totais por tabela</span>
+              <input
+                type="checkbox"
+                checked={current.exibirTotaisPorTabela}
+                onChange={(e) => setExibirTotaisPorTabela(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 text-egen-navy focus:ring-egen-navy"
+              />
+            </label>
+          </div>
+
           <div className="flex items-center gap-6">
             <div className="text-right">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Equipamentos</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Periódicos</p>
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {formatCurrency(totals.equipamentos)}
+                {formatCurrency(totals.periodicos)}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Serviços</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Spot</p>
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {formatCurrency(totals.servicos)}
+                {formatCurrency(totals.spot)}
               </p>
             </div>
             <div className="text-right pl-4 border-l border-gray-200 dark:border-gray-700">

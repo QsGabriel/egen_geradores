@@ -75,6 +75,42 @@ export const PeriodoLocacaoLabels: Record<PeriodoLocacao, string> = {
 };
 
 // ============================================
+// ITEM CATEGORIES (NEW)
+// ============================================
+
+export type ItemTipoPeriodico =
+  | 'gerador'
+  | 'cabo_380v'
+  | 'cabo_220v'
+  | 'qta'
+  | 'tanque'
+  | 'telemetria_item'
+  | 'manutencao_recorrente';
+
+export const ItemTipoPeriodicoLabels: Record<ItemTipoPeriodico, string> = {
+  gerador: 'Gerador',
+  cabo_380v: 'Kit Cabos 380V',
+  cabo_220v: 'Kit Cabos 220V',
+  qta: 'QTA',
+  tanque: 'Tanque Auxiliar',
+  telemetria_item: 'Telemetria',
+  manutencao_recorrente: 'Manutenção Preventiva (Recorrente)',
+};
+
+export type ItemTipoSpot =
+  | 'frete'
+  | 'instalacao'
+  | 'manutencao_pontual'
+  | 'personalizado';
+
+export const ItemTipoSpotLabels: Record<ItemTipoSpot, string> = {
+  frete: 'Frete',
+  instalacao: 'Instalação',
+  manutencao_pontual: 'Manutenção (Pontual)',
+  personalizado: 'Personalizado',
+};
+
+// ============================================
 // CLIENTE SNAPSHOT
 // ============================================
 
@@ -89,40 +125,42 @@ export interface ClienteSnapshot {
 }
 
 // ============================================
-// EQUIPAMENTO (GERADOR)
+// ITEM PERIÓDICO (Recurring — generators and accessories)
 // ============================================
 
-export interface ProposalEquipamento {
+export interface ProposalItemPeriodico {
   id: string;
+  tipo: ItemTipoPeriodico;
   descricao: string;
-  potenciaKva: string;
+  /** Only used for type === 'gerador' */
+  potenciaKva?: string;
   quantidade: number;
   franquiaHoras: FranquiaHoras;
   periodoLocacao: PeriodoLocacao;
   valorUnitario: number;
   valorTotal: number;
-  incluiCabo380v: boolean;
-  incluiCabo220v: boolean;
-  valorCabo380v: number;
-  valorCabo220v: number;
-  incluiManutencao: boolean;
-  valorManutencao: number;
   observacoes: string;
 }
 
 // ============================================
-// SERVIÇO INCLUSO
+// ITEM SPOT (One-time / on-demand services)
 // ============================================
 
-export interface ProposalServico {
+export interface ProposalItemSpot {
   id: string;
-  codigo: string;
+  tipo: ItemTipoSpot;
   descricao: string;
   quantidade: number;
   valorUnitario: number;
   valorTotal: number;
   observacoes: string;
 }
+
+// Backward-compat aliases (used by service mapper)
+/** @deprecated Use ProposalItemPeriodico */
+export type ProposalEquipamento = ProposalItemPeriodico;
+/** @deprecated Use ProposalItemSpot */
+export type ProposalServico = ProposalItemSpot;
 
 // ============================================
 // HORA EXCEDENTE
@@ -143,6 +181,7 @@ export interface ProposalHoraExcedente {
 export interface CondicoesComerciais {
   localUtilizacao: string;
   formaPagamento: string;
+  prazoPagamento: string;
   faturamento: string;
   prazoEntrega: string;
   validadeProposta: string;
@@ -189,23 +228,30 @@ export interface SalesQuotation {
   // Snapshot do cliente (gravado no momento da criação)
   cliente: ClienteSnapshot;
   
-  // Itens
-  equipamentos: ProposalEquipamento[];
-  servicos: ProposalServico[];
+  // Itens (NOVA ESTRUTURA)
+  itensPeriodicos: ProposalItemPeriodico[];
+  itensSpot: ProposalItemSpot[];
   horasExcedentes: ProposalHoraExcedente[];
   
   // Condições
   condicoes: CondicoesComerciais;
   
+  // Observações Gerais (exibidas na proposta final)
+  observacoesGerais: string;
+  
   // Totais calculados
-  totalEquipamentos: number;
-  totalServicos: number;
+  totalPeriodicos: number;
+  totalSpot: number;
   totalGeral: number;
   
   // Desconto
   descontoPercent: number;
   descontoValor: number;
   totalComDesconto: number;
+  
+  // Opção de exibição de totais:
+  // true  = Subtotal por tabela | false = Soma Geral unificada
+  exibirTotaisPorTabela: boolean;
   
   // Metadados
   createdBy: string | null;
@@ -230,11 +276,13 @@ export interface SalesQuotationFormData {
   dataEmissao: string;
   validade: string;
   cliente: ClienteSnapshot;
-  equipamentos: ProposalEquipamento[];
-  servicos: ProposalServico[];
+  itensPeriodicos: ProposalItemPeriodico[];
+  itensSpot: ProposalItemSpot[];
   horasExcedentes: ProposalHoraExcedente[];
   condicoes: CondicoesComerciais;
+  observacoesGerais: string;
   descontoPercent: number;
+  exibirTotaisPorTabela: boolean;
   notasInternas: string;
 }
 
@@ -254,7 +302,8 @@ export const DEFAULT_CLIENTE_SNAPSHOT: ClienteSnapshot = {
 
 export const DEFAULT_CONDICOES: CondicoesComerciais = {
   localUtilizacao: '',
-  formaPagamento: 'Boleto - 15 dias',
+  formaPagamento: 'Boleto',
+  prazoPagamento: '14 dias',
   faturamento: 'Data da saída do pátio',
   prazoEntrega: 'A combinar',
   validadeProposta: '15 dias',
@@ -263,43 +312,38 @@ export const DEFAULT_CONDICOES: CondicoesComerciais = {
   periodoMinimo: '30 dias',
   periodoOrcado: 'Mensal',
   tensao: '380/220V',
-  emissaoArt: 'Não incluso',
-  transporteEnvio: 'Orçado',
-  transporteRetirada: 'Orçado',
-  cargaDescargaMobilizacao: 'Orçado',
+  emissaoArt: 'Não orçado',
+  transporteEnvio: 'Não orçado',
+  transporteRetirada: 'Não orçado',
+  cargaDescargaMobilizacao: 'Não orçado',
   cargaDescargaDesmobilizacao: 'Não orçado',
-  instalacao: 'Sim',
-  manutencaoPreventiva: 'Orçado sob demanda',
-  combustivel: 'Não Incluso',
-  seguro: 'Incluso',
+  instalacao: 'Não orçado',
+  manutencaoPreventiva: 'Não orçado',
+  combustivel: 'Não orçado',
+  seguro: 'Não incluso',
   impostos: 'Incluso',
-  telemetria: 'Não incluso',
+  telemetria: 'Não orçado',
   dimensionamento: 'Locatária',
   definicaoEscopo: 'Locatária',
 };
 
-export const createEmptyEquipamento = (): ProposalEquipamento => ({
+export const createEmptyItemPeriodico = (tipo: ItemTipoPeriodico = 'gerador'): ProposalItemPeriodico => ({
   id: crypto.randomUUID(),
-  descricao: '',
-  potenciaKva: '',
+  tipo,
+  descricao: tipo === 'gerador' ? '' : ItemTipoPeriodicoLabels[tipo],
+  potenciaKva: tipo === 'gerador' ? '' : undefined,
   quantidade: 1,
   franquiaHoras: '240h',
   periodoLocacao: 'mensal',
   valorUnitario: 0,
   valorTotal: 0,
-  incluiCabo380v: false,
-  incluiCabo220v: false,
-  valorCabo380v: 0,
-  valorCabo220v: 0,
-  incluiManutencao: false,
-  valorManutencao: 0,
   observacoes: '',
 });
 
-export const createEmptyServico = (): ProposalServico => ({
+export const createEmptyItemSpot = (tipo: ItemTipoSpot = 'personalizado'): ProposalItemSpot => ({
   id: crypto.randomUUID(),
-  codigo: '',
-  descricao: '',
+  tipo,
+  descricao: tipo === 'personalizado' ? '' : ItemTipoSpotLabels[tipo],
   quantidade: 1,
   valorUnitario: 0,
   valorTotal: 0,
@@ -336,22 +380,20 @@ export function generateDocumentId(tipo: DocumentTipo = 'proposta'): string {
 // CALCULATION HELPERS
 // ============================================
 
-export function calculateEquipamentoTotal(eq: ProposalEquipamento): number {
-  let total = eq.valorUnitario * eq.quantidade;
-  
-  if (eq.incluiCabo380v) {
-    total += eq.valorCabo380v * eq.quantidade;
-  }
-  if (eq.incluiCabo220v) {
-    total += eq.valorCabo220v * eq.quantidade;
-  }
-  if (eq.incluiManutencao) {
-    total += eq.valorManutencao * eq.quantidade;
-  }
-  
-  return total;
+export function calculateItemPeriodicoTotal(item: ProposalItemPeriodico): number {
+  return item.valorUnitario * item.quantidade;
 }
 
-export function calculateServicoTotal(serv: ProposalServico): number {
-  return serv.valorUnitario * serv.quantidade;
+export function calculateItemSpotTotal(item: ProposalItemSpot): number {
+  return item.valorUnitario * item.quantidade;
 }
+
+// Backward-compat aliases
+/** @deprecated */
+export const calculateEquipamentoTotal = calculateItemPeriodicoTotal as (eq: ProposalItemPeriodico) => number;
+/** @deprecated */
+export const calculateServicoTotal = calculateItemSpotTotal as (s: ProposalItemSpot) => number;
+/** @deprecated */
+export const createEmptyEquipamento = () => createEmptyItemPeriodico('gerador');
+/** @deprecated */
+export const createEmptyServico = () => createEmptyItemSpot('personalizado');

@@ -10,17 +10,17 @@ import {
   DocumentStatus,
   ClienteSnapshot,
   CondicoesComerciais,
-  ProposalEquipamento,
-  ProposalServico,
+  ProposalItemPeriodico,
+  ProposalItemSpot,
   ProposalHoraExcedente,
   DEFAULT_CLIENTE_SNAPSHOT,
   DEFAULT_CONDICOES,
-  createEmptyEquipamento,
-  createEmptyServico,
+  createEmptyItemPeriodico,
+  createEmptyItemSpot,
   createEmptyHoraExcedente,
   generateDocumentId,
-  calculateEquipamentoTotal,
-  calculateServicoTotal,
+  calculateItemPeriodicoTotal,
+  calculateItemSpotTotal,
 } from '../types/proposal';
 
 // ============================================
@@ -57,6 +57,8 @@ interface QuotationStoreActions {
   setDataEmissao: (data: string) => void;
   setValidade: (data: string) => void;
   setNotasInternas: (notas: string) => void;
+  setObservacoesGerais: (obs: string) => void;
+  setExibirTotaisPorTabela: (value: boolean) => void;
   
   // Cliente
   setCliente: (cliente: ClienteSnapshot) => void;
@@ -64,17 +66,17 @@ interface QuotationStoreActions {
   setClientId: (clientId: string | null) => void;
   setLeadId: (leadId: string | null) => void;
   
-  // Equipamentos
-  addEquipamento: (equipamento?: Partial<ProposalEquipamento>) => void;
-  updateEquipamento: (id: string, updates: Partial<ProposalEquipamento>) => void;
-  removeEquipamento: (id: string) => void;
-  clearEquipamentos: () => void;
+  // Itens Periódicos
+  addItemPeriodico: (item?: Partial<ProposalItemPeriodico>) => void;
+  updateItemPeriodico: (id: string, updates: Partial<ProposalItemPeriodico>) => void;
+  removeItemPeriodico: (id: string) => void;
+  clearItensPeriodicos: () => void;
   
-  // Serviços
-  addServico: (servico?: Partial<ProposalServico>) => void;
-  updateServico: (id: string, updates: Partial<ProposalServico>) => void;
-  removeServico: (id: string) => void;
-  clearServicos: () => void;
+  // Itens Spot
+  addItemSpot: (item?: Partial<ProposalItemSpot>) => void;
+  updateItemSpot: (id: string, updates: Partial<ProposalItemSpot>) => void;
+  removeItemSpot: (id: string) => void;
+  clearItensSpot: () => void;
   
   // Horas Excedentes
   addHoraExcedente: (hora?: Partial<ProposalHoraExcedente>) => void;
@@ -91,8 +93,8 @@ interface QuotationStoreActions {
   
   // Calculations
   recalculateTotals: () => void;
-  getTotalEquipamentos: () => number;
-  getTotalServicos: () => number;
+  getTotalPeriodicos: () => number;
+  getTotalSpot: () => number;
   getTotalGeral: () => number;
   
   // UI
@@ -130,12 +132,14 @@ function createEmptyQuotation(tipo: DocumentTipo = 'proposta'): SalesQuotation {
     dataEmissao: formatDate(now),
     validade: formatDate(addDays(now, 15)),
     cliente: { ...DEFAULT_CLIENTE_SNAPSHOT },
-    equipamentos: [createEmptyEquipamento()],
-    servicos: [],
+    itensPeriodicos: [createEmptyItemPeriodico('gerador')],
+    itensSpot: [],
     horasExcedentes: [],
     condicoes: { ...DEFAULT_CONDICOES },
-    totalEquipamentos: 0,
-    totalServicos: 0,
+    observacoesGerais: '',
+    exibirTotaisPorTabela: false,
+    totalPeriodicos: 0,
+    totalSpot: 0,
     totalGeral: 0,
     descontoPercent: 0,
     descontoValor: 0,
@@ -278,6 +282,26 @@ export const useQuotationStore = create<QuotationStore>()(
           });
         },
 
+        setObservacoesGerais: (observacoesGerais) => {
+          set((state) => {
+            if (!state.current) return state;
+            return {
+              current: { ...state.current, observacoesGerais },
+              isDirty: true,
+            };
+          });
+        },
+
+        setExibirTotaisPorTabela: (exibirTotaisPorTabela) => {
+          set((state) => {
+            if (!state.current) return state;
+            return {
+              current: { ...state.current, exibirTotaisPorTabela },
+              isDirty: true,
+            };
+          });
+        },
+
         // ========== CLIENTE ==========
         
         setCliente: (cliente) => {
@@ -323,19 +347,19 @@ export const useQuotationStore = create<QuotationStore>()(
           });
         },
 
-        // ========== EQUIPAMENTOS ==========
+        // ========== ITENS PERIÓDICOS ==========
         
-        addEquipamento: (equipamento) => {
+        addItemPeriodico: (item) => {
           set((state) => {
             if (!state.current) return state;
-            const newEquipamento = {
-              ...createEmptyEquipamento(),
-              ...equipamento,
+            const newItem = {
+              ...createEmptyItemPeriodico('gerador'),
+              ...item,
             };
             return {
               current: {
                 ...state.current,
-                equipamentos: [...state.current.equipamentos, newEquipamento],
+                itensPeriodicos: [...state.current.itensPeriodicos, newItem],
               },
               isDirty: true,
             };
@@ -343,30 +367,30 @@ export const useQuotationStore = create<QuotationStore>()(
           get().recalculateTotals();
         },
 
-        updateEquipamento: (id, updates) => {
+        updateItemPeriodico: (id, updates) => {
           set((state) => {
             if (!state.current) return state;
-            const equipamentos = state.current.equipamentos.map(eq => {
-              if (eq.id !== id) return eq;
-              const updated = { ...eq, ...updates };
-              updated.valorTotal = calculateEquipamentoTotal(updated);
+            const itensPeriodicos = state.current.itensPeriodicos.map(item => {
+              if (item.id !== id) return item;
+              const updated = { ...item, ...updates };
+              updated.valorTotal = calculateItemPeriodicoTotal(updated);
               return updated;
             });
             return {
-              current: { ...state.current, equipamentos },
+              current: { ...state.current, itensPeriodicos },
               isDirty: true,
             };
           });
           get().recalculateTotals();
         },
 
-        removeEquipamento: (id) => {
+        removeItemPeriodico: (id) => {
           set((state) => {
             if (!state.current) return state;
             return {
               current: {
                 ...state.current,
-                equipamentos: state.current.equipamentos.filter(eq => eq.id !== id),
+                itensPeriodicos: state.current.itensPeriodicos.filter(item => item.id !== id),
               },
               isDirty: true,
             };
@@ -374,30 +398,30 @@ export const useQuotationStore = create<QuotationStore>()(
           get().recalculateTotals();
         },
 
-        clearEquipamentos: () => {
+        clearItensPeriodicos: () => {
           set((state) => {
             if (!state.current) return state;
             return {
-              current: { ...state.current, equipamentos: [] },
+              current: { ...state.current, itensPeriodicos: [] },
               isDirty: true,
             };
           });
           get().recalculateTotals();
         },
 
-        // ========== SERVIÇOS ==========
+        // ========== ITENS SPOT ==========
         
-        addServico: (servico) => {
+        addItemSpot: (item) => {
           set((state) => {
             if (!state.current) return state;
-            const newServico = {
-              ...createEmptyServico(),
-              ...servico,
+            const newItem = {
+              ...createEmptyItemSpot('personalizado'),
+              ...item,
             };
             return {
               current: {
                 ...state.current,
-                servicos: [...state.current.servicos, newServico],
+                itensSpot: [...state.current.itensSpot, newItem],
               },
               isDirty: true,
             };
@@ -405,30 +429,30 @@ export const useQuotationStore = create<QuotationStore>()(
           get().recalculateTotals();
         },
 
-        updateServico: (id, updates) => {
+        updateItemSpot: (id, updates) => {
           set((state) => {
             if (!state.current) return state;
-            const servicos = state.current.servicos.map(serv => {
-              if (serv.id !== id) return serv;
-              const updated = { ...serv, ...updates };
-              updated.valorTotal = calculateServicoTotal(updated);
+            const itensSpot = state.current.itensSpot.map(item => {
+              if (item.id !== id) return item;
+              const updated = { ...item, ...updates };
+              updated.valorTotal = calculateItemSpotTotal(updated);
               return updated;
             });
             return {
-              current: { ...state.current, servicos },
+              current: { ...state.current, itensSpot },
               isDirty: true,
             };
           });
           get().recalculateTotals();
         },
 
-        removeServico: (id) => {
+        removeItemSpot: (id) => {
           set((state) => {
             if (!state.current) return state;
             return {
               current: {
                 ...state.current,
-                servicos: state.current.servicos.filter(s => s.id !== id),
+                itensSpot: state.current.itensSpot.filter(item => item.id !== id),
               },
               isDirty: true,
             };
@@ -436,11 +460,11 @@ export const useQuotationStore = create<QuotationStore>()(
           get().recalculateTotals();
         },
 
-        clearServicos: () => {
+        clearItensSpot: () => {
           set((state) => {
             if (!state.current) return state;
             return {
-              current: { ...state.current, servicos: [] },
+              current: { ...state.current, itensSpot: [] },
               isDirty: true,
             };
           });
@@ -546,25 +570,25 @@ export const useQuotationStore = create<QuotationStore>()(
           set((state) => {
             if (!state.current) return state;
 
-            const totalEquipamentos = state.current.equipamentos.reduce(
-              (sum, eq) => sum + calculateEquipamentoTotal(eq),
+            const totalPeriodicos = state.current.itensPeriodicos.reduce(
+              (sum, item) => sum + calculateItemPeriodicoTotal(item),
               0
             );
 
-            const totalServicos = state.current.servicos.reduce(
-              (sum, serv) => sum + calculateServicoTotal(serv),
+            const totalSpot = state.current.itensSpot.reduce(
+              (sum, item) => sum + calculateItemSpotTotal(item),
               0
             );
 
-            const totalGeral = totalEquipamentos + totalServicos;
+            const totalGeral = totalPeriodicos + totalSpot;
             const descontoValor = totalGeral * (state.current.descontoPercent / 100);
             const totalComDesconto = totalGeral - descontoValor;
 
             return {
               current: {
                 ...state.current,
-                totalEquipamentos,
-                totalServicos,
+                totalPeriodicos,
+                totalSpot,
                 totalGeral,
                 descontoValor,
                 totalComDesconto,
@@ -573,20 +597,20 @@ export const useQuotationStore = create<QuotationStore>()(
           });
         },
 
-        getTotalEquipamentos: () => {
+        getTotalPeriodicos: () => {
           const { current } = get();
           if (!current) return 0;
-          return current.equipamentos.reduce(
-            (sum, eq) => sum + calculateEquipamentoTotal(eq),
+          return current.itensPeriodicos.reduce(
+            (sum, item) => sum + calculateItemPeriodicoTotal(item),
             0
           );
         },
 
-        getTotalServicos: () => {
+        getTotalSpot: () => {
           const { current } = get();
           if (!current) return 0;
-          return current.servicos.reduce(
-            (sum, serv) => sum + calculateServicoTotal(serv),
+          return current.itensSpot.reduce(
+            (sum, item) => sum + calculateItemSpotTotal(item),
             0
           );
         },
@@ -594,7 +618,7 @@ export const useQuotationStore = create<QuotationStore>()(
         getTotalGeral: () => {
           const { current } = get();
           if (!current) return 0;
-          return get().getTotalEquipamentos() + get().getTotalServicos();
+          return get().getTotalPeriodicos() + get().getTotalSpot();
         },
 
         // ========== UI ==========
@@ -633,20 +657,25 @@ const EMPTY_ARRAY: never[] = [];
 export const selectCurrent = (state: QuotationStore) => state.current;
 export const selectDrafts = (state: QuotationStore) => state.drafts;
 export const selectCliente = (state: QuotationStore) => state.current?.cliente;
-export const selectEquipamentos = (state: QuotationStore) => state.current?.equipamentos ?? EMPTY_ARRAY;
-export const selectServicos = (state: QuotationStore) => state.current?.servicos ?? EMPTY_ARRAY;
+export const selectItensPeriodicos = (state: QuotationStore) => state.current?.itensPeriodicos ?? EMPTY_ARRAY;
+export const selectItensSpot = (state: QuotationStore) => state.current?.itensSpot ?? EMPTY_ARRAY;
 export const selectHorasExcedentes = (state: QuotationStore) => state.current?.horasExcedentes ?? EMPTY_ARRAY;
 export const selectCondicoes = (state: QuotationStore) => state.current?.condicoes;
-// Note: selectTotals returns a new object reference - use individual selectors or useShallow instead
 export const selectTotals = (state: QuotationStore) => ({
-  equipamentos: state.current?.totalEquipamentos ?? 0,
-  servicos: state.current?.totalServicos ?? 0,
+  periodicos: state.current?.totalPeriodicos ?? 0,
+  spot: state.current?.totalSpot ?? 0,
   geral: state.current?.totalGeral ?? 0,
   desconto: state.current?.descontoValor ?? 0,
   final: state.current?.totalComDesconto ?? 0,
 });
 export const selectIsDirty = (state: QuotationStore) => state.isDirty;
 export const selectPreviewMode = (state: QuotationStore) => state.previewMode;
+
+// Backward-compat selectors
+/** @deprecated Use selectItensPeriodicos */
+export const selectEquipamentos = selectItensPeriodicos;
+/** @deprecated Use selectItensSpot */
+export const selectServicos = selectItensSpot;
 
 // Export types for external use
 export type { QuotationStoreState as QuotationState, QuotationStoreActions as QuotationActions };

@@ -4,6 +4,18 @@
  */
 
 // ============================================
+// CONTACT PERSON (múltiplos contatos)
+// ============================================
+
+export interface ContactPerson {
+  name: string;
+  phone: string;
+  email: string;
+}
+
+export const EMPTY_CONTACT: ContactPerson = { name: '', phone: '', email: '' };
+
+// ============================================
 // CLIENT
 // ============================================
 
@@ -20,9 +32,12 @@ export interface Client {
   city: string;
   state: string;
   notes: string;
+  locationUrl: string;
+  classification: string;
   clientStatus: ClientStatus;
   contractsCount: number;
   quotationsCount: number;
+  contacts: ContactPerson[];
   lastInteraction: string | null;
   createdAt: string;
   updatedAt: string;
@@ -38,8 +53,24 @@ export interface ClientFormData {
   city: string;
   state: string;
   notes: string;
+  locationUrl: string;
+  classification: string;
   clientStatus: ClientStatus;
+  contacts: ContactPerson[];
 }
+
+export const CLIENT_CLASSIFICATIONS = [
+  'Sistemas de Irrigação',
+  'Armazéns de Grãos e Sementes',
+  'Mineração Minerais Metálicos',
+  'Minerais Não Metálicos',
+  'Obras Const. Civil',
+  'Pecuária',
+  'Agroindústria Energética',
+  'Indústria de Alimentos',
+  'Comércio',
+  'Paradas de Manutenção',
+] as const;
 
 export const CLIENT_STATUS_LABELS: Record<ClientStatus, string> = {
   active: 'Ativo',
@@ -70,6 +101,7 @@ export interface Lead {
   source: string;
   status: LeadStatus;
   notes: string;
+  contacts: ContactPerson[];
   convertedClientId: string | null;
   convertedAt: string | null;
   createdAt: string;
@@ -84,6 +116,7 @@ export interface LeadFormData {
   source: string;
   status: LeadStatus;
   notes: string;
+  contacts: ContactPerson[];
 }
 
 export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
