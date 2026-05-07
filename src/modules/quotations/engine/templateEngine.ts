@@ -464,12 +464,8 @@ export function assembleTemplate(config: Partial<TemplateConfig> = {}): string {
     sections.push(TEMPLATE_INTRO);
   }
   
-  if (finalConfig.includeEquipamentos) {
-    sections.push(TEMPLATE_EQUIPAMENTOS);
-  }
-  
-  if (finalConfig.includeServicos) {
-    sections.push(TEMPLATE_SERVICOS);
+  if (finalConfig.includeEquipamentos || finalConfig.includeServicos) {
+    sections.push(TEMPLATE_ESCOPO);
   }
   
   if (finalConfig.includeCondicoes) {
