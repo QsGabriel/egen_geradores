@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ArrowRightCircle,
   Phone,
   Mail,
   Building,
   MoveRight,
+  Search,
+  ChevronDown,
 } from 'lucide-react';
 import { useCRM } from '../hooks/useCRM';
 import { useNotification } from '../../../hooks/useNotification';
@@ -25,12 +27,30 @@ const COLUMN_COLORS: Record<LeadStatus, string> = {
   lost: 'border-t-red-500',
 };
 
+const COLUMN_INITIAL_LIMIT = 15;
+
 const LeadPipeline: React.FC = () => {
   const { leads, updateLeadStatus, convertLeadToClient } = useCRM();
   const { notification, showSuccess, showError, hideNotification } = useNotification();
 
+  const [searchTerm, setSearchTerm] = useState('');
+  const [columnLimits, setColumnLimits] = useState<Partial<Record<LeadStatus, number>>>({});
+
+  const expandColumn = (status: LeadStatus, total: number) =>
+    setColumnLimits(prev => ({ ...prev, [status]: total }));
+
+  const filteredLeads = searchTerm.trim()
+    ? leads.filter(
+        l =>
+          l.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          l.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          l.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          l.phone.includes(searchTerm),
+      )
+    : leads;
+
   const getLeadsByStatus = (status: LeadStatus) =>
-    leads.filter((lead) => lead.status === status);
+    filteredLeads.filter((lead) => lead.status === status);
 
   const handleAdvance = async (lead: Lead) => {
     const currentIndex = LEAD_PIPELINE_ORDER.indexOf(lead.status);
@@ -144,9 +164,25 @@ const LeadPipeline: React.FC = () => {
         </p>
       </div>
 
+      {/* Search */}
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Buscar lead por nome, empresa, e-mail ou telefone..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 dark:text-white"
+        />
+      </div>
+
       <div className="flex gap-4 overflow-x-auto pb-4">
         {LEAD_PIPELINE_ORDER.map((status) => {
           const statusLeads = getLeadsByStatus(status);
+          const limit = columnLimits[status] ?? COLUMN_INITIAL_LIMIT;
+          const visibleLeads = statusLeads.slice(0, limit);
+          const hiddenCount = statusLeads.length - visibleLeads.length;
+
           return (
             <div
               key={status}
@@ -168,10 +204,21 @@ const LeadPipeline: React.FC = () => {
               <div className="p-3 space-y-3 min-h-[200px]">
                 {statusLeads.length === 0 ? (
                   <div className="text-center text-xs text-gray-400 dark:text-gray-500 py-8">
-                    Nenhum lead
+                    {searchTerm ? 'Nenhum resultado' : 'Nenhum lead'}
                   </div>
                 ) : (
-                  statusLeads.map(renderCard)
+                  <>
+                    {visibleLeads.map(renderCard)}
+                    {hiddenCount > 0 && (
+                      <button
+                        onClick={() => expandColumn(status, statusLeads.length)}
+                        className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
+                      >
+                        <ChevronDown className="h-3.5 w-3.5" />
+                        Ver mais {hiddenCount} lead{hiddenCount !== 1 ? 's' : ''}
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </div>

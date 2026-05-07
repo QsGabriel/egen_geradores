@@ -61,14 +61,22 @@ export function useCRM() {
   }, []);
 
   const fetchLeads = useCallback(async () => {
-    const { data, error: err } = await supabase
-      .from('leads')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const PAGE = 1000;
+    let all: any[] = [];
+    let from = 0;
+    while (true) {
+      const { data, error: err } = await supabase
+        .from('leads')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .range(from, from + PAGE - 1);
+      if (err) throw err;
+      if (data && data.length > 0) all = all.concat(data);
+      if (!data || data.length < PAGE) break;
+      from += PAGE;
+    }
 
-    if (err) throw err;
-
-    const mapped: Lead[] = (data || []).map((r: any) => ({
+    const mapped: Lead[] = all.map((r: any) => ({
       id: r.id,
       name: r.name,
       company: r.company || '',
