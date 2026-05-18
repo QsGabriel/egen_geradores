@@ -49,6 +49,7 @@ export const PLACEHOLDERS = {
   CONDICOES_SECTION: '{{condicoes.section}}',
   LOCAL_UTILIZACAO: '{{condicoes.localUtilizacao}}',
   FORMA_PAGAMENTO: '{{condicoes.formaPagamento}}',
+  PRAZO_PAGAMENTO: '{{condicoes.prazoPagamento}}',
   FATURAMENTO: '{{condicoes.faturamento}}',
   PRAZO_ENTREGA: '{{condicoes.prazoEntrega}}',
   VALIDADE_PROPOSTA: '{{condicoes.validadeProposta}}',
@@ -70,6 +71,7 @@ export const PLACEHOLDERS = {
   TELEMETRIA: '{{condicoes.telemetria}}',
   DIMENSIONAMENTO: '{{condicoes.dimensionamento}}',
   DEFINICAO_ESCOPO: '{{condicoes.definicaoEscopo}}',
+  CONDICOES_OBSERVACOES: '{{condicoes.observacoes}}',
 } as const;
 
 // ============================================
@@ -283,6 +285,10 @@ export const TEMPLATE_CONDICOES = `
         <span class="condicao-value">${PLACEHOLDERS.FORMA_PAGAMENTO}</span>
       </div>
       <div class="condicao-item">
+        <span class="condicao-label">Prazo de Pagamento:</span>
+        <span class="condicao-value">${PLACEHOLDERS.PRAZO_PAGAMENTO}</span>
+      </div>
+      <div class="condicao-item">
         <span class="condicao-label">Faturamento:</span>
         <span class="condicao-value">${PLACEHOLDERS.FATURAMENTO}</span>
       </div>
@@ -380,6 +386,9 @@ export const TEMPLATE_CONDICOES = `
         </tr>
       </tbody>
     </table>
+
+    <!-- Observações das Condições -->
+    ${PLACEHOLDERS.CONDICOES_OBSERVACOES}
   </div>
 </section>
 `;

@@ -5,8 +5,8 @@
 
 import type {
   SalesQuotation,
-  ProposalEquipamento,
-  ProposalServico,
+  ProposalItemPeriodico,
+  ProposalItemSpot,
   ProposalHoraExcedente,
 } from '../types/proposal';
 import {
@@ -67,87 +67,71 @@ export function formatNumber(value: number | null | undefined): string {
 // ============================================
 
 /**
- * Renderiza uma linha de equipamento
+ * Renderiza uma linha de item periódico (Equipamentos e Acessórios)
  */
-function renderEquipamentoRow(eq: ProposalEquipamento): string {
-  const extras: string[] = [];
-  
-  if (eq.incluiCabo380v) {
-    extras.push(`+ Kit Cabos 380V: ${formatCurrency(eq.valorCabo380v)}`);
-  }
-  if (eq.incluiCabo220v) {
-    extras.push(`+ Kit Cabos 220V: ${formatCurrency(eq.valorCabo220v)}`);
-  }
-  if (eq.incluiManutencao) {
-    extras.push(`+ Manutenção Prev.: ${formatCurrency(eq.valorManutencao)}`);
-  }
-  
-  const descricaoCompleta = extras.length > 0
-    ? `${eq.descricao}<br><small class="extras">${extras.join('<br>')}</small>`
-    : eq.descricao;
-  
-  const observacoes = eq.observacoes
-    ? `<br><small class="obs">${eq.observacoes}</small>`
+function renderItemPeriodicoRow(item: ProposalItemPeriodico): string {
+  const observacoes = item.observacoes
+    ? `<br><small class="obs">${item.observacoes}</small>`
     : '';
-  
+
   return `
     <tr class="item-row">
-      <td class="col-desc">${descricaoCompleta}${observacoes}</td>
-      <td class="col-qty">${eq.quantidade}</td>
-      <td class="col-franquia">${FranquiaHorasLabels[eq.franquiaHoras]}</td>
-      <td class="col-periodo">${PeriodoLocacaoLabels[eq.periodoLocacao]}</td>
-      <td class="col-unit">${formatCurrency(eq.valorUnitario)}</td>
-      <td class="col-total">${formatCurrency(eq.valorTotal)}</td>
+      <td class="col-desc">${item.descricao}${observacoes}</td>
+      <td class="col-qty">${item.quantidade}</td>
+      <td class="col-franquia">${FranquiaHorasLabels[item.franquiaHoras]}</td>
+      <td class="col-periodo">${PeriodoLocacaoLabels[item.periodoLocacao]}</td>
+      <td class="col-unit">${formatCurrency(item.valorUnitario)}</td>
+      <td class="col-total">${formatCurrency(item.valorTotal)}</td>
     </tr>
   `;
 }
 
 /**
- * Renderiza todas as linhas de equipamentos
+ * Renderiza todas as linhas de itens periódicos
  */
-function renderEquipamentosTable(equipamentos: ProposalEquipamento[]): string {
-  if (!equipamentos || equipamentos.length === 0) {
+function renderItensPeriodicosTable(itens: ProposalItemPeriodico[]): string {
+  if (!itens || itens.length === 0) {
     return `
       <tr class="empty-row">
-        <td colspan="6" class="empty-message">Nenhum equipamento adicionado</td>
+        <td colspan="6" class="empty-message">Nenhum equipamento ou acessório adicionado</td>
       </tr>
     `;
   }
-  
-  return equipamentos.map(renderEquipamentoRow).join('\n');
+
+  return itens.map(renderItemPeriodicoRow).join('\n');
 }
 
 /**
- * Renderiza uma linha de serviço
+ * Renderiza uma linha de item spot (Serviços)
  */
-function renderServicoRow(serv: ProposalServico): string {
-  const observacoes = serv.observacoes
-    ? `<br><small class="obs">${serv.observacoes}</small>`
+function renderItemSpotRow(item: ProposalItemSpot): string {
+  const observacoes = item.observacoes
+    ? `<br><small class="obs">${item.observacoes}</small>`
     : '';
-  
+
   return `
     <tr class="item-row">
-      <td class="col-desc">${serv.descricao}${observacoes}</td>
-      <td class="col-qty">${serv.quantidade}</td>
-      <td class="col-unit">${formatCurrency(serv.valorUnitario)}</td>
-      <td class="col-total">${formatCurrency(serv.valorTotal)}</td>
+      <td class="col-desc">${item.descricao}${observacoes}</td>
+      <td class="col-qty">${item.quantidade}</td>
+      <td class="col-unit">${formatCurrency(item.valorUnitario)}</td>
+      <td class="col-total">${formatCurrency(item.valorTotal)}</td>
     </tr>
   `;
 }
 
 /**
- * Renderiza todas as linhas de serviços
+ * Renderiza todas as linhas de itens spot
  */
-function renderServicosTable(servicos: ProposalServico[]): string {
-  if (!servicos || servicos.length === 0) {
+function renderItensSpotTable(itens: ProposalItemSpot[]): string {
+  if (!itens || itens.length === 0) {
     return `
       <tr class="empty-row">
         <td colspan="4" class="empty-message">Nenhum serviço adicionado</td>
       </tr>
     `;
   }
-  
-  return servicos.map(renderServicoRow).join('\n');
+
+  return itens.map(renderItemSpotRow).join('\n');
 }
 
 /**
@@ -176,6 +160,75 @@ function renderHorasExcedentesTable(horas: ProposalHoraExcedente[]): string {
   }
   
   return horas.map(renderHoraExcedenteRow).join('\n');
+}
+
+// ============================================
+// TOTALS TOGGLE HELPERS (Opção A / Opção B)
+// ============================================
+
+/**
+ * Opção A: subtotal row inside the periodic items table footer
+ */
+function renderSubtotalPeriodicosRow(total: number, show: boolean): string {
+  if (!show) return '';
+  return `
+    <tr class="subtotal-row">
+      <td colspan="5" class="subtotal-label">Total Equipamentos e Acessórios:</td>
+      <td class="col-total subtotal-value">${formatCurrency(total)}</td>
+    </tr>
+  `;
+}
+
+/**
+ * Opção A: subtotal row inside the spot items table footer
+ */
+function renderSubtotalSpotRow(total: number, show: boolean): string {
+  if (!show) return '';
+  return `
+    <tr class="subtotal-row">
+      <td colspan="3" class="subtotal-label">Total Serviços:</td>
+      <td class="col-total subtotal-value">${formatCurrency(total)}</td>
+    </tr>
+  `;
+}
+
+/**
+ * Opção B: unified total block shown between services table and horas excedentes
+ */
+function renderSomaGeralSection(totalGeral: number, show: boolean): string {
+  if (!show) return '';
+  return `
+    <div class="soma-geral-box">
+      <span class="soma-geral-label">Subtotal Geral (Equipamentos + Serviços):</span>
+      <span class="soma-geral-value">${formatCurrency(totalGeral)}</span>
+    </div>
+  `;
+}
+
+/**
+ * Renderiza o bloco de observações gerais (visível no documento final)
+ */
+function renderObservacoesGerais(obs: string): string {
+  if (!obs || !obs.trim()) return '';
+  return `
+    <div class="observacoes-box">
+      <h3 class="subsection-title">Observações</h3>
+      <p class="observacoes-text">${obs.replace(/\n/g, '<br>')}</p>
+    </div>
+  `;
+}
+
+/**
+ * Renderiza o bloco de observações das condições comerciais
+ */
+function renderCondicoesObservacoes(obs: string): string {
+  if (!obs || !obs.trim()) return '';
+  return `
+    <div class="observacoes-box condicoes-obs">
+      <h3 class="subsection-title">Observações das Condições</h3>
+      <p class="observacoes-text">${obs.replace(/\n/g, '<br>')}</p>
+    </div>
+  `;
 }
 
 // ============================================
@@ -210,21 +263,40 @@ function extractPlaceholderValues(quotation: SalesQuotation): PlaceholderValues 
     [PLACEHOLDERS.CLIENTE_CIDADE_UF]: cliente.cidadeUf || '-',
     
     // Tabelas
-    [PLACEHOLDERS.EQUIPAMENTOS_TABLE]: renderEquipamentosTable(quotation.equipamentos),
-    [PLACEHOLDERS.SERVICOS_TABLE]: renderServicosTable(quotation.servicos),
+    [PLACEHOLDERS.ITENS_PERIODICOS_TABLE]: renderItensPeriodicosTable(quotation.itensPeriodicos),
+    [PLACEHOLDERS.ITENS_SPOT_TABLE]: renderItensSpotTable(quotation.itensSpot),
     [PLACEHOLDERS.HORAS_EXCEDENTES_TABLE]: renderHorasExcedentesTable(quotation.horasExcedentes),
     
     // Totais
-    [PLACEHOLDERS.TOTAL_EQUIPAMENTOS]: formatCurrency(quotation.totalEquipamentos),
-    [PLACEHOLDERS.TOTAL_SERVICOS]: formatCurrency(quotation.totalServicos),
+    [PLACEHOLDERS.TOTAL_PERIODICOS]: formatCurrency(quotation.totalPeriodicos),
+    [PLACEHOLDERS.TOTAL_SPOT]: formatCurrency(quotation.totalSpot),
     [PLACEHOLDERS.TOTAL_GERAL]: formatCurrency(quotation.totalGeral),
     [PLACEHOLDERS.DESCONTO_PERCENT]: formatNumber(quotation.descontoPercent),
     [PLACEHOLDERS.DESCONTO_VALOR]: formatCurrency(quotation.descontoValor),
     [PLACEHOLDERS.TOTAL_FINAL]: formatCurrency(quotation.totalComDesconto),
     
+    // Toggle: subtotals per table (Opção A) vs unified total (Opção B)
+    [PLACEHOLDERS.SUBTOTAL_PERIODICOS_ROW]: renderSubtotalPeriodicosRow(
+      quotation.totalPeriodicos,
+      quotation.exibirTotaisPorTabela,
+    ),
+    [PLACEHOLDERS.SUBTOTAL_SPOT_ROW]: renderSubtotalSpotRow(
+      quotation.totalSpot,
+      quotation.exibirTotaisPorTabela,
+    ),
+    [PLACEHOLDERS.SOMA_GERAL_SECTION]: renderSomaGeralSection(
+      quotation.totalGeral,
+      !quotation.exibirTotaisPorTabela,
+    ),
+    
+    // Observações
+    [PLACEHOLDERS.OBSERVACOES_GERAIS]: renderObservacoesGerais(quotation.observacoesGerais),
+    [PLACEHOLDERS.CONDICOES_OBSERVACOES]: renderCondicoesObservacoes(quotation.condicoes.observacoes ?? ''),
+    
     // Condições
     [PLACEHOLDERS.LOCAL_UTILIZACAO]: condicoes.localUtilizacao || '-',
     [PLACEHOLDERS.FORMA_PAGAMENTO]: condicoes.formaPagamento || '-',
+    [PLACEHOLDERS.PRAZO_PAGAMENTO]: condicoes.prazoPagamento || '-',
     [PLACEHOLDERS.FATURAMENTO]: condicoes.faturamento || '-',
     [PLACEHOLDERS.PRAZO_ENTREGA]: condicoes.prazoEntrega || '-',
     [PLACEHOLDERS.VALIDADE_PROPOSTA]: condicoes.validadeProposta || '-',
@@ -314,9 +386,9 @@ export function renderSection(
   
   switch (section) {
     case 'equipamentos':
-      return renderEquipamentosTable(quotation.equipamentos);
+      return renderItensPeriodicosTable(quotation.itensPeriodicos);
     case 'servicos':
-      return renderServicosTable(quotation.servicos);
+      return renderItensSpotTable(quotation.itensSpot);
     case 'horas':
       return renderHorasExcedentesTable(quotation.horasExcedentes);
     case 'condicoes':

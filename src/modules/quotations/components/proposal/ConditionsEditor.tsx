@@ -378,6 +378,21 @@ export function ConditionsEditor({ className = '' }: ConditionsEditorProps) {
           />
         </div>
       </div>
+
+      {/* Section: Observações das Condições */}
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
+          <FileText className="w-4 h-4" />
+          Observações das Condições
+        </h4>
+        <textarea
+          value={condicoes.observacoes}
+          onChange={(e) => handleChange('observacoes', e.target.value)}
+          placeholder="Observações específicas sobre as condições comerciais desta proposta..."
+          rows={4}
+          className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30 dark:focus:ring-egen-yellow/30 transition-colors"
+        />
+      </div>
     </div>
   );
 }

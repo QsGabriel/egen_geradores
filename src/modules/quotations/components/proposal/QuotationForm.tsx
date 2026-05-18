@@ -506,17 +506,35 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
 
           {/* Totals */}
           <div className="flex items-center gap-4">
-            {/* Totais por tabela toggle */}
-            <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 dark:text-gray-400">
-              <LayoutList className="w-4 h-4" />
-              <span>Totais por tabela</span>
-              <input
-                type="checkbox"
-                checked={current.exibirTotaisPorTabela}
-                onChange={(e) => setExibirTotaisPorTabela(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-egen-navy focus:ring-egen-navy"
-              />
-            </label>
+            {/* Totais display mode toggle: Opção A / Opção B */}
+            <div className="flex items-center gap-2">
+              <LayoutList className="w-4 h-4 text-gray-400" />
+              <span className="text-xs text-gray-500 dark:text-gray-400">Exibir totais:</span>
+              <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 text-xs font-medium">
+                <button
+                  onClick={() => setExibirTotaisPorTabela(true)}
+                  title="Opção A — subtotal por tabela"
+                  className={`px-3 py-1.5 transition-colors ${
+                    current.exibirTotaisPorTabela
+                      ? 'bg-egen-navy text-white'
+                      : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  A — Por tabela
+                </button>
+                <button
+                  onClick={() => setExibirTotaisPorTabela(false)}
+                  title="Opção B — total geral único"
+                  className={`px-3 py-1.5 border-l border-gray-200 dark:border-gray-700 transition-colors ${
+                    !current.exibirTotaisPorTabela
+                      ? 'bg-egen-navy text-white'
+                      : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  B — Total geral
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="flex items-center gap-6">

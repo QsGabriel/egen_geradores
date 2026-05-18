@@ -201,6 +201,7 @@ export interface CondicoesComerciais {
   telemetria: string;
   dimensionamento: string;
   definicaoEscopo: string;
+  observacoes: string;
 }
 
 // ============================================
@@ -323,6 +324,7 @@ export const DEFAULT_CONDICOES: CondicoesComerciais = {
   telemetria: 'Não orçado',
   dimensionamento: 'Locatária',
   definicaoEscopo: 'Locatária',
+  observacoes: '',
 };
 
 export const createEmptyItemPeriodico = (tipo: ItemTipoPeriodico = 'gerador'): ProposalItemPeriodico => ({
