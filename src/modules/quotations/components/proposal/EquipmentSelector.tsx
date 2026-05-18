@@ -5,7 +5,7 @@
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Plus, Trash2, Zap, Cable, Wrench, Server, Fuel, Radio,
+  Plus, Trash2, Zap, Cable, Server, Fuel, Radio,
   Calculator, AlertTriangle,
 } from 'lucide-react';
 import { useQuotationStore, selectItensPeriodicos } from '../../stores/quotationStore';
@@ -24,11 +24,10 @@ const TIPO_ICONS: Record<ItemTipoPeriodico, React.ReactNode> = {
   qta: <Server className="w-4 h-4" />,
   tanque: <Fuel className="w-4 h-4" />,
   telemetria_item: <Radio className="w-4 h-4" />,
-  manutencao_recorrente: <Wrench className="w-4 h-4" />,
 };
 
 const QUICK_ADD_TYPES: ItemTipoPeriodico[] = [
-  'gerador', 'cabo_380v', 'cabo_220v', 'qta', 'tanque', 'telemetria_item', 'manutencao_recorrente',
+  'gerador', 'cabo_380v', 'cabo_220v', 'qta', 'tanque', 'telemetria_item',
 ];
 
 // ============================================

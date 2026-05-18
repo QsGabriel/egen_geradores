@@ -1,10 +1,10 @@
 /**
- * EGEN System - Spot Item Selector (Itens Spot / Sob Demanda)
- * Gerencia itens Spot: Frete, Instalação, Manutenção Pontual e Personalizado
+ * EGEN System - Spot Item Selector (Serviços / Spot / Sob Demanda)
+ * Gerencia serviços: Frete, Instalação, Manutenção e Serviço Personalizado
  */
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, Truck, Wrench, PackageOpen, Calculator } from 'lucide-react';
+import { Plus, Trash2, Truck, Wrench, PackageOpen, PenLine, Calculator } from 'lucide-react';
 import { useQuotationStore, selectItensSpot } from '../../stores/quotationStore';
 import type { ProposalItemSpot, ItemTipoSpot } from '../../types/proposal';
 import { ItemTipoSpotLabels } from '../../types/proposal';
@@ -16,11 +16,11 @@ import { ItemTipoSpotLabels } from '../../types/proposal';
 const TIPO_ICONS: Record<ItemTipoSpot, React.ReactNode> = {
   frete: <Truck className="w-4 h-4" />,
   instalacao: <PackageOpen className="w-4 h-4" />,
-  manutencao_pontual: <Wrench className="w-4 h-4" />,
-  personalizado: <Plus className="w-4 h-4" />,
+  manutencao: <Wrench className="w-4 h-4" />,
+  personalizado: <PenLine className="w-4 h-4" />,
 };
 
-const QUICK_ADD_TYPES: ItemTipoSpot[] = ['frete', 'instalacao', 'manutencao_pontual', 'personalizado'];
+const QUICK_ADD_TYPES: ItemTipoSpot[] = ['frete', 'instalacao', 'manutencao', 'personalizado'];
 
 // ============================================
 // TYPES
@@ -41,7 +41,7 @@ export function ServiceSelector({ className = '' }: ServiceSelectorProps) {
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
-  const handleAddItem = (tipo: ItemTipoSpot = 'personalizado') => {
+  const handleAddItem = (tipo: ItemTipoSpot = 'frete') => {
     addItemSpot({
       tipo,
       descricao: tipo === 'personalizado' ? '' : ItemTipoSpotLabels[tipo],
@@ -59,10 +59,10 @@ export function ServiceSelector({ className = '' }: ServiceSelectorProps) {
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
           <Truck className="w-5 h-5 text-blue-500" />
-          Itens Spot (Sob Demanda)
+          Serviços (Spot / Sob Demanda)
         </h3>
         <button
-          onClick={() => handleAddItem('personalizado')}
+          onClick={() => handleAddItem('frete')}
           className="flex items-center gap-2 px-3 py-1.5 text-sm bg-egen-navy text-white rounded-lg hover:bg-egen-navy/90 transition-colors"
         >
           <Plus className="w-4 h-4" />
@@ -93,12 +93,12 @@ export function ServiceSelector({ className = '' }: ServiceSelectorProps) {
             className="text-center py-8 text-gray-500 dark:text-gray-400 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg"
           >
             <Truck className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p>Nenhum item spot adicionado</p>
+            <p>Nenhum serviço adicionado</p>
             <button
               onClick={() => handleAddItem('frete')}
               className="mt-2 text-sm text-egen-navy dark:text-egen-yellow hover:underline"
             >
-              Adicionar item
+              Adicionar serviço
             </button>
           </motion.div>
         ) : (
@@ -119,7 +119,14 @@ export function ServiceSelector({ className = '' }: ServiceSelectorProps) {
                   </label>
                   <select
                     value={item.tipo}
-                    onChange={(e) => handleFieldUpdate(item.id, 'tipo', e.target.value as ItemTipoSpot)}
+                    onChange={(e) => {
+                      const newTipo = e.target.value as ItemTipoSpot;
+                      updateItemSpot(item.id, {
+                        tipo: newTipo,
+                        descricao: newTipo === 'personalizado' ? '' : ItemTipoSpotLabels[newTipo],
+                      });
+                      recalculateTotals();
+                    }}
                     className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
                   >
                     {QUICK_ADD_TYPES.map((t) => (
@@ -131,14 +138,27 @@ export function ServiceSelector({ className = '' }: ServiceSelectorProps) {
                 {/* Descrição */}
                 <div className="md:col-span-2">
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                    Descrição
+                    {item.tipo === 'personalizado' ? (
+                      <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                        <PenLine className="w-3 h-3" />
+                        Serviço (texto livre)
+                      </span>
+                    ) : 'Descrição'}
                   </label>
                   <input
                     type="text"
                     value={item.descricao}
                     onChange={(e) => handleFieldUpdate(item.id, 'descricao', e.target.value)}
-                    placeholder={ItemTipoSpotLabels[item.tipo]}
-                    className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+                    placeholder={
+                      item.tipo === 'personalizado'
+                        ? 'Descreva o serviço acordado com o cliente...'
+                        : ItemTipoSpotLabels[item.tipo]
+                    }
+                    className={`w-full px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 ${
+                      item.tipo === 'personalizado'
+                        ? 'bg-amber-50 dark:bg-amber-900/10 border border-amber-300 dark:border-amber-700 focus:ring-amber-400/30'
+                        : 'bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 focus:ring-egen-navy/30'
+                    }`}
                   />
                 </div>
 

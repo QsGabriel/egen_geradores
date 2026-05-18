@@ -84,8 +84,7 @@ export type ItemTipoPeriodico =
   | 'cabo_220v'
   | 'qta'
   | 'tanque'
-  | 'telemetria_item'
-  | 'manutencao_recorrente';
+  | 'telemetria_item';
 
 export const ItemTipoPeriodicoLabels: Record<ItemTipoPeriodico, string> = {
   gerador: 'Gerador',
@@ -94,20 +93,19 @@ export const ItemTipoPeriodicoLabels: Record<ItemTipoPeriodico, string> = {
   qta: 'QTA',
   tanque: 'Tanque Auxiliar',
   telemetria_item: 'Telemetria',
-  manutencao_recorrente: 'Manutenção Preventiva (Recorrente)',
 };
 
 export type ItemTipoSpot =
   | 'frete'
   | 'instalacao'
-  | 'manutencao_pontual'
+  | 'manutencao'
   | 'personalizado';
 
 export const ItemTipoSpotLabels: Record<ItemTipoSpot, string> = {
   frete: 'Frete',
   instalacao: 'Instalação',
-  manutencao_pontual: 'Manutenção (Pontual)',
-  personalizado: 'Personalizado',
+  manutencao: 'Manutenção',
+  personalizado: 'Serviço Personalizado',
 };
 
 // ============================================

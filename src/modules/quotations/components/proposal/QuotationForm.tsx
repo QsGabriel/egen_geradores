@@ -396,10 +396,10 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
           </div>
         </AccordionSection>
 
-        {/* Itens Periódicos */}
+        {/* Periódico */}
         <AccordionSection
           id="equipamentos"
-          title="Itens Periódicos"
+          title="Periódico"
           icon={<Zap className="w-5 h-5" />}
           isOpen={openSections.includes('equipamentos')}
           onToggle={() => toggleSection('equipamentos')}
@@ -414,10 +414,10 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
           <EquipmentSelector />
         </AccordionSection>
 
-        {/* Itens Spot */}
+        {/* Spot (Sob Demanda) */}
         <AccordionSection
           id="servicos"
-          title="Itens Spot (Sob Demanda)"
+          title="Spot (Sob Demanda)"
           icon={<Briefcase className="w-5 h-5" />}
           isOpen={openSections.includes('servicos')}
           onToggle={() => toggleSection('servicos')}
