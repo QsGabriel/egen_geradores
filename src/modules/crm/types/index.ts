@@ -90,7 +90,14 @@ export const CLIENT_STATUS_COLORS: Record<ClientStatus, string> = {
 // LEAD
 // ============================================
 
-export type LeadStatus = 'new' | 'contacted' | 'proposal_sent' | 'negotiation' | 'won' | 'lost';
+export type LeadStatus =
+  | 'to_contact'
+  | 'no_demand'
+  | 'potential_client'
+  | 'follow_up'
+  | 'in_proposal'
+  | 'client_no_demand'
+  | 'client_with_demand';
 
 export interface Lead {
   id: string;
@@ -102,6 +109,7 @@ export interface Lead {
   status: LeadStatus;
   notes: string;
   contacts: ContactPerson[];
+  scheduledAt: string | null;
   convertedClientId: string | null;
   convertedAt: string | null;
   createdAt: string;
@@ -117,25 +125,44 @@ export interface LeadFormData {
   status: LeadStatus;
   notes: string;
   contacts: ContactPerson[];
+  scheduledAt?: string;
 }
 
 export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
-  new: 'Novo',
-  contacted: 'Contatado',
-  proposal_sent: 'Proposta Enviada',
-  negotiation: 'Negociação',
-  won: 'Ganho',
-  lost: 'Perdido',
+  to_contact: 'A contatar',
+  no_demand: 'Sem demanda',
+  potential_client: 'Cliente potencial',
+  follow_up: 'Retomar contato',
+  in_proposal: 'Em proposta',
+  client_no_demand: 'Cliente sem demanda',
+  client_with_demand: 'Cliente com demanda',
+};
+
+export const LEAD_STATUS_DESCRIPTIONS: Record<LeadStatus, string> = {
+  to_contact: 'Realizar contato inicial',
+  no_demand: 'Não é um lead em potencial',
+  potential_client: 'Agendamento obrigatório',
+  follow_up: 'Agendamento obrigatório',
+  in_proposal: 'Cliente que somente orçou',
+  client_no_demand: 'Agendamento sazonal',
+  client_with_demand: 'Agendamento sazonal',
 };
 
 export const LEAD_STATUS_COLORS: Record<LeadStatus, string> = {
-  new: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  contacted: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-  proposal_sent: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  negotiation: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
-  won: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  lost: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+  to_contact: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  no_demand: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+  potential_client: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+  follow_up: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+  in_proposal: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
+  client_no_demand: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400',
+  client_with_demand: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
 };
+
+/** Status que exigem agendamento obrigatório */
+export const STATUSES_REQUIRING_SCHEDULE: LeadStatus[] = ['potential_client', 'follow_up'];
+
+/** Status com agendamento sazonal (clientes) */
+export const STATUSES_SEASONAL_SCHEDULE: LeadStatus[] = ['client_no_demand', 'client_with_demand'];
 
 export const LEAD_SOURCES = [
   'Site',
@@ -148,13 +175,33 @@ export const LEAD_SOURCES = [
 ];
 
 export const LEAD_PIPELINE_ORDER: LeadStatus[] = [
-  'new',
-  'contacted',
-  'proposal_sent',
-  'negotiation',
-  'won',
-  'lost',
+  'to_contact',
+  'potential_client',
+  'follow_up',
+  'in_proposal',
+  'client_with_demand',
+  'client_no_demand',
+  'no_demand',
 ];
+
+// ============================================
+// CONTACT LOG (histórico de contatos com leads/clientes)
+// ============================================
+
+export interface ContactLog {
+  id: string;
+  entityType: 'client' | 'lead';
+  entityId: string;
+  /** Obrigatório: identificação da pessoa com quem foi realizado o contato */
+  contactedPerson: string;
+  /** Observações livres sobre o contato */
+  notes: string;
+  /** Data e hora do contato (informado pelo usuário) */
+  contactedAt: string;
+  /** Usuário que registrou */
+  createdBy: string;
+  createdAt: string;
+}
 
 // ============================================
 // CRM HISTORY

@@ -69,19 +69,19 @@ export function formatNumber(value: number | null | undefined): string {
 /**
  * Renderiza uma linha de item periódico (Equipamentos e Acessórios)
  */
-function renderItemPeriodicoRow(item: ProposalItemPeriodico): string {
+function renderItemPeriodicoRow(item: ProposalItemPeriodico, index: number): string {
   const observacoes = item.observacoes
     ? `<br><small class="obs">${item.observacoes}</small>`
     : '';
 
   return `
     <tr class="item-row">
+      <td class="col-item">${index}</td>
       <td class="col-desc">${item.descricao}${observacoes}</td>
       <td class="col-qty">${item.quantidade}</td>
-      <td class="col-franquia">${FranquiaHorasLabels[item.franquiaHoras]}</td>
-      <td class="col-periodo">${PeriodoLocacaoLabels[item.periodoLocacao]}</td>
       <td class="col-unit">${formatCurrency(item.valorUnitario)}</td>
       <td class="col-total">${formatCurrency(item.valorTotal)}</td>
+      <td class="col-franquia">${FranquiaHorasLabels[item.franquiaHoras]}</td>
     </tr>
   `;
 }
@@ -98,7 +98,7 @@ function renderItensPeriodicosTable(itens: ProposalItemPeriodico[]): string {
     `;
   }
 
-  return itens.map(renderItemPeriodicoRow).join('\n');
+  return itens.map((item, i) => renderItemPeriodicoRow(item, i + 1)).join('\n');
 }
 
 /**
@@ -173,8 +173,9 @@ function renderSubtotalPeriodicosRow(total: number, show: boolean): string {
   if (!show) return '';
   return `
     <tr class="subtotal-row">
-      <td colspan="5" class="subtotal-label">Total Equipamentos e Acessórios:</td>
+      <td colspan="4" class="subtotal-label">Total Equipamentos e Acessórios:</td>
       <td class="col-total subtotal-value">${formatCurrency(total)}</td>
+      <td></td>
     </tr>
   `;
 }
@@ -274,6 +275,8 @@ function extractPlaceholderValues(quotation: SalesQuotation): PlaceholderValues 
     [PLACEHOLDERS.DESCONTO_PERCENT]: formatNumber(quotation.descontoPercent),
     [PLACEHOLDERS.DESCONTO_VALOR]: formatCurrency(quotation.descontoValor),
     [PLACEHOLDERS.TOTAL_FINAL]: formatCurrency(quotation.totalComDesconto),
+    [PLACEHOLDERS.VALOR_ANUAL]: formatCurrency(quotation.totalComDesconto),
+    [PLACEHOLDERS.VALOR_MENSAL]: formatCurrency((quotation.totalComDesconto || 0) / 12),
     
     // Toggle: subtotals per table (Opção A) vs unified total (Opção B)
     [PLACEHOLDERS.SUBTOTAL_PERIODICOS_ROW]: renderSubtotalPeriodicosRow(
@@ -403,8 +406,8 @@ export function renderSection(
     case 'totais':
       return `
         <div class="totais-preview">
-          <p>Equipamentos: ${values[PLACEHOLDERS.TOTAL_EQUIPAMENTOS]}</p>
-          <p>Serviços: ${values[PLACEHOLDERS.TOTAL_SERVICOS]}</p>
+          <p>Periódicos: ${values[PLACEHOLDERS.TOTAL_PERIODICOS]}</p>
+          <p>Spot: ${values[PLACEHOLDERS.TOTAL_SPOT]}</p>
           <p><strong>Total: ${values[PLACEHOLDERS.TOTAL_FINAL]}</strong></p>
         </div>
       `;

@@ -57,6 +57,7 @@ export const useAuth = () => {
           id: data.id,
           email: data.email,
           name: data.name,
+          phone: data.phone || undefined,
           role: data.role,
           department: data.department,
           createdAt: data.created_at,

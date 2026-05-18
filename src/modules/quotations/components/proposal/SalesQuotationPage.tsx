@@ -172,16 +172,11 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
   const getStatusColor = (status: DocumentStatus) => {
     const colors: Record<DocumentStatus, string> = {
       draft: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
-      pending_review: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300',
-      pending_approval: 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300',
-      sent: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300',
-      sent_to_client: 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300',
-      approved: 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300',
-      accepted: 'bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300',
-      rejected: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300',
-      expired: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500',
+      negotiating: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300',
+      price_survey: 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300',
+      lost: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300',
       cancelled: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500',
-      converted_to_contract: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300',
+      closed: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300',
     };
     return colors[status] || colors.draft;
   };
@@ -189,16 +184,11 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
   const getStatusLabel = (status: DocumentStatus) => {
     const labels: Record<DocumentStatus, string> = {
       draft: 'Rascunho',
-      pending_review: 'Em Revisão',
-      pending_approval: 'Aguardando Aprovação',
-      sent: 'Enviada',
-      sent_to_client: 'Enviada ao Cliente',
-      approved: 'Aprovada',
-      accepted: 'Aceita',
-      rejected: 'Rejeitada',
-      expired: 'Expirada',
-      cancelled: 'Cancelada',
-      converted_to_contract: 'Convertida em Contrato',
+      negotiating: 'Em negociação',
+      price_survey: 'Tomada de preço',
+      lost: 'Proposta Perdida',
+      cancelled: 'Proposta Cancelada',
+      closed: 'Proposta Fechada',
     };
     return labels[status] || status;
   };
@@ -281,7 +271,7 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
                     exit={{ opacity: 0, y: -10 }}
                     className="absolute top-full left-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50"
                   >
-                    {(['draft', 'pending_review', 'pending_approval', 'approved', 'sent_to_client'] as DocumentStatus[]).map((status) => (
+                    {(['draft', 'negotiating', 'price_survey', 'lost', 'closed', 'cancelled'] as DocumentStatus[]).map((status) => (
                       <button
                         key={status}
                         onClick={() => handleStatusChange(status)}
@@ -384,8 +374,8 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
 
             {/* Send Button */}
             <button
-              onClick={() => handleStatusChange('sent_to_client')}
-              disabled={!current.id || current.status === 'sent_to_client'}
+              onClick={() => handleStatusChange('negotiating')}
+              disabled={!current.id || current.status === 'closed' || current.status === 'cancelled'}
               className="flex items-center gap-2 px-4 py-2 bg-[#F3B229] text-[#0D2A59] rounded-lg hover:bg-[#F3B229]/90 transition-colors disabled:opacity-50 font-medium"
             >
               <Send className="w-4 h-4" />

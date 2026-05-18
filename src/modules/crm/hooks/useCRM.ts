@@ -5,6 +5,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../hooks/useAuth';
+import { quotationService } from '../../quotations/services';
+import type { SalesQuotation } from '../../quotations/types/proposal';
 import type {
   Client,
   ClientFormData,
@@ -13,6 +15,7 @@ import type {
   CrmHistory,
   CrmHistoryFormData,
   LeadStatus,
+  ContactLog,
 } from '../types';
 
 export function useCRM() {
@@ -83,9 +86,10 @@ export function useCRM() {
       phone: r.phone || '',
       email: r.email || '',
       source: r.source || '',
-      status: r.status,
+      status: r.status as LeadStatus,
       notes: r.notes || '',
       contacts: Array.isArray(r.contacts) ? r.contacts : [],
+      scheduledAt: r.scheduled_at || null,
       convertedClientId: r.converted_client_id,
       convertedAt: r.converted_at,
       createdAt: r.created_at,
@@ -222,6 +226,7 @@ export function useCRM() {
       status: data.status,
       notes: data.notes,
       contacts: data.contacts ?? [],
+      scheduled_at: data.scheduledAt || null,
     });
     if (err) throw err;
 
@@ -238,6 +243,7 @@ export function useCRM() {
     if (data.status !== undefined) updateData.status = data.status;
     if (data.notes !== undefined) updateData.notes = data.notes;
     if (data.contacts !== undefined) updateData.contacts = data.contacts;
+    if (data.scheduledAt !== undefined) updateData.scheduled_at = data.scheduledAt || null;
 
     const { error: err } = await supabase
       .from('leads')
@@ -277,33 +283,40 @@ export function useCRM() {
   };
 
   /**
-   * Converte um lead em cliente, migrando dados automaticamente.
+   * Converte um lead em cliente com dados completos fornecidos via modal.
+   * Requer preenchimento obrigatório antes de chamar esta função.
    */
-  const convertLeadToClient = async (leadId: string) => {
+  const convertLeadToClient = async (leadId: string, clientData: ClientFormData) => {
     const lead = leads.find(l => l.id === leadId);
     if (!lead) throw new Error('Lead não encontrado');
 
-    // Criar cliente a partir dos dados do lead
     const { data: newClient, error: insertErr } = await supabase
       .from('clients')
       .insert({
-        name: lead.company || lead.name,
-        contact_name: lead.name,
-        contact_phone: lead.phone,
-        contact_email: lead.email,
-        notes: lead.notes,
+        name: clientData.name,
+        document_number: clientData.documentNumber || null,
+        contact_name: clientData.contactName,
+        contact_phone: clientData.contactPhone,
+        contact_email: clientData.contactEmail,
+        address: clientData.address || null,
+        city: clientData.city || null,
+        state: clientData.state || null,
+        notes: clientData.notes || null,
         client_status: 'active',
+        contacts: clientData.contacts ?? [],
+        location_url: clientData.locationUrl || null,
+        classification: clientData.classification || null,
       })
       .select()
       .single();
 
     if (insertErr) throw insertErr;
 
-    // Atualizar lead com referência ao cliente e status "won"
+    // Atualizar lead: status 'client_with_demand', vincular cliente
     const { error: updateErr } = await supabase
       .from('leads')
       .update({
-        status: 'won',
+        status: 'client_with_demand',
         converted_client_id: newClient.id,
         converted_at: new Date().toISOString(),
       })
@@ -326,6 +339,123 @@ export function useCRM() {
     await Promise.all([fetchClients(), fetchLeads()]);
     return newClient.id;
   };
+
+  /**
+   * Gera um rascunho de proposta a partir dos dados do lead.
+   * Retorna o ID da proposta criada para navegação.
+   */
+  const generateProposalFromLead = async (leadId: string): Promise<string> => {
+    const lead = leads.find(l => l.id === leadId);
+    if (!lead) throw new Error('Lead não encontrado');
+
+    const today = new Date();
+    const suffix = today.getTime().toString(36).toUpperCase().slice(-6);
+    const docId = `PROP-${today.getFullYear()}-L${suffix}`;
+
+    const draft: SalesQuotation = {
+      id: crypto.randomUUID(),
+      documentId: docId,
+      clientId: lead.convertedClientId || null,
+      leadId: lead.id,
+      tipo: 'proposta',
+      status: 'draft',
+      dataEmissao: today.toISOString().split('T')[0],
+      validade: new Date(today.getTime() + 30 * 86400000).toISOString().split('T')[0],
+      cliente: {
+        nome: lead.company || lead.name,
+        responsavel: lead.name,
+        email: lead.email,
+        telefone: lead.phone,
+        documento: '',
+        endereco: '',
+        cidadeUf: '',
+      },
+      itensPeriodicos: [],
+      itensSpot: [],
+      horasExcedentes: [],
+      condicoes: {} as any,
+      observacoesGerais: lead.notes || '',
+      exibirTotaisPorTabela: true,
+      totalPeriodicos: 0,
+      totalSpot: 0,
+      totalGeral: 0,
+      descontoPercent: 0,
+      descontoValor: 0,
+      totalComDesconto: 0,
+      notasInternas: '',
+      version: 1,
+      parentId: null,
+      createdBy: null,
+      updatedBy: null,
+      createdAt: today.toISOString(),
+      updatedAt: today.toISOString(),
+    };
+
+    const created = await quotationService.create(draft);
+
+    await addHistoryEntry({
+      entityType: 'lead',
+      entityId: lead.id,
+      description: `Proposta "${created.documentId}" gerada a partir do lead`,
+    });
+
+    // Avança para 'in_proposal' apenas se não for já cliente
+    if (!['client_with_demand', 'client_no_demand'].includes(lead.status)) {
+      await updateLeadStatus(lead.id, 'in_proposal');
+    }
+
+    return created.id;
+  };
+
+  // ============================================
+  // CONTACT LOG
+  // ============================================
+
+  const fetchContactLogs = useCallback(async (
+    entityType: 'client' | 'lead',
+    entityId: string,
+  ): Promise<ContactLog[]> => {
+    const { data, error: err } = await supabase
+      .from('contact_logs')
+      .select('*')
+      .eq('entity_type', entityType)
+      .eq('entity_id', entityId)
+      .order('contacted_at', { ascending: false });
+
+    if (err) throw err;
+
+    return (data || []).map((r: any) => ({
+      id: r.id,
+      entityType: r.entity_type as 'client' | 'lead',
+      entityId: r.entity_id,
+      contactedPerson: r.contacted_person,
+      notes: r.notes,
+      contactedAt: r.contacted_at,
+      createdBy: r.created_by,
+      createdAt: r.created_at,
+    }));
+  }, []);
+
+  const addContactLog = useCallback(async (
+    entityType: 'client' | 'lead',
+    entityId: string,
+    contactedPerson: string,
+    notes: string,
+    contactedAt: string,
+  ): Promise<void> => {
+    const createdBy = userProfile?.name || userProfile?.email || 'Sistema';
+
+    const { error: err } = await supabase.from('contact_logs').insert({
+      entity_type: entityType,
+      entity_id: entityId,
+      contacted_person: contactedPerson.trim(),
+      notes: notes.trim(),
+      contacted_at: contactedAt,
+      created_by: createdBy,
+    });
+
+    if (err) throw err;
+  }, [userProfile]);
 
   // ============================================
   // CRM HISTORY
@@ -380,7 +510,7 @@ export function useCRM() {
           phone: row.phone?.trim() || '',
           email: row.email?.trim() || '',
           source: row.source?.trim() || '',
-          status: row.status || 'new',
+          status: row.status || 'to_contact',
           notes: row.notes?.trim() || '',
           contacts: row.contacts ?? [],
         },
@@ -436,7 +566,12 @@ export function useCRM() {
     updateLeadStatus,
     deleteLead,
     convertLeadToClient,
+    generateProposalFromLead,
     importLeads,
+
+    // Contact log operations
+    fetchContactLogs,
+    addContactLog,
 
     // History operations
     addHistoryEntry,

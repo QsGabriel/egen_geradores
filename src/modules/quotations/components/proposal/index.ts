@@ -12,5 +12,6 @@ export { default as QuotationForm } from './QuotationForm';
 // Preview & Display
 export { default as QuotationPreview } from './QuotationPreview';
 
-// Page
+// Pages
 export { default as SalesQuotationPage } from './SalesQuotationPage';
+export { default as ProposalManagementPage } from './ProposalManagementPage';

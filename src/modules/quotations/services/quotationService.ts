@@ -50,13 +50,15 @@ function quotationToRow(quotation: SalesQuotation): Omit<QuotationRow, 'created_
     validade: quotation.validade,
     conteudo: {
       cliente: quotation.cliente,
-      equipamentos: quotation.equipamentos,
-      servicos: quotation.servicos,
+      itensPeriodicos: quotation.itensPeriodicos,
+      itensSpot: quotation.itensSpot,
       horasExcedentes: quotation.horasExcedentes,
       condicoes: quotation.condicoes,
+      observacoesGerais: quotation.observacoesGerais,
+      exibirTotaisPorTabela: quotation.exibirTotaisPorTabela,
     },
-    total_equipamentos: quotation.totalEquipamentos,
-    total_servicos: quotation.totalServicos,
+    total_equipamentos: quotation.totalPeriodicos,
+    total_servicos: quotation.totalSpot,
     total_geral: quotation.totalGeral,
     desconto_percent: quotation.descontoPercent,
     desconto_valor: quotation.descontoValor,
@@ -90,12 +92,14 @@ function rowToQuotation(row: QuotationRow): SalesQuotation {
       endereco: '',
       cidadeUf: '',
     },
-    equipamentos: conteudo.equipamentos || [],
-    servicos: conteudo.servicos || [],
+    itensPeriodicos: conteudo.itensPeriodicos || conteudo.equipamentos || [],
+    itensSpot: conteudo.itensSpot || conteudo.servicos || [],
     horasExcedentes: conteudo.horasExcedentes || [],
     condicoes: conteudo.condicoes || {},
-    totalEquipamentos: row.total_equipamentos,
-    totalServicos: row.total_servicos,
+    observacoesGerais: conteudo.observacoesGerais || '',
+    exibirTotaisPorTabela: conteudo.exibirTotaisPorTabela ?? true,
+    totalPeriodicos: row.total_equipamentos,
+    totalSpot: row.total_servicos,
     totalGeral: row.total_geral,
     descontoPercent: row.desconto_percent,
     descontoValor: row.desconto_valor,
@@ -371,8 +375,8 @@ export async function convertToContract(
     throw new Error('Proposta não encontrada');
   }
 
-  // Update original status
-  await updateQuotationStatus(id, 'converted_to_contract', userId);
+  // Update original status to closed when converted to contract
+  await updateQuotationStatus(id, 'closed', userId);
 
   // Create contract version
   const contract: SalesQuotation = {

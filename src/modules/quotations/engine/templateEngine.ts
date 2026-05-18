@@ -41,6 +41,8 @@ export const PLACEHOLDERS = {
   SUBTOTAL_PERIODICOS_ROW: '{{totais.subtotalPeriodicosRow}}',
   SUBTOTAL_SPOT_ROW: '{{totais.subtotalSpotRow}}',
   SOMA_GERAL_SECTION: '{{totais.somaGeralSection}}',
+  VALOR_ANUAL: '{{totais.valorAnual}}',
+  VALOR_MENSAL: '{{totais.valorMensal}}',
   
   // Observações
   OBSERVACOES_GERAIS: '{{observacoesGerais}}',
@@ -101,6 +103,7 @@ export const TEMPLATE_COVER = `
     </div>
   </div>
 </section>
+<div class="html2pdf__page-break"></div>
 `;
 
 /**
@@ -109,11 +112,14 @@ export const TEMPLATE_COVER = `
 export const TEMPLATE_HEADER = `
 <header class="page-header">
   <div class="header-logo">
-    <img src="/LOGO-DM.png" alt="EGEN Geradores" class="header-logo-img" />
+    <img src="/LOGO-DM.png" alt="EGEN Geradores" class="header-logo-img" onerror="this.style.visibility='hidden'" />
   </div>
   <div class="header-info">
     <div class="header-doc-id">${PLACEHOLDERS.DOCUMENT_ID}</div>
     <div class="header-date">Data: ${PLACEHOLDERS.DATA_EMISSAO}</div>
+  </div>
+  <div class="header-logo-right">
+    <img src="/BRG-LOGO.png" alt="BRG" class="header-logo-img brg-logo" onerror="this.style.visibility='hidden'" />
   </div>
 </header>
 `;
@@ -126,35 +132,47 @@ export const TEMPLATE_INTRO = `
   ${TEMPLATE_HEADER}
   
   <div class="client-section">
-    <h2 class="section-title">DADOS DO CLIENTE</h2>
-    <div class="client-grid">
-      <div class="client-field">
-        <span class="field-label">Razão Social / Nome:</span>
-        <span class="field-value">${PLACEHOLDERS.CLIENTE_NOME}</span>
+    <div class="client-section-title">DADOS DO CLIENTE</div>
+    <div class="client-two-col">
+      <div class="client-side locadora-side">
+        <p class="client-side-label">Locadora:</p>
+        <p class="client-side-name">EGEN Geradores</p>
+        <div class="client-field-list">
+          <div class="client-field">
+            <span class="field-label">Site:</span>
+            <span class="field-value">www.egengeradores.com.br</span>
+          </div>
+          <div class="client-field">
+            <span class="field-label">E-mail:</span>
+            <span class="field-value">contato@egengeradores.com.br</span>
+          </div>
+        </div>
       </div>
-      <div class="client-field">
-        <span class="field-label">CNPJ/CPF:</span>
-        <span class="field-value">${PLACEHOLDERS.CLIENTE_DOCUMENTO}</span>
-      </div>
-      <div class="client-field">
-        <span class="field-label">Responsável:</span>
-        <span class="field-value">${PLACEHOLDERS.CLIENTE_RESPONSAVEL}</span>
-      </div>
-      <div class="client-field">
-        <span class="field-label">Telefone:</span>
-        <span class="field-value">${PLACEHOLDERS.CLIENTE_TELEFONE}</span>
-      </div>
-      <div class="client-field">
-        <span class="field-label">E-mail:</span>
-        <span class="field-value">${PLACEHOLDERS.CLIENTE_EMAIL}</span>
-      </div>
-      <div class="client-field full-width">
-        <span class="field-label">Endereço:</span>
-        <span class="field-value">${PLACEHOLDERS.CLIENTE_ENDERECO}</span>
-      </div>
-      <div class="client-field">
-        <span class="field-label">Cidade/UF:</span>
-        <span class="field-value">${PLACEHOLDERS.CLIENTE_CIDADE_UF}</span>
+      <div class="client-side cliente-side">
+        <p class="client-side-label">Cliente:</p>
+        <p class="client-side-name">${PLACEHOLDERS.CLIENTE_NOME}</p>
+        <div class="client-field-list">
+          <div class="client-field">
+            <span class="field-label">CNPJ/CPF:</span>
+            <span class="field-value">${PLACEHOLDERS.CLIENTE_DOCUMENTO}</span>
+          </div>
+          <div class="client-field">
+            <span class="field-label">Responsável:</span>
+            <span class="field-value">${PLACEHOLDERS.CLIENTE_RESPONSAVEL}</span>
+          </div>
+          <div class="client-field">
+            <span class="field-label">Telefone:</span>
+            <span class="field-value">${PLACEHOLDERS.CLIENTE_TELEFONE}</span>
+          </div>
+          <div class="client-field">
+            <span class="field-label">E-mail:</span>
+            <span class="field-value">${PLACEHOLDERS.CLIENTE_EMAIL}</span>
+          </div>
+          <div class="client-field">
+            <span class="field-label">Endereço:</span>
+            <span class="field-value">${PLACEHOLDERS.CLIENTE_ENDERECO} – ${PLACEHOLDERS.CLIENTE_CIDADE_UF}</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -182,7 +200,7 @@ export const TEMPLATE_INTRO = `
  */
 export const TEMPLATE_ESCOPO = `
 <section class="page content-page">
-  ${PLACEHOLDERS.DOCUMENT_ID.replace('{{', '')}<!-- header injected by renderer -->
+  ${TEMPLATE_HEADER}
   
   <div class="escopo-section">
     <h2 class="section-title">ESCOPO DE FORNECIMENTO</h2>
@@ -190,15 +208,15 @@ export const TEMPLATE_ESCOPO = `
     
     <!-- TABLE 1: Equipamentos e Acessórios (Itens Periódicos) -->
     <h3 class="subsection-title">Equipamentos e Acessórios</h3>
-    <table class="items-table">
+    <table class="items-table break-inside-avoid">
       <thead>
         <tr>
+          <th class="col-item">#</th>
           <th class="col-desc">Descrição</th>
-          <th class="col-qty">Qtd</th>
-          <th class="col-franquia">Franquia</th>
-          <th class="col-periodo">Período</th>
-          <th class="col-unit">Valor Unit.</th>
+          <th class="col-qty">Qtd.</th>
+          <th class="col-unit">Valor Unitário</th>
           <th class="col-total">Valor Total</th>
+          <th class="col-franquia">Franquia</th>
         </tr>
       </thead>
       <tbody>
@@ -210,13 +228,13 @@ export const TEMPLATE_ESCOPO = `
     </table>
 
     <!-- TABLE 2: Serviços (Itens Spot) -->
-    <h3 class="subsection-title">Serviços</h3>
-    <table class="items-table">
+    <h3 class="subsection-title">Serviços de outros:</h3>
+    <table class="items-table break-inside-avoid">
       <thead>
         <tr>
           <th class="col-desc">Descrição</th>
-          <th class="col-qty">Qtd</th>
-          <th class="col-unit">Valor Unit.</th>
+          <th class="col-qty">Qtd.</th>
+          <th class="col-unit">Valor Unitário</th>
           <th class="col-total">Valor Total</th>
         </tr>
       </thead>
@@ -234,7 +252,7 @@ export const TEMPLATE_ESCOPO = `
     <!-- TABLE 3: Horas Excedentes (separate, excluded from main totals) -->
     <h3 class="subsection-title">Horas Excedentes</h3>
     <p class="section-note">Os valores de horas excedentes não estão incluídos nos totais acima.</p>
-    <table class="items-table compact">
+    <table class="items-table compact break-inside-avoid">
       <thead>
         <tr>
           <th class="col-desc">Equipamento</th>
@@ -247,15 +265,19 @@ export const TEMPLATE_ESCOPO = `
       </tbody>
     </table>
 
-    <!-- Desconto e Total Final -->
-    <div class="totais-box">
+    <!-- Desconto e Totais Finais -->
+    <div class="totais-box break-inside-avoid">
       <div class="total-line desconto">
         <span class="total-label">Desconto (${PLACEHOLDERS.DESCONTO_PERCENT}%):</span>
         <span class="total-value">- ${PLACEHOLDERS.DESCONTO_VALOR}</span>
       </div>
-      <div class="total-line final">
-        <span class="total-label">VALOR TOTAL ORÇADO:</span>
-        <span class="total-value highlight">${PLACEHOLDERS.TOTAL_FINAL}</span>
+      <div class="total-line valor-anual">
+        <span class="total-label">VALOR ANUAL:</span>
+        <span class="total-value">${PLACEHOLDERS.VALOR_ANUAL}</span>
+      </div>
+      <div class="total-line valor-mensal">
+        <span class="total-label">VALOR MENSAL:</span>
+        <span class="total-value">${PLACEHOLDERS.VALOR_MENSAL}</span>
       </div>
     </div>
 
@@ -275,7 +297,7 @@ export const TEMPLATE_CONDICOES = `
   <div class="condicoes-section">
     <h2 class="section-title">CONDIÇÕES COMERCIAIS</h2>
     
-    <div class="condicoes-grid">
+    <div class="condicoes-grid break-inside-avoid">
       <div class="condicao-item">
         <span class="condicao-label">Local de Utilização:</span>
         <span class="condicao-value">${PLACEHOLDERS.LOCAL_UTILIZACAO}</span>
@@ -324,7 +346,7 @@ export const TEMPLATE_CONDICOES = `
     
     <h3 class="subsection-title">RESPONSABILIDADES</h3>
     
-    <table class="responsibilities-table">
+    <table class="responsibilities-table break-inside-avoid">
       <thead>
         <tr>
           <th>Item</th>
@@ -401,24 +423,33 @@ export const TEMPLATE_FOOTER = `
   ${TEMPLATE_HEADER}
   
   <div class="footer-section">
-    <h2 class="section-title">ASSINATURAS</h2>
-    
-    <div class="signatures-grid">
-      <div class="signature-box">
-        <div class="signature-line"></div>
-        <p class="signature-label">EGEN Geradores</p>
-        <p class="signature-sublabel">Representante</p>
-      </div>
-      <div class="signature-box">
-        <div class="signature-line"></div>
-        <p class="signature-label">${PLACEHOLDERS.CLIENTE_NOME}</p>
-        <p class="signature-sublabel">Contratante</p>
-      </div>
+    <div class="disposicoes-gerais">
+      <h2 class="section-title">DISPOSIÇÕES GERAIS</h2>
+      <p>Todas as condições, preços e especificações técnicas constantes neste documento são válidos pelo período de validade definido. Os valores apresentados referem-se exclusivamente aos itens descritos no Escopo de Fornecimento, não incluindo quaisquer outros serviços ou equipamentos não especificados.</p>
+      <p>As partes reconhecem este instrumento como registro fiel das condições acordadas. Qualquer alteração deverá ser formalizada por aditivo escrito e assinado por ambas as partes. A assinatura abaixo confirma o aceite integral dos termos e condições desta proposta.</p>
     </div>
-    
-    <div class="footer-info">
-      <p class="footer-text">Documento gerado em ${PLACEHOLDERS.DATA_EMISSAO}</p>
-      <p class="footer-text">Válido até ${PLACEHOLDERS.VALIDADE}</p>
+
+    <div class="signatures-section break-inside-avoid">
+      <h2 class="section-title">ACEITE E ASSINATURAS</h2>
+      <p class="aceite-text">Ao assinar este documento, o Contratante declara ter lido, compreendido e aceito integralmente todos os termos e condições descritos nesta proposta.</p>
+
+      <div class="signatures-grid">
+        <div class="signature-box">
+          <div class="signature-line"></div>
+          <p class="signature-label">EGEN Geradores</p>
+          <p class="signature-sublabel">Representante</p>
+        </div>
+        <div class="signature-box">
+          <div class="signature-line"></div>
+          <p class="signature-label">${PLACEHOLDERS.CLIENTE_NOME}</p>
+          <p class="signature-sublabel">Contratante</p>
+        </div>
+      </div>
+
+      <div class="footer-info">
+        <p class="footer-text">Documento gerado em ${PLACEHOLDERS.DATA_EMISSAO}</p>
+        <p class="footer-text">Válido até ${PLACEHOLDERS.VALIDADE}</p>
+      </div>
     </div>
   </div>
   

@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  ArrowRightCircle,
   Phone,
   Mail,
   Building,
-  MoveRight,
   Search,
   ChevronDown,
+  FileText,
+  Calendar,
 } from 'lucide-react';
 import { useCRM } from '../hooks/useCRM';
 import { useNotification } from '../../../hooks/useNotification';
@@ -15,26 +16,32 @@ import type { Lead, LeadStatus } from '../types';
 import {
   LEAD_STATUS_LABELS,
   LEAD_STATUS_COLORS,
+  LEAD_STATUS_DESCRIPTIONS,
   LEAD_PIPELINE_ORDER,
 } from '../types';
+import LeadDetailModal from './LeadDetailModal';
 
 const COLUMN_COLORS: Record<LeadStatus, string> = {
-  new: 'border-t-blue-500',
-  contacted: 'border-t-purple-500',
-  proposal_sent: 'border-t-yellow-500',
-  negotiation: 'border-t-orange-500',
-  won: 'border-t-green-500',
-  lost: 'border-t-red-500',
+  to_contact: 'border-t-blue-500',
+  no_demand: 'border-t-rose-400',
+  potential_client: 'border-t-yellow-500',
+  follow_up: 'border-t-orange-500',
+  in_proposal: 'border-t-indigo-500',
+  client_no_demand: 'border-t-teal-500',
+  client_with_demand: 'border-t-green-500',
 };
 
 const COLUMN_INITIAL_LIMIT = 15;
 
 const LeadPipeline: React.FC = () => {
-  const { leads, updateLeadStatus, convertLeadToClient } = useCRM();
+  const { leads, updateLeadStatus, generateProposalFromLead } = useCRM();
   const { notification, showSuccess, showError, hideNotification } = useNotification();
+  const navigate = useNavigate();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [columnLimits, setColumnLimits] = useState<Partial<Record<LeadStatus, number>>>({});
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
   const expandColumn = (status: LeadStatus, total: number) =>
     setColumnLimits(prev => ({ ...prev, [status]: total }));
@@ -52,42 +59,31 @@ const LeadPipeline: React.FC = () => {
   const getLeadsByStatus = (status: LeadStatus) =>
     filteredLeads.filter((lead) => lead.status === status);
 
-  const handleAdvance = async (lead: Lead) => {
-    const currentIndex = LEAD_PIPELINE_ORDER.indexOf(lead.status);
-    // Can't advance past negotiation (won/lost are terminal)
-    if (currentIndex >= 3) return;
-
-    const nextStatus = LEAD_PIPELINE_ORDER[currentIndex + 1];
+  const handleStatusChange = async (lead: Lead, newStatus: LeadStatus) => {
+    setOpenDropdownId(null);
     try {
-      await updateLeadStatus(lead.id, nextStatus);
-      showSuccess(`Lead "${lead.name}" movido para "${LEAD_STATUS_LABELS[nextStatus]}"`);
+      await updateLeadStatus(lead.id, newStatus);
+      showSuccess(`Lead "${lead.name}" movido para "${LEAD_STATUS_LABELS[newStatus]}"`);
     } catch {
       showError('Erro ao atualizar status do lead.');
     }
   };
 
-  const handleConvert = async (lead: Lead) => {
+  const handleGenerateProposal = async (lead: Lead) => {
     try {
-      await convertLeadToClient(lead.id);
-      showSuccess(`Lead "${lead.name}" convertido em cliente!`);
+      const proposalId = await generateProposalFromLead(lead.id);
+      showSuccess(`Proposta criada com sucesso!`);
+      navigate(`/propostas/${proposalId}`);
     } catch {
-      showError('Erro ao converter lead em cliente.');
-    }
-  };
-
-  const handleMarkLost = async (lead: Lead) => {
-    try {
-      await updateLeadStatus(lead.id, 'lost');
-      showSuccess(`Lead "${lead.name}" marcado como perdido.`);
-    } catch {
-      showError('Erro ao atualizar status do lead.');
+      showError('Erro ao gerar proposta.');
     }
   };
 
   const renderCard = (lead: Lead) => (
     <div
       key={lead.id}
-      className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm hover:shadow-md transition-shadow"
+      className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+      onClick={() => setSelectedLead(lead)}
     >
       <div className="font-medium text-gray-900 dark:text-white text-sm">{lead.name}</div>
       {lead.company && (
@@ -105,6 +101,12 @@ const LeadPipeline: React.FC = () => {
           <Phone className="h-3 w-3" /> {lead.phone}
         </div>
       )}
+      {lead.scheduledAt && (
+        <div className="flex items-center gap-1 text-orange-400 text-xs mt-1">
+          <Calendar className="h-3 w-3" />
+          {new Date(lead.scheduledAt).toLocaleDateString('pt-BR')}
+        </div>
+      )}
       {lead.source && (
         <div className="text-xs text-gray-300 dark:text-gray-500 mt-1">
           Origem: {lead.source}
@@ -112,35 +114,45 @@ const LeadPipeline: React.FC = () => {
       )}
 
       {/* Actions */}
-      <div className="flex items-center gap-1 mt-3 pt-2 border-t border-gray-100 dark:border-gray-700">
-        {lead.status !== 'won' && lead.status !== 'lost' && (
-          <>
-            {lead.status === 'negotiation' ? (
-              <button
-                onClick={() => handleConvert(lead)}
-                className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-medium rounded-lg hover:bg-green-100 dark:hover:bg-green-900/50 transition-all"
-                title="Converter em Cliente"
-              >
-                <ArrowRightCircle className="h-3 w-3" /> Converter
-              </button>
-            ) : (
-              <button
-                onClick={() => handleAdvance(lead)}
-                className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-medium rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all"
-                title="Avançar etapa"
-              >
-                <MoveRight className="h-3 w-3" /> Avançar
-              </button>
-            )}
-            <button
-              onClick={() => handleMarkLost(lead)}
-              className="px-2 py-1.5 text-red-400 text-xs rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-all"
-              title="Marcar como perdido"
-            >
-              Perdido
-            </button>
-          </>
-        )}
+      <div className="flex items-center gap-1 mt-3 pt-2 border-t border-gray-100 dark:border-gray-700" onClick={e => e.stopPropagation()}>
+        {/* Status dropdown */}
+        <div className="relative flex-1">
+          <button
+            onClick={() => setOpenDropdownId(openDropdownId === lead.id ? null : lead.id)}
+            className="w-full inline-flex items-center justify-between gap-1 px-2 py-1.5 bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-all border border-gray-200 dark:border-gray-600"
+          >
+            <span>Mover</span>
+            <ChevronDown className="h-3 w-3" />
+          </button>
+          {openDropdownId === lead.id && (
+            <div className="absolute left-0 top-full mt-1 w-52 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-20 py-1">
+              {LEAD_PIPELINE_ORDER.map(s => (
+                <button
+                  key={s}
+                  onClick={() => handleStatusChange(lead, s)}
+                  disabled={s === lead.status}
+                  className={`w-full flex items-start gap-2 px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${s === lead.status ? 'opacity-40 cursor-not-allowed' : ''}`}
+                >
+                  <span className={`inline-block w-2 h-2 rounded-full mt-0.5 flex-shrink-0 ${LEAD_STATUS_COLORS[s].split(' ')[0].replace('bg-', 'bg-')}`} />
+                  <div className="text-left">
+                    <div className="font-medium text-gray-800 dark:text-gray-200">{LEAD_STATUS_LABELS[s]}</div>
+                    {LEAD_STATUS_DESCRIPTIONS[s] && (
+                      <div className="text-gray-400 dark:text-gray-500 text-[10px]">{LEAD_STATUS_DESCRIPTIONS[s]}</div>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        {/* Generate proposal */}
+        <button
+          onClick={() => handleGenerateProposal(lead)}
+          className="px-2 py-1.5 text-yellow-500 text-xs rounded-lg hover:bg-yellow-50 dark:hover:bg-yellow-900/30 transition-all"
+          title="Gerar Proposta"
+        >
+          <FileText className="h-3.5 w-3.5" />
+        </button>
       </div>
     </div>
   );
@@ -198,6 +210,9 @@ const LeadPipeline: React.FC = () => {
                     {statusLeads.length}
                   </span>
                 </div>
+                {LEAD_STATUS_DESCRIPTIONS[status] && (
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">{LEAD_STATUS_DESCRIPTIONS[status]}</p>
+                )}
               </div>
 
               {/* Column Cards */}
@@ -225,6 +240,16 @@ const LeadPipeline: React.FC = () => {
           );
         })}
       </div>
+
+      {/* Lead Detail Modal */}
+      {selectedLead && (
+        <LeadDetailModal
+          lead={selectedLead}
+          onClose={() => setSelectedLead(null)}
+          onGenerateProposal={handleGenerateProposal}
+          onLeadUpdated={() => setSelectedLead(null)}
+        />
+      )}
     </div>
   );
 };

@@ -15,12 +15,15 @@ import {
   FileText,
   History,
   UserCircle2,
+  MessageSquarePlus,
 } from 'lucide-react';
 import { useCRM } from '../hooks/useCRM';
 import { useNotification } from '../../../hooks/useNotification';
 import { useDialog } from '../../../hooks/useDialog';
 import Notification from '../../../components/Notification';
 import ConfirmDialog from '../../../components/ConfirmDialog';
+import ClientContactLogModal from './ClientContactLogModal';
+import ClientDetailModal from './ClientDetailModal';
 import type { Client, ClientFormData, ClientStatus, ContactPerson } from '../types';
 import {
   CLIENT_STATUS_LABELS,
@@ -60,6 +63,8 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<ClientStatus | 'all'>('all');
+  const [contactLogTarget, setContactLogTarget] = useState<Client | null>(null);
+  const [detailClient, setDetailClient] = useState<Client | null>(null);
 
   const resetForm = () => {
     setFormData(EMPTY_FORM);
@@ -505,7 +510,11 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
                 </tr>
               ) : (
                 filteredClients.map((client) => (
-                  <tr key={client.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <tr
+                    key={client.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
+                    onClick={() => setDetailClient(client)}
+                  >
                     <td className="px-6 py-4">
                       <div className="font-medium text-gray-900 dark:text-white">{client.name}</div>
                       {client.locationUrl && (
@@ -561,7 +570,7 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
                       <div className="flex items-center justify-end gap-1">
                         {onViewHistory && (
                           <button
-                            onClick={() => onViewHistory(client.id, client.name)}
+                            onClick={(e) => { e.stopPropagation(); onViewHistory(client.id, client.name); }}
                             className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg text-blue-500 transition-all"
                             title="Histórico"
                           >
@@ -569,14 +578,21 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
                           </button>
                         )}
                         <button
-                          onClick={() => handleEdit(client)}
+                          onClick={(e) => { e.stopPropagation(); setContactLogTarget(client); }}
+                          className="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 rounded-lg text-yellow-500 transition-all"
+                          title="Histórico de Contatos"
+                        >
+                          <MessageSquarePlus className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleEdit(client); }}
                           className="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 rounded-lg text-yellow-600 transition-all"
                           title="Editar"
                         >
                           <Edit className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(client.id, client.name)}
+                          onClick={(e) => { e.stopPropagation(); handleDelete(client.id, client.name); }}
                           className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg text-red-500 transition-all"
                           title="Excluir"
                         >
@@ -591,6 +607,22 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
           </table>
         </div>
       </div>
+
+      {/* Contact Log Modal */}
+      {contactLogTarget && (
+        <ClientContactLogModal
+          client={contactLogTarget}
+          onClose={() => setContactLogTarget(null)}
+        />
+      )}
+
+      {/* Client detail modal — opened by clicking a row */}
+      {detailClient && (
+        <ClientDetailModal
+          client={detailClient}
+          onClose={() => setDetailClient(null)}
+        />
+      )}
     </div>
   );
 };

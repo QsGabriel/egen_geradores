@@ -172,6 +172,7 @@ export interface UserProfile {
   id: string;
   email: string;
   name: string;
+  phone?: string;
   role: UserRole;
   department: Department;
   createdAt: string;

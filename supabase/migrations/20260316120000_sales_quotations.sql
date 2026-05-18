@@ -13,22 +13,18 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS sales_quotations (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   document_id VARCHAR(50) UNIQUE NOT NULL,
-  client_id UUID REFERENCES crm_clients(id) ON DELETE SET NULL,
-  lead_id UUID REFERENCES crm_leads(id) ON DELETE SET NULL,
+  client_id UUID REFERENCES clients(id) ON DELETE SET NULL,
+  lead_id UUID REFERENCES leads(id) ON DELETE SET NULL,
   
   -- Document metadata
   tipo VARCHAR(50) NOT NULL DEFAULT 'proposta' CHECK (tipo IN ('proposta', 'orcamento', 'contrato')),
   status VARCHAR(50) NOT NULL DEFAULT 'draft' CHECK (status IN (
     'draft',
-    'pending_review',
-    'pending_approval',
-    'approved',
-    'sent_to_client',
-    'accepted',
-    'rejected',
-    'expired',
+    'negotiating',
+    'price_survey',
+    'lost',
     'cancelled',
-    'converted_to_contract'
+    'closed'
   )),
   
   -- Dates

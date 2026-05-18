@@ -119,6 +119,23 @@ function addDays(date: Date, days: number): Date {
   return result;
 }
 
+function normalizeCondicoes(condicoes?: Partial<CondicoesComerciais>): CondicoesComerciais {
+  const normalized: CondicoesComerciais = {
+    ...DEFAULT_CONDICOES,
+    ...(condicoes ?? {}),
+  };
+
+  if (normalized.inicioCobranca === 'Data da saída dos equipamentos') {
+    normalized.inicioCobranca = 'Data da instalação';
+  }
+
+  if (normalized.finalCobranca === 'Data do retorno') {
+    normalized.finalCobranca = 'Data de desinstalação';
+  }
+
+  return normalized;
+}
+
 function createEmptyQuotation(tipo: DocumentTipo = 'proposta'): SalesQuotation {
   const now = new Date();
   
@@ -135,7 +152,7 @@ function createEmptyQuotation(tipo: DocumentTipo = 'proposta'): SalesQuotation {
     itensPeriodicos: [createEmptyItemPeriodico('gerador')],
     itensSpot: [],
     horasExcedentes: [],
-    condicoes: { ...DEFAULT_CONDICOES },
+    condicoes: normalizeCondicoes(DEFAULT_CONDICOES),
     observacoesGerais: '',
     exibirTotaisPorTabela: false,
     totalPeriodicos: 0,
@@ -183,7 +200,10 @@ export const useQuotationStore = create<QuotationStore>()(
 
         loadQuotation: (quotation) => {
           set({ 
-            current: { ...quotation }, 
+            current: {
+              ...quotation,
+              condicoes: normalizeCondicoes(quotation.condicoes),
+            }, 
             isDirty: false,
             error: null,
           });
@@ -532,7 +552,7 @@ export const useQuotationStore = create<QuotationStore>()(
           set((state) => {
             if (!state.current) return state;
             return {
-              current: { ...state.current, condicoes },
+              current: { ...state.current, condicoes: normalizeCondicoes(condicoes) },
               isDirty: true,
             };
           });
@@ -541,10 +561,21 @@ export const useQuotationStore = create<QuotationStore>()(
         updateCondicoes: (field, value) => {
           set((state) => {
             if (!state.current) return state;
+
+            let normalizedValue = value;
+
+            if (field === 'inicioCobranca' && value === 'Data da saída dos equipamentos') {
+              normalizedValue = 'Data da instalação' as CondicoesComerciais[typeof field];
+            }
+
+            if (field === 'finalCobranca' && value === 'Data do retorno') {
+              normalizedValue = 'Data de desinstalação' as CondicoesComerciais[typeof field];
+            }
+
             return {
               current: {
                 ...state.current,
-                condicoes: { ...state.current.condicoes, [field]: value },
+                condicoes: { ...state.current.condicoes, [field]: normalizedValue },
               },
               isDirty: true,
             };

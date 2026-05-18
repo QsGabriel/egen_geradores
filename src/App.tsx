@@ -7,7 +7,7 @@ import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import UserManagement from './components/UserManagement';
 import { CrmPage } from './modules/crm';
-import { SalesQuotationPage } from './modules/quotations/components/proposal';
+import { SalesQuotationPage, ProposalManagementPage } from './modules/quotations/components/proposal';
 import ResetPassword from './components/ResetPassword';
 import Home from './components/Home';
 
@@ -70,6 +70,14 @@ const AuthenticatedApp: React.FC = () => {
         />
         <Route
           path="/propostas"
+          element={
+            <ProtectedRoute permission="canManageQuotations" userRole={userRole}>
+              <ProposalManagementPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/propostas/nova"
           element={
             <ProtectedRoute permission="canManageQuotations" userRole={userRole}>
               <SalesQuotationPage />

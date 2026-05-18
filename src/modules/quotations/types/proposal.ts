@@ -9,18 +9,13 @@
 
 export type DocumentTipo = 'proposta' | 'orcamento' | 'contrato';
 
-export type DocumentStatus = 
-  | 'draft' 
-  | 'pending_review'
-  | 'pending_approval'
-  | 'sent' 
-  | 'sent_to_client'
-  | 'approved' 
-  | 'accepted'
-  | 'rejected' 
-  | 'converted_to_contract'
-  | 'expired'
-  | 'cancelled';
+export type DocumentStatus =
+  | 'draft'
+  | 'negotiating'
+  | 'price_survey'
+  | 'lost'
+  | 'cancelled'
+  | 'closed';
 
 export const DocumentTipoLabels: Record<DocumentTipo, string> = {
   proposta: 'Proposta Comercial',
@@ -30,30 +25,20 @@ export const DocumentTipoLabels: Record<DocumentTipo, string> = {
 
 export const DocumentStatusLabels: Record<DocumentStatus, string> = {
   draft: 'Rascunho',
-  pending_review: 'Em Revisão',
-  pending_approval: 'Aguardando Aprovação',
-  sent: 'Enviado',
-  sent_to_client: 'Enviado ao Cliente',
-  approved: 'Aprovado',
-  accepted: 'Aceito',
-  rejected: 'Rejeitado',
-  converted_to_contract: 'Convertido em Contrato',
-  expired: 'Expirado',
-  cancelled: 'Cancelado',
+  negotiating: 'Em negociação',
+  price_survey: 'Tomada de preço',
+  lost: 'Proposta Perdida',
+  cancelled: 'Proposta Cancelada',
+  closed: 'Proposta Fechada',
 };
 
 export const DocumentStatusColors: Record<DocumentStatus, string> = {
-  draft: 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200',
-  pending_review: 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-200',
-  pending_approval: 'bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200',
-  sent: 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200',
-  sent_to_client: 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-800 dark:text-indigo-200',
-  approved: 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200',
-  accepted: 'bg-teal-100 dark:bg-teal-900/50 text-teal-800 dark:text-teal-200',
-  rejected: 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200',
-  converted_to_contract: 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200',
-  expired: 'bg-orange-100 dark:bg-orange-900/50 text-orange-800 dark:text-orange-200',
-  cancelled: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300',
+  draft: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300',
+  negotiating: 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200',
+  price_survey: 'bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200',
+  lost: 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200',
+  cancelled: 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400',
+  closed: 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200',
 };
 
 export type FranquiaHoras = 'standby' | '120h' | '240h' | '360h' | 'continuo';
@@ -306,8 +291,8 @@ export const DEFAULT_CONDICOES: CondicoesComerciais = {
   faturamento: 'Data da saída do pátio',
   prazoEntrega: 'A combinar',
   validadeProposta: '15 dias',
-  inicioCobranca: 'Data da saída dos equipamentos',
-  finalCobranca: 'Data do retorno',
+  inicioCobranca: 'Data da instalação',
+  finalCobranca: 'Data de desinstalação',
   periodoMinimo: '30 dias',
   periodoOrcado: 'Mensal',
   tensao: '380/220V',

@@ -1,0 +1,285 @@
+chunk-67DEV5DB.js?v=bd741701:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+react-router-dom.js?v=bd741701:4393 ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+warnOnce @ react-router-dom.js?v=bd741701:4393
+logDeprecation @ react-router-dom.js?v=bd741701:4396
+logV6DeprecationWarnings @ react-router-dom.js?v=bd741701:4399
+(anonymous) @ react-router-dom.js?v=bd741701:5271
+commitHookEffectListMount @ chunk-67DEV5DB.js?v=bd741701:16915
+commitPassiveMountOnFiber @ chunk-67DEV5DB.js?v=bd741701:18156
+commitPassiveMountEffects_complete @ chunk-67DEV5DB.js?v=bd741701:18129
+commitPassiveMountEffects_begin @ chunk-67DEV5DB.js?v=bd741701:18119
+commitPassiveMountEffects @ chunk-67DEV5DB.js?v=bd741701:18109
+flushPassiveEffectsImpl @ chunk-67DEV5DB.js?v=bd741701:19490
+flushPassiveEffects @ chunk-67DEV5DB.js?v=bd741701:19447
+(anonymous) @ chunk-67DEV5DB.js?v=bd741701:19328
+workLoop @ chunk-67DEV5DB.js?v=bd741701:197
+flushWork @ chunk-67DEV5DB.js?v=bd741701:176
+performWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:384
+postMessage
+schedulePerformWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:407
+performWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:387
+postMessage
+schedulePerformWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:407
+requestHostCallback @ chunk-67DEV5DB.js?v=bd741701:418
+unstable_scheduleCallback @ chunk-67DEV5DB.js?v=bd741701:330
+scheduleCallback$1 @ chunk-67DEV5DB.js?v=bd741701:19826
+ensureRootIsScheduled @ chunk-67DEV5DB.js?v=bd741701:18652
+scheduleUpdateOnFiber @ chunk-67DEV5DB.js?v=bd741701:18562
+updateContainer @ chunk-67DEV5DB.js?v=bd741701:20776
+ReactDOMHydrationRoot.render.ReactDOMRoot.render @ chunk-67DEV5DB.js?v=bd741701:21116
+(anonymous) @ main.tsx:7
+react-router-dom.js?v=bd741701:4393 ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+warnOnce @ react-router-dom.js?v=bd741701:4393
+logDeprecation @ react-router-dom.js?v=bd741701:4396
+logV6DeprecationWarnings @ react-router-dom.js?v=bd741701:4402
+(anonymous) @ react-router-dom.js?v=bd741701:5271
+commitHookEffectListMount @ chunk-67DEV5DB.js?v=bd741701:16915
+commitPassiveMountOnFiber @ chunk-67DEV5DB.js?v=bd741701:18156
+commitPassiveMountEffects_complete @ chunk-67DEV5DB.js?v=bd741701:18129
+commitPassiveMountEffects_begin @ chunk-67DEV5DB.js?v=bd741701:18119
+commitPassiveMountEffects @ chunk-67DEV5DB.js?v=bd741701:18109
+flushPassiveEffectsImpl @ chunk-67DEV5DB.js?v=bd741701:19490
+flushPassiveEffects @ chunk-67DEV5DB.js?v=bd741701:19447
+(anonymous) @ chunk-67DEV5DB.js?v=bd741701:19328
+workLoop @ chunk-67DEV5DB.js?v=bd741701:197
+flushWork @ chunk-67DEV5DB.js?v=bd741701:176
+performWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:384
+postMessage
+schedulePerformWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:407
+performWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:387
+postMessage
+schedulePerformWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:407
+requestHostCallback @ chunk-67DEV5DB.js?v=bd741701:418
+unstable_scheduleCallback @ chunk-67DEV5DB.js?v=bd741701:330
+scheduleCallback$1 @ chunk-67DEV5DB.js?v=bd741701:19826
+ensureRootIsScheduled @ chunk-67DEV5DB.js?v=bd741701:18652
+scheduleUpdateOnFiber @ chunk-67DEV5DB.js?v=bd741701:18562
+updateContainer @ chunk-67DEV5DB.js?v=bd741701:20776
+ReactDOMHydrationRoot.render.ReactDOMRoot.render @ chunk-67DEV5DB.js?v=bd741701:21116
+(anonymous) @ main.tsx:7
+propostas:1 Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+propostas:1 Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+propostas:1 Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+propostas:1 Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.
+@supabase_supabase-js.js?v=bd741701:3943  GET https://iiqoqdtactacwdhkpkzd.supabase.co/rest/v1/sales_quotations?select=*&order=created_at.desc&limit=100 404 (Not Found)
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:3943
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:3964
+fulfilled @ @supabase_supabase-js.js?v=bd741701:3916
+Promise.then
+step @ @supabase_supabase-js.js?v=bd741701:3929
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:3931
+__awaiter6 @ @supabase_supabase-js.js?v=bd741701:3913
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:3954
+then @ @supabase_supabase-js.js?v=bd741701:89
+postMessage
+schedulePerformWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:407
+performWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:387
+postMessage
+schedulePerformWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:407
+requestHostCallback @ chunk-67DEV5DB.js?v=bd741701:418
+unstable_scheduleCallback @ chunk-67DEV5DB.js?v=bd741701:330
+scheduleCallback$1 @ chunk-67DEV5DB.js?v=bd741701:19826
+ensureRootIsScheduled @ chunk-67DEV5DB.js?v=bd741701:18652
+scheduleUpdateOnFiber @ chunk-67DEV5DB.js?v=bd741701:18562
+dispatchSetState @ chunk-67DEV5DB.js?v=bd741701:12403
+(anonymous) @ useAuth.ts:56
+await in (anonymous)
+(anonymous) @ useAuth.ts:31
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:6641
+_notifyAllSubscribers @ @supabase_supabase-js.js?v=bd741701:6639
+_recoverAndRefresh @ @supabase_supabase-js.js?v=bd741701:6582
+await in _recoverAndRefresh
+_initialize @ @supabase_supabase-js.js?v=bd741701:5294
+await in _initialize
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:5248
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:5926
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:5067
+quotationService.ts:278 [quotationService] List error: {code: 'PGRST205', details: null, hint: "Perhaps you meant the table 'public.quotations'", message: "Could not find the table 'public.sales_quotations' in the schema cache"}
+(anonymous) @ quotationService.ts:278
+await in (anonymous)
+(anonymous) @ ProposalManagementPage.tsx:183
+(anonymous) @ ProposalManagementPage.tsx:197
+commitHookEffectListMount @ chunk-67DEV5DB.js?v=bd741701:16915
+commitPassiveMountOnFiber @ chunk-67DEV5DB.js?v=bd741701:18156
+commitPassiveMountEffects_complete @ chunk-67DEV5DB.js?v=bd741701:18129
+commitPassiveMountEffects_begin @ chunk-67DEV5DB.js?v=bd741701:18119
+commitPassiveMountEffects @ chunk-67DEV5DB.js?v=bd741701:18109
+flushPassiveEffectsImpl @ chunk-67DEV5DB.js?v=bd741701:19490
+flushPassiveEffects @ chunk-67DEV5DB.js?v=bd741701:19447
+(anonymous) @ chunk-67DEV5DB.js?v=bd741701:19328
+workLoop @ chunk-67DEV5DB.js?v=bd741701:197
+flushWork @ chunk-67DEV5DB.js?v=bd741701:176
+performWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:384
+postMessage
+schedulePerformWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:407
+performWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:387
+postMessage
+schedulePerformWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:407
+requestHostCallback @ chunk-67DEV5DB.js?v=bd741701:418
+unstable_scheduleCallback @ chunk-67DEV5DB.js?v=bd741701:330
+scheduleCallback$1 @ chunk-67DEV5DB.js?v=bd741701:19826
+ensureRootIsScheduled @ chunk-67DEV5DB.js?v=bd741701:18652
+scheduleUpdateOnFiber @ chunk-67DEV5DB.js?v=bd741701:18562
+dispatchSetState @ chunk-67DEV5DB.js?v=bd741701:12403
+(anonymous) @ useAuth.ts:56
+await in (anonymous)
+(anonymous) @ useAuth.ts:31
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:6641
+_notifyAllSubscribers @ @supabase_supabase-js.js?v=bd741701:6639
+_recoverAndRefresh @ @supabase_supabase-js.js?v=bd741701:6582
+await in _recoverAndRefresh
+_initialize @ @supabase_supabase-js.js?v=bd741701:5294
+await in _initialize
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:5248
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:5926
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:5067
+ProposalManagementPage.tsx:190 [ProposalManagementPage] load error: Error: Erro ao listar propostas: Could not find the table 'public.sales_quotations' in the schema cache
+    at Object.listQuotations [as list] (quotationService.ts:279:11)
+    at async ProposalManagementPage.tsx:183:24
+(anonymous) @ ProposalManagementPage.tsx:190
+await in (anonymous)
+(anonymous) @ ProposalManagementPage.tsx:197
+commitHookEffectListMount @ chunk-67DEV5DB.js?v=bd741701:16915
+commitPassiveMountOnFiber @ chunk-67DEV5DB.js?v=bd741701:18156
+commitPassiveMountEffects_complete @ chunk-67DEV5DB.js?v=bd741701:18129
+commitPassiveMountEffects_begin @ chunk-67DEV5DB.js?v=bd741701:18119
+commitPassiveMountEffects @ chunk-67DEV5DB.js?v=bd741701:18109
+flushPassiveEffectsImpl @ chunk-67DEV5DB.js?v=bd741701:19490
+flushPassiveEffects @ chunk-67DEV5DB.js?v=bd741701:19447
+(anonymous) @ chunk-67DEV5DB.js?v=bd741701:19328
+workLoop @ chunk-67DEV5DB.js?v=bd741701:197
+flushWork @ chunk-67DEV5DB.js?v=bd741701:176
+performWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:384
+postMessage
+schedulePerformWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:407
+performWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:387
+postMessage
+schedulePerformWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:407
+requestHostCallback @ chunk-67DEV5DB.js?v=bd741701:418
+unstable_scheduleCallback @ chunk-67DEV5DB.js?v=bd741701:330
+scheduleCallback$1 @ chunk-67DEV5DB.js?v=bd741701:19826
+ensureRootIsScheduled @ chunk-67DEV5DB.js?v=bd741701:18652
+scheduleUpdateOnFiber @ chunk-67DEV5DB.js?v=bd741701:18562
+dispatchSetState @ chunk-67DEV5DB.js?v=bd741701:12403
+(anonymous) @ useAuth.ts:56
+await in (anonymous)
+(anonymous) @ useAuth.ts:31
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:6641
+_notifyAllSubscribers @ @supabase_supabase-js.js?v=bd741701:6639
+_recoverAndRefresh @ @supabase_supabase-js.js?v=bd741701:6582
+await in _recoverAndRefresh
+_initialize @ @supabase_supabase-js.js?v=bd741701:5294
+await in _initialize
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:5248
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:5926
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:5067
+@supabase_supabase-js.js?v=bd741701:3943  GET https://iiqoqdtactacwdhkpkzd.supabase.co/rest/v1/sales_quotations?select=*&order=created_at.desc&limit=100 404 (Not Found)
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:3943
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:3964
+fulfilled @ @supabase_supabase-js.js?v=bd741701:3916
+Promise.then
+step @ @supabase_supabase-js.js?v=bd741701:3929
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:3931
+__awaiter6 @ @supabase_supabase-js.js?v=bd741701:3913
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:3954
+then @ @supabase_supabase-js.js?v=bd741701:89
+postMessage
+schedulePerformWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:407
+performWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:387
+postMessage
+schedulePerformWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:407
+requestHostCallback @ chunk-67DEV5DB.js?v=bd741701:418
+unstable_scheduleCallback @ chunk-67DEV5DB.js?v=bd741701:330
+scheduleCallback$1 @ chunk-67DEV5DB.js?v=bd741701:19826
+ensureRootIsScheduled @ chunk-67DEV5DB.js?v=bd741701:18652
+scheduleUpdateOnFiber @ chunk-67DEV5DB.js?v=bd741701:18562
+dispatchSetState @ chunk-67DEV5DB.js?v=bd741701:12403
+(anonymous) @ useAuth.ts:56
+await in (anonymous)
+(anonymous) @ useAuth.ts:31
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:6641
+_notifyAllSubscribers @ @supabase_supabase-js.js?v=bd741701:6639
+_recoverAndRefresh @ @supabase_supabase-js.js?v=bd741701:6582
+await in _recoverAndRefresh
+_initialize @ @supabase_supabase-js.js?v=bd741701:5294
+await in _initialize
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:5248
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:5926
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:5067
+quotationService.ts:278 [quotationService] List error: {code: 'PGRST205', details: null, hint: "Perhaps you meant the table 'public.quotations'", message: "Could not find the table 'public.sales_quotations' in the schema cache"}code: "PGRST205"details: nullhint: "Perhaps you meant the table 'public.quotations'"message: "Could not find the table 'public.sales_quotations' in the schema cache"[[Prototype]]: Object
+(anonymous) @ quotationService.ts:278
+await in (anonymous)
+(anonymous) @ ProposalManagementPage.tsx:183
+(anonymous) @ ProposalManagementPage.tsx:197
+commitHookEffectListMount @ chunk-67DEV5DB.js?v=bd741701:16915
+invokePassiveEffectMountInDEV @ chunk-67DEV5DB.js?v=bd741701:18324
+invokeEffectsInDev @ chunk-67DEV5DB.js?v=bd741701:19701
+commitDoubleInvokeEffectsInDEV @ chunk-67DEV5DB.js?v=bd741701:19686
+flushPassiveEffectsImpl @ chunk-67DEV5DB.js?v=bd741701:19503
+flushPassiveEffects @ chunk-67DEV5DB.js?v=bd741701:19447
+(anonymous) @ chunk-67DEV5DB.js?v=bd741701:19328
+workLoop @ chunk-67DEV5DB.js?v=bd741701:197
+flushWork @ chunk-67DEV5DB.js?v=bd741701:176
+performWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:384
+postMessage
+schedulePerformWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:407
+performWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:387
+postMessage
+schedulePerformWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:407
+requestHostCallback @ chunk-67DEV5DB.js?v=bd741701:418
+unstable_scheduleCallback @ chunk-67DEV5DB.js?v=bd741701:330
+scheduleCallback$1 @ chunk-67DEV5DB.js?v=bd741701:19826
+ensureRootIsScheduled @ chunk-67DEV5DB.js?v=bd741701:18652
+scheduleUpdateOnFiber @ chunk-67DEV5DB.js?v=bd741701:18562
+dispatchSetState @ chunk-67DEV5DB.js?v=bd741701:12403
+(anonymous) @ useAuth.ts:56
+await in (anonymous)
+(anonymous) @ useAuth.ts:31
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:6641
+_notifyAllSubscribers @ @supabase_supabase-js.js?v=bd741701:6639
+_recoverAndRefresh @ @supabase_supabase-js.js?v=bd741701:6582
+await in _recoverAndRefresh
+_initialize @ @supabase_supabase-js.js?v=bd741701:5294
+await in _initialize
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:5248
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:5926
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:5067
+ProposalManagementPage.tsx:190 [ProposalManagementPage] load error: Error: Erro ao listar propostas: Could not find the table 'public.sales_quotations' in the schema cache
+    at Object.listQuotations [as list] (quotationService.ts:279:11)
+    at async ProposalManagementPage.tsx:183:24
+(anonymous) @ ProposalManagementPage.tsx:190
+await in (anonymous)
+(anonymous) @ ProposalManagementPage.tsx:197
+commitHookEffectListMount @ chunk-67DEV5DB.js?v=bd741701:16915
+invokePassiveEffectMountInDEV @ chunk-67DEV5DB.js?v=bd741701:18324
+invokeEffectsInDev @ chunk-67DEV5DB.js?v=bd741701:19701
+commitDoubleInvokeEffectsInDEV @ chunk-67DEV5DB.js?v=bd741701:19686
+flushPassiveEffectsImpl @ chunk-67DEV5DB.js?v=bd741701:19503
+flushPassiveEffects @ chunk-67DEV5DB.js?v=bd741701:19447
+(anonymous) @ chunk-67DEV5DB.js?v=bd741701:19328
+workLoop @ chunk-67DEV5DB.js?v=bd741701:197
+flushWork @ chunk-67DEV5DB.js?v=bd741701:176
+performWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:384
+postMessage
+schedulePerformWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:407
+performWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:387
+postMessage
+schedulePerformWorkUntilDeadline @ chunk-67DEV5DB.js?v=bd741701:407
+requestHostCallback @ chunk-67DEV5DB.js?v=bd741701:418
+unstable_scheduleCallback @ chunk-67DEV5DB.js?v=bd741701:330
+scheduleCallback$1 @ chunk-67DEV5DB.js?v=bd741701:19826
+ensureRootIsScheduled @ chunk-67DEV5DB.js?v=bd741701:18652
+scheduleUpdateOnFiber @ chunk-67DEV5DB.js?v=bd741701:18562
+dispatchSetState @ chunk-67DEV5DB.js?v=bd741701:12403
+(anonymous) @ useAuth.ts:56
+await in (anonymous)
+(anonymous) @ useAuth.ts:31
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:6641
+_notifyAllSubscribers @ @supabase_supabase-js.js?v=bd741701:6639
+_recoverAndRefresh @ @supabase_supabase-js.js?v=bd741701:6582
+await in _recoverAndRefresh
+_initialize @ @supabase_supabase-js.js?v=bd741701:5294
+await in _initialize
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:5248
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:5926
+(anonymous) @ @supabase_supabase-js.js?v=bd741701:5067

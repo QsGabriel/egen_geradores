@@ -23,9 +23,11 @@ declare module 'html2pdf.js' {
       useCORS?: boolean;
       allowTaint?: boolean;
       logging?: boolean;
+      letterRendering?: boolean;
       backgroundColor?: string;
       windowWidth?: number;
       windowHeight?: number;
+      scrollX?: number;
       scrollY?: number;
     };
     jsPDF?: {

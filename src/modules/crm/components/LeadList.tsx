@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   UserPlus,
   Plus,
@@ -16,6 +17,8 @@ import {
   UserCircle2,
   ChevronLeft,
   ChevronRight,
+  FileText,
+  Calendar,
 } from 'lucide-react';
 import { useCRM } from '../hooks/useCRM';
 import { useNotification } from '../../../hooks/useNotification';
@@ -23,12 +26,16 @@ import { useDialog } from '../../../hooks/useDialog';
 import Notification from '../../../components/Notification';
 import ConfirmDialog from '../../../components/ConfirmDialog';
 import LeadImportModal from './LeadImportModal';
+import LeadConvertModal from './LeadConvertModal';
+import LeadDetailModal from './LeadDetailModal';
 import type { Lead, LeadFormData, LeadStatus, ContactPerson } from '../types';
 import {
   LEAD_STATUS_LABELS,
   LEAD_STATUS_COLORS,
+  LEAD_STATUS_DESCRIPTIONS,
   LEAD_SOURCES,
   EMPTY_CONTACT,
+  STATUSES_REQUIRING_SCHEDULE,
 } from '../types';
 
 const EMPTY_FORM: LeadFormData = {
@@ -37,7 +44,7 @@ const EMPTY_FORM: LeadFormData = {
   phone: '',
   email: '',
   source: '',
-  status: 'new',
+  status: 'to_contact',
   notes: '',
   contacts: [],
 };
@@ -47,7 +54,8 @@ interface LeadListProps {
 }
 
 const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
-  const { leads, addLead, updateLead, deleteLead, convertLeadToClient, importLeads } = useCRM();
+  const navigate = useNavigate();
+  const { leads, addLead, updateLead, deleteLead, convertLeadToClient, generateProposalFromLead, importLeads } = useCRM();
   const { notification, showSuccess, showError, hideNotification } = useNotification();
   const { confirmDialog, showConfirmDialog, hideConfirmDialog } = useDialog();
 
@@ -59,6 +67,8 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'all'>('all');
   const [page, setPage] = useState(1);
+  const [convertTarget, setConvertTarget] = useState<Lead | null>(null);
+  const [detailLead, setDetailLead] = useState<Lead | null>(null);
 
   const PAGE_SIZE = 25;
 
@@ -119,6 +129,7 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
       status: lead.status,
       notes: lead.notes,
       contacts: lead.contacts ?? [],
+      scheduledAt: lead.scheduledAt || '',
     });
     setEditing(lead);
     setShowForm(true);
@@ -141,20 +152,29 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
   };
 
   const handleConvert = (lead: Lead) => {
-    showConfirmDialog(
-      'Converter Lead em Cliente',
-      `Deseja converter o lead "${lead.name}" (${lead.company || 'sem empresa'}) em um novo cliente? Os dados serão migrados automaticamente.`,
-      async () => {
-        try {
-          await convertLeadToClient(lead.id);
-          showSuccess(`Lead "${lead.name}" convertido em cliente com sucesso!`);
-          onConvert?.(lead.id);
-        } catch {
-          showError('Erro ao converter lead.');
-        }
-      },
-      { type: 'info', confirmText: 'Converter' }
-    );
+    setConvertTarget(lead);
+  };
+
+  const handleConvertConfirm = async (clientData: import('../types').ClientFormData) => {
+    if (!convertTarget) return;
+    try {
+      await convertLeadToClient(convertTarget.id, clientData);
+      showSuccess(`Lead "${convertTarget.name}" convertido em cliente com sucesso!`);
+      setConvertTarget(null);
+      onConvert?.(convertTarget.id);
+    } catch {
+      showError('Erro ao converter lead.');
+    }
+  };
+
+  const handleGenerateProposal = async (lead: Lead) => {
+    try {
+      const quotationId = await generateProposalFromLead(lead.id);
+      showSuccess('Proposta criada! Redirecionando...');
+      setTimeout(() => navigate(`/propostas/${quotationId}`), 600);
+    } catch {
+      showError('Erro ao gerar proposta.');
+    }
   };
 
   const filteredLeads = leads.filter((lead) => {
@@ -250,14 +270,32 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
                   <select
                     value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as LeadStatus })}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as LeadStatus, scheduledAt: '' })}
                     className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500"
                   >
                     {Object.entries(LEAD_STATUS_LABELS).map(([key, label]) => (
                       <option key={key} value={key}>{label}</option>
                     ))}
                   </select>
+                  {LEAD_STATUS_DESCRIPTIONS[formData.status] && (
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                      {LEAD_STATUS_DESCRIPTIONS[formData.status]}
+                    </p>
+                  )}
                 </div>
+                {STATUSES_REQUIRING_SCHEDULE.includes(formData.status) && (
+                  <div>
+                    <label className="block text-sm font-medium text-amber-700 dark:text-amber-400 mb-1 flex items-center gap-1">
+                      <Calendar className="h-4 w-4" /> Data de Agendamento *
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.scheduledAt || ''}
+                      onChange={e => setFormData({ ...formData, scheduledAt: e.target.value })}
+                      className="w-full px-3 py-2.5 border border-amber-300 dark:border-amber-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                )}
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Observações</label>
                   <textarea
@@ -461,7 +499,11 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
                       : [];
 
                   return (
-                    <tr key={lead.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                    <tr
+                      key={lead.id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
+                      onClick={() => setDetailLead(lead)}
+                    >
                       <td className="px-6 py-4">
                         <div className="font-medium text-gray-900 dark:text-white">{lead.name}</div>
                       </td>
@@ -497,33 +539,51 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
                         {lead.source || '—'}
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-block px-2 py-1 rounded-md text-xs font-medium ${LEAD_STATUS_COLORS[lead.status]}`}>
-                          {LEAD_STATUS_LABELS[lead.status]}
-                        </span>
+                        <div className="relative group inline-block">
+                          <span className={`inline-block px-2 py-1 rounded-md text-xs font-medium ${LEAD_STATUS_COLORS[lead.status]}`}>
+                            {LEAD_STATUS_LABELS[lead.status]}
+                          </span>
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                            {LEAD_STATUS_DESCRIPTIONS[lead.status]}
+                          </div>
+                        </div>
+                        {lead.scheduledAt && (
+                          <div className="flex items-center gap-1 text-xs text-amber-600 mt-1">
+                            <Calendar className="h-3 w-3" />
+                            {new Date(lead.scheduledAt).toLocaleDateString('pt-BR')}
+                          </div>
+                        )}
                         {lead.convertedAt && (
                           <div className="text-xs text-green-500 mt-1">Convertido</div>
                         )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-1">
-                          {!lead.convertedClientId && lead.status !== 'lost' && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleGenerateProposal(lead); }}
+                            className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400 transition-all"
+                            title="Gerar Proposta"
+                          >
+                            <FileText className="h-4 w-4" />
+                          </button>
+                          {!lead.convertedClientId && (
                             <button
-                              onClick={() => handleConvert(lead)}
-                              className="p-2 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg text-green-600 transition-all"
+                              onClick={(e) => { e.stopPropagation(); handleConvert(lead); }}
+                              className="p-2 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg text-green-600 dark:text-green-400 transition-all"
                               title="Converter em Cliente"
                             >
                               <ArrowRightCircle className="h-4 w-4" />
                             </button>
                           )}
                           <button
-                            onClick={() => handleEdit(lead)}
+                            onClick={(e) => { e.stopPropagation(); handleEdit(lead); }}
                             className="p-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 rounded-lg text-yellow-600 transition-all"
                             title="Editar"
                           >
                             <Edit className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => handleDelete(lead.id, lead.name)}
+                            onClick={(e) => { e.stopPropagation(); handleDelete(lead.id, lead.name); }}
                             className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg text-red-500 transition-all"
                             title="Excluir"
                           >
@@ -590,6 +650,28 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Convert modal */}
+      {convertTarget && (
+        <LeadConvertModal
+          lead={convertTarget}
+          onConfirm={handleConvertConfirm}
+          onClose={() => setConvertTarget(null)}
+        />
+      )}
+
+      {/* Lead detail modal — opened by clicking a row */}
+      {detailLead && (
+        <LeadDetailModal
+          lead={detailLead}
+          onClose={() => setDetailLead(null)}
+          onGenerateProposal={(leadId) => {
+            const lead = leads.find(l => l.id === leadId);
+            if (lead) handleGenerateProposal(lead);
+          }}
+          onLeadUpdated={() => setDetailLead(null)}
+        />
       )}
     </div>
   );

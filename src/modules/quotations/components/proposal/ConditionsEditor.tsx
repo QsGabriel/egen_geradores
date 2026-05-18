@@ -207,7 +207,6 @@ export function ConditionsEditor({ className = '' }: ConditionsEditorProps) {
             onChange={handleChange}
             type="select"
             options={[
-              'Data da saída dos equipamentos',
               'Data da instalação',
               'Data de início de utilização',
               'Data de entrega',
@@ -220,7 +219,6 @@ export function ConditionsEditor({ className = '' }: ConditionsEditorProps) {
             onChange={handleChange}
             type="select"
             options={[
-              'Data do retorno',
               'Data de desinstalação',
               'Data de desmobilização',
               'Data de desligamento',
