@@ -58,8 +58,13 @@ export default function LeadDetailModal({
   const [formData, setFormData] = useState<LeadFormData>({
     name: lead.name,
     company: lead.company,
+    documentNumber: lead.documentNumber,
+    areaCode: lead.areaCode,
     phone: lead.phone,
     email: lead.email,
+    city: lead.city,
+    state: lead.state,
+    classification: lead.classification,
     source: lead.source,
     status: lead.status,
     notes: lead.notes,

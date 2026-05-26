@@ -14,9 +14,22 @@ import type { LeadFormData, LeadStatus } from '../types';
 import { LEAD_SOURCES } from '../types';
 
 // ── Cabeçalhos da planilha ──────────────────────────────────────────────────
-const FIXED_HEADERS = ['Nome*', 'Empresa', 'Origem', 'Status', 'Observações'];
-const FIXED_COLS = FIXED_HEADERS.length; // 5
-const TEMPLATE_CONTACT_SLOTS = 5; // padrão do modelo para download
+const FIXED_HEADERS = [
+  'Nome*',
+  'Razão Social',
+  'CNPJ/CPF',
+  'DDD',
+  'Telefone',
+  'E-mail',
+  'Cidade',
+  'Estado',
+  'Classificação',
+  'Origem',
+  'Status',
+  'Observações',
+];
+const FIXED_COLS = FIXED_HEADERS.length; // 12
+const TEMPLATE_CONTACT_SLOTS = 3; // padrão do modelo para download
 
 function buildContactHeaders(slots: number): string[] {
   const h: string[] = [];
@@ -29,19 +42,30 @@ function buildContactHeaders(slots: number): string[] {
 const TEMPLATE_HEADERS = [...FIXED_HEADERS, ...buildContactHeaders(TEMPLATE_CONTACT_SLOTS)];
 
 const STATUS_MAP: Record<string, LeadStatus> = {
-  novo: 'new',
-  new: 'new',
-  contatado: 'contacted',
-  contacted: 'contacted',
-  'proposta enviada': 'proposal_sent',
-  proposal_sent: 'proposal_sent',
-  negociação: 'negotiation',
-  negociacao: 'negotiation',
-  negotiation: 'negotiation',
-  ganho: 'won',
-  won: 'won',
-  perdido: 'lost',
-  lost: 'lost',
+  'a contatar': 'to_contact',
+  to_contact: 'to_contact',
+  novo: 'to_contact',
+  new: 'to_contact',
+  contatado: 'to_contact',
+  contacted: 'to_contact',
+  'sem demanda': 'no_demand',
+  no_demand: 'no_demand',
+  perdido: 'no_demand',
+  lost: 'no_demand',
+  'cliente potencial': 'potential_client',
+  potential_client: 'potential_client',
+  'retomar contato': 'follow_up',
+  follow_up: 'follow_up',
+  'em proposta': 'in_proposal',
+  in_proposal: 'in_proposal',
+  'proposta enviada': 'in_proposal',
+  proposal_sent: 'in_proposal',
+  'cliente sem demanda': 'client_no_demand',
+  client_no_demand: 'client_no_demand',
+  'cliente com demanda': 'client_with_demand',
+  client_with_demand: 'client_with_demand',
+  ganho: 'client_with_demand',
+  won: 'client_with_demand',
 };
 
 function normalizeStatus(raw: string): LeadStatus {
@@ -78,6 +102,11 @@ function parseRows(sheet: XLSX.WorkSheet): LeadFormData[] {
 
     const str = (v: any) => (v !== undefined && v !== null ? String(v).trim() : '');
 
+    // Fixed columns (0–11):
+    // 0: Nome*, 1: Razão Social, 2: CNPJ/CPF, 3: DDD, 4: Telefone,
+    // 5: E-mail, 6: Cidade, 7: Estado, 8: Classificação, 9: Origem,
+    // 10: Status, 11: Observações
+
     const contacts: { name: string; phone: string; email: string }[] = [];
     for (let ci = 0; ci < contactSlots; ci++) {
       const base = FIXED_COLS + ci * 3;
@@ -92,11 +121,16 @@ function parseRows(sheet: XLSX.WorkSheet): LeadFormData[] {
     rows.push({
       name: str(r[0]),
       company: str(r[1]),
-      source: normalizeSource(str(r[2])),
-      status: normalizeStatus(str(r[3])),
-      notes: str(r[4]),
-      phone: contacts[0]?.phone ?? '',
-      email: contacts[0]?.email ?? '',
+      documentNumber: str(r[2]),
+      areaCode: str(r[3]),
+      phone: str(r[4]),
+      email: str(r[5]),
+      city: str(r[6]),
+      state: str(r[7]),
+      classification: str(r[8]),
+      source: normalizeSource(str(r[9])),
+      status: normalizeStatus(str(r[10])),
+      notes: str(r[11]),
       contacts,
     });
   }
@@ -133,18 +167,23 @@ const LeadImportModal: React.FC<LeadImportModalProps> = ({ onClose, onImport }) 
       TEMPLATE_HEADERS,
       // Linha de exemplo
       [
-        'João da Silva',
-        'Empresa Exemplo',
-        'Indicação',
-        'Novo',
-        'Cliente interessado em locação de 200kVA',
-        'João da Silva',
-        '(11) 99999-0001',
-        'joao@empresa.com',
+        'João da Silva',          // Nome*
+        'Empresa Exemplo Ltda',   // Razão Social
+        '12.345.678/0001-90',     // CNPJ/CPF
+        '11',                     // DDD
+        '99999-0001',             // Telefone
+        'joao@empresa.com',       // E-mail
+        'São Paulo',              // Cidade
+        'SP',                     // Estado
+        'Sistemas de Irrigação',  // Classificação
+        'Indicação',              // Origem
+        'A contatar',             // Status
+        'Cliente interessado em locação de 200kVA', // Observações
+        // Contato 1
         'Maria Souza',
         '(11) 99999-0002',
         'maria@empresa.com',
-        ...Array((TEMPLATE_CONTACT_SLOTS - 2) * 3).fill(''),
+        ...Array((TEMPLATE_CONTACT_SLOTS - 1) * 3).fill(''),
       ],
     ]);
 
@@ -153,7 +192,18 @@ const LeadImportModal: React.FC<LeadImportModalProps> = ({ onClose, onImport }) 
       .fill(null)
       .map((_, i) => (i % 3 === 0 ? { wch: 20 } : i % 3 === 1 ? { wch: 18 } : { wch: 28 }));
     ws['!cols'] = [
-      { wch: 24 }, { wch: 24 }, { wch: 16 }, { wch: 18 }, { wch: 32 },
+      { wch: 24 }, // Nome*
+      { wch: 24 }, // Razão Social
+      { wch: 20 }, // CNPJ/CPF
+      { wch: 8  }, // DDD
+      { wch: 16 }, // Telefone
+      { wch: 28 }, // E-mail
+      { wch: 18 }, // Cidade
+      { wch: 8  }, // Estado
+      { wch: 28 }, // Classificação
+      { wch: 16 }, // Origem
+      { wch: 18 }, // Status
+      { wch: 32 }, // Observações
       ...contactColWidths,
     ];
 
@@ -241,7 +291,8 @@ const LeadImportModal: React.FC<LeadImportModalProps> = ({ onClose, onImport }) 
             <ol className="text-sm text-yellow-700 dark:text-yellow-400 list-decimal list-inside space-y-1">
               <li>Baixe a planilha modelo clicando no botão abaixo.</li>
               <li>Preencha os dados nas colunas indicadas (campos com * são obrigatórios).</li>
-              <li>Cada lead pode ter quantos contatos quiser — adicione colunas <strong>Contato4_Nome / Contato4_Telefone / Contato4_Email</strong>, Contato5, etc.</li>
+              <li>Colunas fixas: <strong>Nome*, Razão Social, CNPJ/CPF, DDD, Telefone, E-mail, Cidade, Estado, Classificação, Origem, Status, Observações</strong>.</li>
+              <li>Cada lead pode ter contatos adicionais — adicione colunas <strong>Contato1_Nome / Contato1_Telefone / Contato1_Email</strong>, Contato2, etc.</li>
               <li>Faça o upload do arquivo preenchido.</li>
               <li>Revise os dados na pré-visualização e clique em Importar.</li>
             </ol>

@@ -83,8 +83,13 @@ export function useCRM() {
       id: r.id,
       name: r.name,
       company: r.company || '',
+      documentNumber: r.document_number || '',
+      areaCode: r.area_code || '',
       phone: r.phone || '',
       email: r.email || '',
+      city: r.city || '',
+      state: r.state || '',
+      classification: r.classification || '',
       source: r.source || '',
       status: r.status as LeadStatus,
       notes: r.notes || '',
@@ -220,8 +225,13 @@ export function useCRM() {
     const { error: err } = await supabase.from('leads').insert({
       name: data.name,
       company: data.company,
+      document_number: data.documentNumber?.trim() || null,
+      area_code: data.areaCode?.trim() || null,
       phone: data.phone,
       email: data.email,
+      city: data.city?.trim() || null,
+      state: data.state?.trim() || null,
+      classification: data.classification?.trim() || null,
       source: data.source,
       status: data.status,
       notes: data.notes,
@@ -237,8 +247,13 @@ export function useCRM() {
     const updateData: Record<string, unknown> = {};
     if (data.name !== undefined) updateData.name = data.name;
     if (data.company !== undefined) updateData.company = data.company;
+    if (data.documentNumber !== undefined) updateData.document_number = data.documentNumber?.trim() || null;
+    if (data.areaCode !== undefined) updateData.area_code = data.areaCode?.trim() || null;
     if (data.phone !== undefined) updateData.phone = data.phone;
     if (data.email !== undefined) updateData.email = data.email;
+    if (data.city !== undefined) updateData.city = data.city?.trim() || null;
+    if (data.state !== undefined) updateData.state = data.state?.trim() || null;
+    if (data.classification !== undefined) updateData.classification = data.classification?.trim() || null;
     if (data.source !== undefined) updateData.source = data.source;
     if (data.status !== undefined) updateData.status = data.status;
     if (data.notes !== undefined) updateData.notes = data.notes;
@@ -507,8 +522,13 @@ export function useCRM() {
         payload: {
           name: row.name.trim(),
           company: row.company?.trim() || '',
+          document_number: row.documentNumber?.trim() || null,
+          area_code: row.areaCode?.trim() || null,
           phone: row.phone?.trim() || '',
           email: row.email?.trim() || '',
+          city: row.city?.trim() || null,
+          state: row.state?.trim() || null,
+          classification: row.classification?.trim() || null,
           source: row.source?.trim() || '',
           status: row.status || 'to_contact',
           notes: row.notes?.trim() || '',

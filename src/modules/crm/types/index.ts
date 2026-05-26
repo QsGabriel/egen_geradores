@@ -103,8 +103,13 @@ export interface Lead {
   id: string;
   name: string;
   company: string;
+  documentNumber: string;
+  areaCode: string;
   phone: string;
   email: string;
+  city: string;
+  state: string;
+  classification: string;
   source: string;
   status: LeadStatus;
   notes: string;
@@ -119,14 +124,21 @@ export interface Lead {
 export interface LeadFormData {
   name: string;
   company: string;
+  documentNumber: string;
+  areaCode: string;
   phone: string;
   email: string;
+  city: string;
+  state: string;
+  classification: string;
   source: string;
   status: LeadStatus;
   notes: string;
   contacts: ContactPerson[];
   scheduledAt?: string;
 }
+
+export const LEAD_CLASSIFICATIONS = CLIENT_CLASSIFICATIONS;
 
 export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
   to_contact: 'A contatar',

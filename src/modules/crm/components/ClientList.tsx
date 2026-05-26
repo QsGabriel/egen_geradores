@@ -63,6 +63,9 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<ClientStatus | 'all'>('all');
+  const [cityFilter, setCityFilter] = useState('');
+  const [stateFilter, setStateFilter] = useState('');
+  const [classificationFilter, setClassificationFilter] = useState('');
   const [contactLogTarget, setContactLogTarget] = useState<Client | null>(null);
   const [detailClient, setDetailClient] = useState<Client | null>(null);
 
@@ -150,15 +153,22 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
   };
 
   const filteredClients = clients.filter((client) => {
+    const term = searchTerm.toLowerCase();
     const matchesSearch =
-      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.documentNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.contactEmail.toLowerCase().includes(searchTerm.toLowerCase());
+      client.name.toLowerCase().includes(term) ||
+      client.documentNumber.toLowerCase().includes(term) ||
+      client.contactName.toLowerCase().includes(term) ||
+      client.contactEmail.toLowerCase().includes(term) ||
+      client.contactPhone.toLowerCase().includes(term) ||
+      client.city.toLowerCase().includes(term) ||
+      client.state.toLowerCase().includes(term);
 
     const matchesStatus = statusFilter === 'all' || client.clientStatus === statusFilter;
+    const matchesCity = !cityFilter || client.city.toLowerCase().includes(cityFilter.toLowerCase());
+    const matchesState = !stateFilter || client.state.toLowerCase() === stateFilter.toLowerCase();
+    const matchesClassification = !classificationFilter || client.classification === classificationFilter;
 
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesCity && matchesState && matchesClassification;
   });
 
   const formatDocument = (doc: string) => {
@@ -215,27 +225,56 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Buscar por nome, documento, contato, telefone, cidade..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 dark:text-white"
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as ClientStatus | 'all')}
+            className="px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 dark:text-white"
+          >
+            <option value="all">Todos os Status</option>
+            {Object.entries(CLIENT_STATUS_LABELS).map(([key, label]) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="text"
-            placeholder="Buscar por nome, documento, contato ou e-mail..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 dark:text-white"
+            placeholder="Filtrar por cidade..."
+            value={cityFilter}
+            onChange={(e) => setCityFilter(e.target.value)}
+            className="flex-1 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 dark:text-white"
           />
+          <input
+            type="text"
+            placeholder="Estado (UF)"
+            value={stateFilter}
+            onChange={(e) => setStateFilter(e.target.value)}
+            className="w-full sm:w-32 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 dark:text-white"
+            maxLength={2}
+          />
+          <select
+            value={classificationFilter}
+            onChange={(e) => setClassificationFilter(e.target.value)}
+            className="flex-1 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 dark:text-white"
+          >
+            <option value="">Todas as Classificações</option>
+            {CLIENT_CLASSIFICATIONS.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
         </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as ClientStatus | 'all')}
-          className="px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 dark:text-white"
-        >
-          <option value="all">Todos os Status</option>
-          {Object.entries(CLIENT_STATUS_LABELS).map(([key, label]) => (
-            <option key={key} value={key}>{label}</option>
-          ))}
-        </select>
       </div>
 
       {/* Modal Form — React portal para posicionamento correto */}

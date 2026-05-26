@@ -34,6 +34,7 @@ import {
   LEAD_STATUS_COLORS,
   LEAD_STATUS_DESCRIPTIONS,
   LEAD_SOURCES,
+  LEAD_CLASSIFICATIONS,
   EMPTY_CONTACT,
   STATUSES_REQUIRING_SCHEDULE,
 } from '../types';
@@ -41,8 +42,13 @@ import {
 const EMPTY_FORM: LeadFormData = {
   name: '',
   company: '',
+  documentNumber: '',
+  areaCode: '',
   phone: '',
   email: '',
+  city: '',
+  state: '',
+  classification: '',
   source: '',
   status: 'to_contact',
   notes: '',
@@ -66,6 +72,10 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'all'>('all');
+  const [cityFilter, setCityFilter] = useState('');
+  const [stateFilter, setStateFilter] = useState('');
+  const [classificationFilter, setClassificationFilter] = useState('');
+  const [sourceFilter, setSourceFilter] = useState('');
   const [page, setPage] = useState(1);
   const [convertTarget, setConvertTarget] = useState<Lead | null>(null);
   const [detailLead, setDetailLead] = useState<Lead | null>(null);
@@ -123,8 +133,13 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
     setFormData({
       name: lead.name,
       company: lead.company,
+      documentNumber: lead.documentNumber,
+      areaCode: lead.areaCode,
       phone: lead.phone,
       email: lead.email,
+      city: lead.city,
+      state: lead.state,
+      classification: lead.classification,
       source: lead.source,
       status: lead.status,
       notes: lead.notes,
@@ -178,14 +193,24 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
   };
 
   const filteredLeads = leads.filter((lead) => {
+    const term = searchTerm.toLowerCase();
     const matchesSearch =
-      lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.email.toLowerCase().includes(searchTerm.toLowerCase());
+      lead.name.toLowerCase().includes(term) ||
+      lead.company.toLowerCase().includes(term) ||
+      lead.email.toLowerCase().includes(term) ||
+      lead.documentNumber.toLowerCase().includes(term) ||
+      lead.phone.toLowerCase().includes(term) ||
+      lead.areaCode.toLowerCase().includes(term) ||
+      lead.city.toLowerCase().includes(term) ||
+      lead.state.toLowerCase().includes(term);
 
     const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
+    const matchesCity = !cityFilter || lead.city.toLowerCase().includes(cityFilter.toLowerCase());
+    const matchesState = !stateFilter || lead.state.toLowerCase() === stateFilter.toLowerCase();
+    const matchesClassification = !classificationFilter || lead.classification === classificationFilter;
+    const matchesSource = !sourceFilter || lead.source === sourceFilter;
 
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesCity && matchesState && matchesClassification && matchesSource;
   });
 
   const totalPages = Math.max(1, Math.ceil(filteredLeads.length / PAGE_SIZE));
@@ -233,14 +258,14 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome / Razão Social *</label>
                   <input
                     type="text"
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500"
-                    placeholder="Nome do lead"
+                    placeholder="Nome do lead / Razão Social"
                   />
                 </div>
                 <div>
@@ -252,6 +277,83 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
                     className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500"
                     placeholder="Nome da empresa"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">CNPJ / CPF</label>
+                  <input
+                    type="text"
+                    value={formData.documentNumber}
+                    onChange={(e) => setFormData({ ...formData, documentNumber: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500"
+                    placeholder="00.000.000/0000-00"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <div className="w-24 shrink-0">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">DDD</label>
+                    <input
+                      type="text"
+                      value={formData.areaCode}
+                      onChange={(e) => setFormData({ ...formData, areaCode: e.target.value })}
+                      className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500"
+                      placeholder="(11)"
+                      maxLength={5}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Telefone</label>
+                    <input
+                      type="text"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500"
+                      placeholder="99999-0000"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">E-mail</label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500"
+                    placeholder="email@empresa.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cidade</label>
+                  <input
+                    type="text"
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500"
+                    placeholder="Cidade"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Estado</label>
+                  <input
+                    type="text"
+                    value={formData.state}
+                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500"
+                    placeholder="UF"
+                    maxLength={2}
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Classificação</label>
+                  <select
+                    value={formData.classification}
+                    onChange={(e) => setFormData({ ...formData, classification: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500"
+                  >
+                    <option value="">Selecione a classificação...</option>
+                    {LEAD_CLASSIFICATIONS.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Origem</label>
@@ -444,27 +546,66 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Buscar por nome, empresa, documento, telefone, cidade..."
+              value={searchTerm}
+              onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
+              className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 dark:text-white"
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value as LeadStatus | 'all'); setPage(1); }}
+            className="px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 dark:text-white"
+          >
+            <option value="all">Todos os Status</option>
+            {Object.entries(LEAD_STATUS_LABELS).map(([key, label]) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="text"
-            placeholder="Buscar por nome, empresa ou e-mail..."
-            value={searchTerm}
-            onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
-            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 dark:text-white"
+            placeholder="Filtrar por cidade..."
+            value={cityFilter}
+            onChange={(e) => { setCityFilter(e.target.value); setPage(1); }}
+            className="flex-1 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 dark:text-white"
           />
+          <input
+            type="text"
+            placeholder="Estado (UF)"
+            value={stateFilter}
+            onChange={(e) => { setStateFilter(e.target.value); setPage(1); }}
+            className="w-full sm:w-32 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 dark:text-white"
+            maxLength={2}
+          />
+          <select
+            value={classificationFilter}
+            onChange={(e) => { setClassificationFilter(e.target.value); setPage(1); }}
+            className="flex-1 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 dark:text-white"
+          >
+            <option value="">Todas as Classificações</option>
+            {LEAD_CLASSIFICATIONS.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+          <select
+            value={sourceFilter}
+            onChange={(e) => { setSourceFilter(e.target.value); setPage(1); }}
+            className="flex-1 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 dark:text-white"
+          >
+            <option value="">Todas as Origens</option>
+            {LEAD_SOURCES.map((src) => (
+              <option key={src} value={src}>{src}</option>
+            ))}
+          </select>
         </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value as LeadStatus | 'all'); setPage(1); }}
-          className="px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 dark:text-white"
-        >
-          <option value="all">Todos os Status</option>
-          {Object.entries(LEAD_STATUS_LABELS).map(([key, label]) => (
-            <option key={key} value={key}>{label}</option>
-          ))}
-        </select>
       </div>
 
       {/* Lead Table */}
