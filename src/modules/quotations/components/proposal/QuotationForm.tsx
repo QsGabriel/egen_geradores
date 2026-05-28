@@ -62,8 +62,10 @@ function AccordionSection({
   children,
   badge,
 }: AccordionSectionProps) {
+  const [bodyOverflow, setBodyOverflow] = useState<'hidden' | 'visible'>('hidden');
+
   return (
-    <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+    <div className="border border-gray-200 dark:border-gray-700 rounded-lg">
       <button
         onClick={onToggle}
         className={`
@@ -71,7 +73,8 @@ function AccordionSection({
           bg-white dark:bg-gray-800 
           hover:bg-gray-50 dark:hover:bg-gray-750 
           transition-colors
-          ${isOpen ? 'border-b border-gray-200 dark:border-gray-700' : ''}
+          rounded-t-lg
+          ${isOpen ? 'border-b border-gray-200 dark:border-gray-700' : 'rounded-b-lg'}
         `}
       >
         <div className="flex items-center gap-3">
@@ -92,7 +95,9 @@ function AccordionSection({
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="overflow-hidden"
+            style={{ overflow: bodyOverflow }}
+            onAnimationStart={() => setBodyOverflow('hidden')}
+            onAnimationComplete={() => setBodyOverflow(isOpen ? 'visible' : 'hidden')}
           >
             <div className="p-4 bg-gray-50 dark:bg-gray-900/50">{children}</div>
           </motion.div>
@@ -133,7 +138,6 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
     createNew,
     setTipo,
     setDataEmissao,
-    setValidade,
     setDescontoPercent,
     setNotasInternas,
     setObservacoesGerais,
@@ -236,7 +240,7 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
           isOpen={openSections.includes('identificacao')}
           onToggle={() => toggleSection('identificacao')}
         >
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Tipo de Documento */}
             <div>
               <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
@@ -264,19 +268,6 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
                 type="date"
                 value={current.dataEmissao}
                 onChange={(e) => setDataEmissao(e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
-              />
-            </div>
-
-            {/* Validade */}
-            <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-                Válido até
-              </label>
-              <input
-                type="date"
-                value={current.validade}
-                onChange={(e) => setValidade(e.target.value)}
                 className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
               />
             </div>

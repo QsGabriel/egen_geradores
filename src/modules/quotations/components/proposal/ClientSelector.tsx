@@ -80,9 +80,9 @@ export function ClientSelector({ onClientSelect, className = '' }: ClientSelecto
     responsavel: lead.name,
     email: lead.email || '',
     telefone: lead.phone || '',
-    documento: '',
+    documento: lead.documentNumber || '',
     endereco: '',
-    cidadeUf: '',
+    cidadeUf: lead.city && lead.state ? `${lead.city}/${lead.state}` : '',
   }), []);
 
   // Handle client selection

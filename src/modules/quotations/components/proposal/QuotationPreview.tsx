@@ -193,6 +193,11 @@ export function QuotationPreview({
       .map((node) => node.outerHTML)
       .join('\n');
 
+    // Clone and strip zoom/transform so the print window renders at 100%
+    const exportNode = documentRef.current.cloneNode(true) as HTMLDivElement;
+    exportNode.style.removeProperty('zoom');
+    exportNode.style.removeProperty('transform');
+
     const printHtml = `
       <!DOCTYPE html>
       <html lang="pt-BR">
@@ -203,7 +208,7 @@ export function QuotationPreview({
         ${styles}
       </head>
       <body>
-        ${documentRef.current.innerHTML}
+        ${exportNode.innerHTML}
       </body>
       </html>
     `;

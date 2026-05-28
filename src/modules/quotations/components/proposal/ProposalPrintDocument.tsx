@@ -35,6 +35,7 @@ interface ConditionRow {
   code: string;
   label: string;
   value: string;
+  breakValue?: boolean;
 }
 
 const DOCUMENT_TITLES: Record<DocumentTipo, string> = {
@@ -95,7 +96,9 @@ function buildScopePages(
 
     if (equipmentRemaining > 0 && serviceRemaining > 0) {
       equipmentTake = Math.min(EQUIPMENT_ROWS_WHEN_BOTH_TABLES, equipmentRemaining);
-      serviceTake = Math.min(SERVICE_ROWS_WHEN_BOTH_TABLES, serviceRemaining);
+      // Give any leftover equipment-row budget to the service table
+      const serviceSlot = EQUIPMENT_ROWS_WHEN_BOTH_TABLES + SERVICE_ROWS_WHEN_BOTH_TABLES - equipmentTake;
+      serviceTake = Math.min(serviceSlot, serviceRemaining);
     } else if (equipmentRemaining > 0) {
       equipmentTake = Math.min(MAX_SCOPE_ROWS_PER_PAGE, equipmentRemaining);
     } else if (serviceRemaining > 0) {
@@ -126,7 +129,6 @@ function buildConditionRows(condicoes: CondicoesComerciais): ConditionRow[] {
     ['Forma de pagamento', textValue(condicoes.formaPagamento)],
     ['Faturamento', textValue(condicoes.faturamento)],
     ['Prazo de entrega', textValue(condicoes.prazoEntrega)],
-    ['Validade da proposta', textValue(condicoes.validadeProposta)],
     ['Inicio da cobranca', textValue(condicoes.inicioCobranca)],
     ['Final da cobranca', textValue(condicoes.finalCobranca)],
     ['Periodo minimo', textValue(condicoes.periodoMinimo)],
@@ -151,6 +153,7 @@ function buildConditionRows(condicoes: CondicoesComerciais): ConditionRow[] {
     code: `1.${index + 1}`,
     label,
     value,
+    breakValue: label === 'Local de utilizacao',
   }));
 }
 
@@ -252,25 +255,21 @@ function ProposalFooter({
 function ConditionColumns({ rows }: { rows: ConditionRow[] }) {
   const [leftRows, rightRows] = splitConditionRows(rows);
 
+  const renderRow = (row: ConditionRow) => (
+    <p key={row.code} className={`proposal-condition-line${row.breakValue ? ' proposal-condition-line--break' : ''}`}>
+      <span className="proposal-condition-code">{row.code}</span>
+      <span className="proposal-condition-label">{row.label}:</span>
+      <span className="proposal-condition-value">{row.value}</span>
+    </p>
+  );
+
   return (
     <div className="proposal-conditions-grid">
       <div className="proposal-conditions-column">
-        {leftRows.map((row) => (
-          <p key={row.code} className="proposal-condition-line">
-            <span className="proposal-condition-code">{row.code}</span>
-            <span className="proposal-condition-label">{row.label}:</span>
-            <span className="proposal-condition-value">{row.value}</span>
-          </p>
-        ))}
+        {leftRows.map(renderRow)}
       </div>
       <div className="proposal-conditions-column">
-        {rightRows.map((row) => (
-          <p key={row.code} className="proposal-condition-line">
-            <span className="proposal-condition-code">{row.code}</span>
-            <span className="proposal-condition-label">{row.label}:</span>
-            <span className="proposal-condition-value">{row.value}</span>
-          </p>
-        ))}
+        {rightRows.map(renderRow)}
       </div>
     </div>
   );
@@ -355,10 +354,9 @@ export default function ProposalPrintDocument({
   );
 
   const issueLine = formatIssueLine(quotation.dataEmissao);
-  const monthlyTotal = (quotation.totalComDesconto || 0) / 12;
   const conditionRows = buildConditionRows(quotation.condicoes);
-  const shouldInlineCommercialSections = scopePages.length === 1;
-  const includeCommercialPage = !shouldInlineCommercialSections;
+  const shouldInlineCommercialSections = false;
+  const includeCommercialPage = true;
 
   const totalPages = 1 + 1 + scopePages.length + (includeCommercialPage ? 1 : 0) + 1;
 
@@ -480,6 +478,11 @@ export default function ProposalPrintDocument({
   scopePages.forEach((slice, index) => {
     const isLastScopePage = index === scopePages.length - 1;
     const includeInlineSections = shouldInlineCommercialSections && isLastScopePage;
+    const isLastEquipmentPage = index === lastEquipmentPageIndex && lastEquipmentPageIndex >= 0;
+    const isLastServicePage = index === lastServicePageIndex && lastServicePageIndex >= 0;
+    // Only render a table on continuation pages if it actually has items on this page
+    const showEquipmentTable = index === 0 || slice.equipmentItems.length > 0;
+    const showServiceTable = index === 0 || slice.serviceItems.length > 0;
     const pageNumber = index + 3;
 
     pages.push({
@@ -489,6 +492,7 @@ export default function ProposalPrintDocument({
           <ProposalHeader issueLine={issueLine} documentId={quotation.documentId} />
 
           <div className="proposal-standard-body proposal-scope-body">
+            {showEquipmentTable ? (
             <section className="proposal-table-block">
               <table className="proposal-table proposal-table-main">
                 <thead>
@@ -519,9 +523,20 @@ export default function ProposalPrintDocument({
                     ))
                   )}
                 </tbody>
+                {isLastEquipmentPage ? (
+                  <tfoot>
+                    <tr className="proposal-table-subtotal">
+                      <td colSpan={4} className="proposal-table-subtotal-label">TOTAL PERIÓDICOS</td>
+                      <td className="proposal-table-subtotal-value">{formatCurrency(quotation.totalPeriodicos)}</td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                ) : null}
               </table>
             </section>
+            ) : null}
 
+            {showServiceTable ? (
             <section className="proposal-table-block">
               <table className="proposal-table proposal-table-main">
                 <thead>
@@ -550,23 +565,24 @@ export default function ProposalPrintDocument({
                     ))
                   )}
                 </tbody>
+                {isLastServicePage ? (
+                  <tfoot>
+                    <tr className="proposal-table-subtotal">
+                      <td colSpan={4} className="proposal-table-subtotal-label">TOTAL SPOT</td>
+                      <td className="proposal-table-subtotal-value">{formatCurrency(quotation.totalSpot)}</td>
+                    </tr>
+                  </tfoot>
+                ) : null}
               </table>
             </section>
+            ) : null}
 
-            {isLastScopePage && (lastEquipmentPageIndex >= 0 || lastServicePageIndex >= 0) ? (
+            {isLastScopePage ? (
               <div className="proposal-totals-band">
-                {lastEquipmentPageIndex >= 0 ? (
-                  <p className="proposal-totals-row">
-                    <span>VALOR ANUAL</span>
-                    <strong>{formatCurrency(quotation.totalComDesconto)}</strong>
-                  </p>
-                ) : null}
-                {lastServicePageIndex >= 0 ? (
-                  <p className="proposal-totals-row">
-                    <span>VALOR MENSAL</span>
-                    <strong>{formatCurrency(monthlyTotal)}</strong>
-                  </p>
-                ) : null}
+                <p className="proposal-totals-row">
+                  <span>VALOR TOTAL DO ORÇAMENTO</span>
+                  <strong>{formatCurrency(quotation.totalGeral)}</strong>
+                </p>
               </div>
             ) : null}
 

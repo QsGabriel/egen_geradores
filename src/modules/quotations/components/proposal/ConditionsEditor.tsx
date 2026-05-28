@@ -175,14 +175,6 @@ export function ConditionsEditor({ className = '' }: ConditionsEditorProps) {
             placeholder="Ex: 3 dias úteis"
           />
           <ConditionField
-            label="Validade da Proposta"
-            field="validadeProposta"
-            value={condicoes.validadeProposta}
-            onChange={handleChange}
-            type="select"
-            options={['7 dias', '10 dias', '15 dias', '30 dias']}
-          />
-          <ConditionField
             label="Tensão"
             field="tensao"
             value={condicoes.tensao}
