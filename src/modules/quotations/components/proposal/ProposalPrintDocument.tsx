@@ -235,7 +235,7 @@ function ProposalHeader({
   return (
     <header className="proposal-master-header">
       <img
-        src="/LOGO-DM.png"
+        src="/LOGO FULL.png"
         alt="EGEN"
         className="proposal-master-logo"
         onError={(event) => {

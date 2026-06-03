@@ -102,12 +102,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 5mm 12mm;
+  padding: 5mm 12mm 5mm 2mm;
 }
 
 .proposal-master-logo {
-  width: 34mm;
-  height: 20mm;
+  width: 44mm;
+  height: 26mm;
   object-fit: contain;
 }
 

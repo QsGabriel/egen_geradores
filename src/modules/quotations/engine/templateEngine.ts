@@ -112,7 +112,7 @@ export const TEMPLATE_COVER = `
 export const TEMPLATE_HEADER = `
 <header class="page-header">
   <div class="header-logo">
-    <img src="/LOGO-DM.png" alt="EGEN Geradores" class="header-logo-img" onerror="this.style.visibility='hidden'" />
+    <img src="/LOGO FULL.png" alt="EGEN Geradores" class="header-logo-img" onerror="this.style.visibility='hidden'" />
   </div>
   <div class="header-info">
     <div class="header-doc-id">${PLACEHOLDERS.DOCUMENT_ID}</div>
