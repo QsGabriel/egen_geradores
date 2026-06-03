@@ -500,6 +500,13 @@ export default function ProposalPrintDocument({
 
   const issueLine = formatIssueLine(quotation.dataEmissao);
   const conditionRows = buildConditionRows(quotation.condicoes);
+  if (quotation.validade) {
+    conditionRows.push({
+      code: '1.23',
+      label: 'Validade da proposta',
+      value: formatDate(quotation.validade),
+    });
+  }
   const shouldInlineCommercialSections = false;
 
   const lastScopeSlice = scopePages[scopePages.length - 1];
@@ -511,8 +518,13 @@ export default function ProposalPrintDocument({
   const includeCommercialPage = !showCommercialInline;
 
   // Dynamic: fewer items → more paragraphs inline → less whitespace
+  // Conservative formula leaves room for conditions + footer gap
   const inlineParagraphCount = showCommercialInline
-    ? Math.min(DISPOSITION_PARAGRAPHS.length, Math.max(2, COMMERCIAL_INLINE_THRESHOLD - lastScopeTotalItems))
+    ? lastScopeTotalItems < 4
+      ? 3
+      : lastScopeTotalItems < 6
+        ? 2
+        : 1
     : 0;
 
   const annexLabel = quotation.isAnnex ? 'ANEXO0001' : undefined;

@@ -140,6 +140,7 @@ export function QuotationForm({ onSave, className = '' }: QuotationFormProps) {
     createNew,
     setTipo,
     setDataEmissao,
+    setValidade,
     setDescontoPercent,
     setNotasInternas,
     setObservacoesGerais,
@@ -235,7 +236,7 @@ export function QuotationForm({ onSave, className = '' }: QuotationFormProps) {
           isOpen={openSections.includes('identificacao')}
           onToggle={() => toggleSection('identificacao')}
         >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Tipo de Documento */}
             <div>
               <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
@@ -263,6 +264,19 @@ export function QuotationForm({ onSave, className = '' }: QuotationFormProps) {
                 type="date"
                 value={current.dataEmissao}
                 onChange={(e) => setDataEmissao(e.target.value)}
+                className="w-full px-3 py-2 text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+              />
+            </div>
+
+            {/* Data de Validade */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                Data de Validade
+              </label>
+              <input
+                type="date"
+                value={current.validade}
+                onChange={(e) => setValidade(e.target.value)}
                 className="w-full px-3 py-2 text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30 placeholder:text-gray-400 dark:placeholder:text-gray-500"
               />
             </div>
