@@ -107,6 +107,23 @@
     border-radius: 0.375rem;
   }
 
+  .dark .skeleton {
+    background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+    background-size: 200% 100%;
+  }
+
+  .skeleton-circle {
+    background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 9999px;
+  }
+
+  .dark .skeleton-circle {
+    background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+    background-size: 200% 100%;
+  }
+
   /* Glass effect */
   .glass {
     background: rgba(255, 255, 255, 0.7);

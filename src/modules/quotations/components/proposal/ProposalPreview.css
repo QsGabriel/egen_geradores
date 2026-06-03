@@ -129,7 +129,7 @@
   width: 210mm;
   height: 255mm;
   box-sizing: border-box;
-  padding: 7mm 12mm 10mm;
+  padding: 7mm 12mm 15mm;
   overflow: hidden;
 }
 
@@ -405,6 +405,111 @@
   white-space: nowrap;
 }
 
+/* ── Contract body — styled ── */
+.proposal-contract-body-container {
+  overflow-y: auto;
+}
+
+.proposal-contract-body-wrapper {
+  width: 186mm;
+  margin: 0 auto;
+  color: #111111;
+  font-size: 9.5pt;
+  line-height: 1.5;
+}
+
+.proposal-contract-main-title {
+  margin: 0 0 3mm;
+  font-size: 12pt;
+  font-weight: 700;
+  text-align: center;
+  color: #173172;
+  text-transform: uppercase;
+}
+
+.proposal-contract-date-line {
+  margin: 0 0 3mm;
+  font-size: 9pt;
+  text-align: center;
+  color: #444;
+}
+
+.proposal-contract-separator {
+  margin: 2.5mm 0;
+  border: none;
+  border-top: 0.3mm solid #173172;
+}
+
+.proposal-contract-section-title {
+  margin: 4mm 0 2mm;
+  padding: 1mm 2mm;
+  background: #173172;
+  color: #ffffff;
+  font-size: 10pt;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.proposal-contract-subsection {
+  margin: 0;
+}
+
+.proposal-contract-subsection-title {
+  margin: 2mm 0 1.5mm;
+  font-size: 10pt;
+  font-weight: 700;
+  color: #173172;
+}
+
+.proposal-contract-subsection-end {
+  margin-bottom: 1.5mm;
+}
+
+.proposal-contract-body {
+  margin: 0 0 1.2mm;
+  font-size: 9.5pt;
+  text-align: justify;
+}
+
+.proposal-contract-standalone {
+  margin: 0 0 2mm;
+  font-size: 9.5pt;
+  text-align: justify;
+}
+
+.proposal-contract-kv {
+  margin: 0 0 0.8mm;
+  font-size: 9.5pt;
+}
+
+.proposal-contract-kv-key {
+  font-weight: 600;
+  color: #173172;
+}
+
+.proposal-contract-kv-value {
+  color: #111111;
+}
+
+.proposal-contract-signature-line {
+  margin: 0 0 5mm;
+  font-size: 9.5pt;
+  word-spacing: 0.5mm;
+}
+
+/* ── Deprecated raw text (keep for backward compat) ── */
+.proposal-contract-body-text {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 7.8pt;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #1a1a1a;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 .proposal-totals-band {
   width: 186mm;
   background: #173172;
@@ -477,6 +582,10 @@
   color: #111111;
 }
 
+.proposal-dispositions-inline p:last-child {
+  margin-bottom: 3mm;
+}
+
 .proposal-acceptance-body {
   padding-top: 8mm;
 }
@@ -490,6 +599,10 @@
   font-size: 9.5pt;
   line-height: 1.5;
   color: #111111;
+}
+
+.proposal-dispositions-final p:last-child {
+  margin-bottom: 3mm;
 }
 
 .proposal-accept-section {
@@ -574,15 +687,16 @@
     break-after: page;
   }
 
-  .proposal-table {
+  .proposal-table thead,
+  .proposal-table tfoot {
     page-break-inside: avoid;
     break-inside: avoid;
   }
 
-  .proposal-dispositions-inline,
-  .proposal-dispositions-final {
-    page-break-inside: avoid;
-    break-inside: avoid;
+  .proposal-dispositions-inline .proposal-blue-section-title,
+  .proposal-dispositions-final .proposal-blue-section-title {
+    page-break-after: avoid;
+    break-after: avoid;
   }
 
   .proposal-print-document {

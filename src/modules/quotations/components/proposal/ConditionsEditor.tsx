@@ -5,6 +5,7 @@
 import React from 'react';
 import { Settings, FileText, Truck, Wrench, Shield, Clock } from 'lucide-react';
 import { useQuotationStore, selectCondicoes } from '../../stores/quotationStore';
+import { Select } from './Select';
 import type { CondicoesComerciais } from '../../types/proposal';
 
 // ============================================
@@ -40,10 +41,12 @@ function ConditionField({
 }: ConditionFieldProps) {
   const baseInputClass = `
     w-full px-3 py-2 text-sm 
+    text-gray-900 dark:text-white
     bg-gray-50 dark:bg-gray-900 
     border border-gray-200 dark:border-gray-700 
     rounded-lg focus:outline-none 
     focus:ring-2 focus:ring-egen-navy/30 dark:focus:ring-egen-yellow/30
+    placeholder:text-gray-400 dark:placeholder:text-gray-500
     transition-colors
   `;
 
@@ -53,17 +56,16 @@ function ConditionField({
         {label}
       </label>
       {type === 'select' ? (
-        <select
+        <Select
           value={value}
-          onChange={(e) => onChange(field, e.target.value)}
-          className={baseInputClass}
+          onChange={(val) => onChange(field, val)}
         >
           {options.map((opt) => (
             <option key={opt} value={opt}>
               {opt}
             </option>
           ))}
-        </select>
+        </Select>
       ) : type === 'textarea' ? (
         <textarea
           value={value}

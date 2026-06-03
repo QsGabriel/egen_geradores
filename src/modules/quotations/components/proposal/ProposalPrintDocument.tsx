@@ -39,12 +39,12 @@ interface ConditionRow {
 }
 
 const DOCUMENT_TITLES: Record<DocumentTipo, string> = {
-  proposta: 'PROPOSTA DE LOCACAO',
-  orcamento: 'ORCAMENTO',
-  contrato: 'CONTRATO DE LOCACAO',
+  proposta: 'PROPOSTA DE LOCAÇÃO',
+  orcamento: 'ORÇAMENTO',
+  contrato: 'CONTRATO DE LOCAÇÃO',
 };
 
-const MAX_SCOPE_ROWS_PER_PAGE = 12;
+const MAX_SCOPE_ROWS_PER_PAGE = 22;
 const EQUIPMENT_ROWS_WHEN_BOTH_TABLES = 7;
 const SERVICE_ROWS_WHEN_BOTH_TABLES = 5;
 
@@ -94,7 +94,13 @@ function buildScopePages(
     let equipmentTake = 0;
     let serviceTake = 0;
 
-    if (equipmentRemaining > 0 && serviceRemaining > 0) {
+    const totalRemaining = equipmentRemaining + serviceRemaining;
+
+    if (totalRemaining <= MAX_SCOPE_ROWS_PER_PAGE) {
+      // All remaining items fit on one page — never split unnecessarily
+      equipmentTake = equipmentRemaining;
+      serviceTake = serviceRemaining;
+    } else if (equipmentRemaining > 0 && serviceRemaining > 0) {
       equipmentTake = Math.min(EQUIPMENT_ROWS_WHEN_BOTH_TABLES, equipmentRemaining);
       // Give any leftover equipment-row budget to the service table
       const serviceSlot = EQUIPMENT_ROWS_WHEN_BOTH_TABLES + SERVICE_ROWS_WHEN_BOTH_TABLES - equipmentTake;
@@ -125,35 +131,35 @@ function buildScopePages(
 
 function buildConditionRows(condicoes: CondicoesComerciais): ConditionRow[] {
   const rows: Array<[string, string]> = [
-    ['Local de utilizacao', textValue(condicoes.localUtilizacao)],
+    ['Local de utilização', textValue(condicoes.localUtilizacao)],
     ['Forma de pagamento', textValue(condicoes.formaPagamento)],
     ['Faturamento', textValue(condicoes.faturamento)],
     ['Prazo de entrega', textValue(condicoes.prazoEntrega)],
-    ['Inicio da cobranca', textValue(condicoes.inicioCobranca)],
-    ['Final da cobranca', textValue(condicoes.finalCobranca)],
-    ['Periodo minimo', textValue(condicoes.periodoMinimo)],
-    ['Periodo orcado', textValue(condicoes.periodoOrcado)],
-    ['Tensao', textValue(condicoes.tensao)],
-    ['Emissao de ART', textValue(condicoes.emissaoArt)],
+    ['Início da cobrança', textValue(condicoes.inicioCobranca)],
+    ['Final da cobrança', textValue(condicoes.finalCobranca)],
+    ['Período mínimo', textValue(condicoes.periodoMinimo)],
+    ['Período orçado', textValue(condicoes.periodoOrcado)],
+    ['Tensão', textValue(condicoes.tensao)],
+    ['Emissão de ART', textValue(condicoes.emissaoArt)],
     ['Transporte de envio', textValue(condicoes.transporteEnvio)],
     ['Transporte de retirada', textValue(condicoes.transporteRetirada)],
-    ['Carga e descarga mobilizacao', textValue(condicoes.cargaDescargaMobilizacao)],
-    ['Carga e descarga desmobilizacao', textValue(condicoes.cargaDescargaDesmobilizacao)],
-    ['Instalacao', textValue(condicoes.instalacao)],
-    ['Manutencao preventiva', textValue(condicoes.manutencaoPreventiva)],
-    ['Combustivel', textValue(condicoes.combustivel)],
+    ['Carga e descarga mobilização', textValue(condicoes.cargaDescargaMobilizacao)],
+    ['Carga e descarga desmobilização', textValue(condicoes.cargaDescargaDesmobilizacao)],
+    ['Instalação', textValue(condicoes.instalacao)],
+    ['Manutenção preventiva', textValue(condicoes.manutencaoPreventiva)],
+    ['Combustível', textValue(condicoes.combustivel)],
     ['Seguro', textValue(condicoes.seguro)],
     ['Impostos', textValue(condicoes.impostos)],
     ['Telemetria', textValue(condicoes.telemetria)],
     ['Dimensionamento', textValue(condicoes.dimensionamento)],
-    ['Definicao de escopo', textValue(condicoes.definicaoEscopo)],
+    ['Definição de escopo', textValue(condicoes.definicaoEscopo)],
   ];
 
   return rows.map(([label, value], index) => ({
     code: `1.${index + 1}`,
     label,
     value,
-    breakValue: label === 'Local de utilizacao',
+    breakValue: label === 'Local de utilização',
   }));
 }
 
@@ -212,10 +218,20 @@ function renderPageBreaks(
 function ProposalHeader({
   issueLine,
   documentId,
+  annexLabel,
+  tipo,
 }: {
   issueLine: string;
   documentId: string;
+  annexLabel?: string;
+  tipo: DocumentTipo;
 }) {
+  const headerLine = annexLabel
+    ? annexLabel
+    : tipo === 'contrato'
+      ? `Contrato de locação nº ${textValue(documentId)}`
+      : `Proposta de locação nº ${textValue(documentId)}`;
+
   return (
     <header className="proposal-master-header">
       <img
@@ -229,8 +245,8 @@ function ProposalHeader({
 
       <div className="proposal-master-header-right">
         <p>{issueLine}</p>
-        <p>Proposta de locacao n {textValue(documentId)}</p>
-        <p>ANEX000</p>
+        <p>{headerLine}</p>
+        {annexLabel && <p style={{ fontSize: '7pt', color: '#888' }}>{documentId}</p>}
       </div>
     </header>
   );
@@ -247,7 +263,7 @@ function ProposalFooter({
     <footer className="proposal-master-footer">
       <span>@egengeradores</span>
       <span>egengeradores.com.br</span>
-      <span>Pagina {pageNumber} de {totalPages}</span>
+      <span>Página {pageNumber} de {totalPages}</span>
     </footer>
   );
 }
@@ -275,6 +291,124 @@ function ConditionColumns({ rows }: { rows: ConditionRow[] }) {
   );
 }
 
+// ============================================
+// CONTRACT BODY RENDERER
+// ============================================
+
+function ContractBody({ text }: { text: string }) {
+  const lines = text.split('\n');
+
+  const elements: React.ReactNode[] = [];
+  let key = 0;
+  let inSubsection = false;
+  let inSignatureBlock = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    // Blank line
+    if (!trimmed) {
+      if (inSubsection) {
+        inSubsection = false;
+        elements.push(<div key={key++} className="proposal-contract-subsection-end" />);
+      }
+      continue;
+    }
+
+    // Separator line (all ─ or similar)
+    if (/^[─═]{5,}$/.test(trimmed)) {
+      elements.push(<hr key={key++} className="proposal-contract-separator" />);
+      inSubsection = false;
+      continue;
+    }
+
+    // Main title (first non-separator line)
+    if (key === 0 && /CONTRATO DE LOCAÇÃO/.test(trimmed)) {
+      elements.push(<h2 key={key++} className="proposal-contract-main-title">{trimmed}</h2>);
+      continue;
+    }
+
+    // Date line (Goiânia, ... | Contrato ...)
+    if (/Goiânia,.*\|.*Contrato/.test(trimmed)) {
+      elements.push(<p key={key++} className="proposal-contract-date-line">{trimmed}</p>);
+      continue;
+    }
+
+    // Section header: "1. PARTES CONTRATANTES E LOCAL"
+    if (/^\d+\.\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ\s]{5,}$/.test(trimmed) && !trimmed.includes(':')) {
+      elements.push(<h3 key={key++} className="proposal-contract-section-title">{trimmed}</h3>);
+      inSubsection = false;
+      continue;
+    }
+
+    // Subsection header: "1.1 LOCADORA:" or "1.2 LOCATÁRIO:"
+    if (/^\d+\.\d+\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ\s]{3,}:$/.test(trimmed)) {
+      if (inSubsection) {
+        elements.push(<div key={key++} className="proposal-contract-subsection-end" />);
+      }
+      inSubsection = true;
+
+      // Signature block
+      if (trimmed === 'ASSINATURAS' || trimmed.startsWith('ASSINATURAS')) {
+        inSignatureBlock = true;
+        elements.push(<h3 key={key++} className="proposal-contract-section-title">{trimmed}</h3>);
+        continue;
+      }
+
+      elements.push(
+        <div key={key++} className="proposal-contract-subsection">
+          <h4 className="proposal-contract-subsection-title">{trimmed}</h4>
+        </div>
+      );
+      continue;
+    }
+
+    // Body text inside subsection or standalone paragraph
+    if (inSubsection) {
+      // Key-value pair: "Nome: EGEN GERADORES"
+      const kvMatch = trimmed.match(/^([A-Za-zÀ-úçãõ\s]+):\s+(.+)$/);
+      if (kvMatch && !trimmed.startsWith('Assinatura:')) {
+        elements.push(
+          <p key={key++} className="proposal-contract-kv">
+            <span className="proposal-contract-kv-key">{kvMatch[1]}:</span>{' '}
+            <span className="proposal-contract-kv-value">{kvMatch[2]}</span>
+          </p>
+        );
+        continue;
+      }
+
+      // Signature lines
+      if (inSignatureBlock && /^(.+):\s_{3,}$/.test(trimmed)) {
+        const sigMatch = trimmed.match(/^(.+):\s(_{3,})$/);
+        elements.push(
+          <p key={key++} className="proposal-contract-signature-line">
+            <strong>{sigMatch![1]}:</strong> {sigMatch![2]}
+          </p>
+        );
+        continue;
+      }
+
+      if (inSignatureBlock && /^(.+):\s_{3,}\s+(.+):\s_{3,}$/.test(trimmed)) {
+        elements.push(
+          <p key={key++} className="proposal-contract-signature-line">{trimmed}</p>
+        );
+        continue;
+      }
+
+      elements.push(<p key={key++} className="proposal-contract-body">{trimmed}</p>);
+    } else {
+      elements.push(<p key={key++} className="proposal-contract-standalone">{trimmed}</p>);
+    }
+  }
+
+  if (inSubsection) {
+    elements.push(<div key={key++} className="proposal-contract-subsection-end" />);
+  }
+
+  return <div className="proposal-contract-body-wrapper">{elements}</div>;
+}
+
 function ExceedingHoursTable({ rows }: { rows: ProposalHoraExcedente[] }) {
   return (
     <table className="proposal-table proposal-table-hours">
@@ -282,20 +416,20 @@ function ExceedingHoursTable({ rows }: { rows: ProposalHoraExcedente[] }) {
         <tr>
           <th className="col-item">Item</th>
           <th className="col-hours-desc">Valor por hora excedente ao limite de franquia</th>
-          <th className="col-hours-unit">Valor Unitario</th>
-          <th className="col-hours-note">Observacoes</th>
+          <th className="col-hours-unit">Valor Unitário</th>
+          <th className="col-hours-note">Observações</th>
         </tr>
       </thead>
       <tbody>
         {rows.length === 0 ? (
           <tr>
-            <td className="proposal-empty-row" colSpan={4}>Valores conforme tabela padrao</td>
+            <td className="proposal-empty-row" colSpan={4}>Valores conforme tabela padrão</td>
           </tr>
         ) : (
           rows.map((row, index) => (
             <tr key={row.id}>
               <td>{index + 1}</td>
-              <td>{textValue(`${row.descricao} ${row.potenciaKva}`)}</td>
+              <td>{textValue(row.descricao)}</td>
               <td>{formatCurrency(row.valorUnitario)}</td>
               <td>{textValue(row.observacoes)}</td>
             </tr>
@@ -353,12 +487,41 @@ export default function ProposalPrintDocument({
     [quotation.itensPeriodicos, quotation.itensSpot],
   );
 
+  const contractPageChunks = useMemo(() => {
+    if (quotation.tipo !== 'contrato' || !quotation.contractText) return [];
+    const LINES_PER_PAGE = 55;
+    const lines = quotation.contractText.split('\n');
+    const chunks: string[][] = [];
+    for (let i = 0; i < lines.length; i += LINES_PER_PAGE) {
+      chunks.push(lines.slice(i, i + LINES_PER_PAGE));
+    }
+    return chunks;
+  }, [quotation.tipo, quotation.contractText]);
+
   const issueLine = formatIssueLine(quotation.dataEmissao);
   const conditionRows = buildConditionRows(quotation.condicoes);
   const shouldInlineCommercialSections = false;
-  const includeCommercialPage = true;
 
-  const totalPages = 1 + 1 + scopePages.length + (includeCommercialPage ? 1 : 0) + 1;
+  const lastScopeSlice = scopePages[scopePages.length - 1];
+  const lastScopeTotalItems = lastScopeSlice
+    ? lastScopeSlice.equipmentItems.length + lastScopeSlice.serviceItems.length
+    : 0;
+  const COMMERCIAL_INLINE_THRESHOLD = 8;
+  const showCommercialInline = lastScopeTotalItems < COMMERCIAL_INLINE_THRESHOLD;
+  const includeCommercialPage = !showCommercialInline;
+
+  // Dynamic: fewer items → more paragraphs inline → less whitespace
+  const inlineParagraphCount = showCommercialInline
+    ? Math.min(DISPOSITION_PARAGRAPHS.length, Math.max(2, COMMERCIAL_INLINE_THRESHOLD - lastScopeTotalItems))
+    : 0;
+
+  const annexLabel = quotation.isAnnex ? 'ANEXO0001' : undefined;
+  const showAsAnnex = quotation.tipo === 'contrato';
+
+  const proposalPageCount = 1 + scopePages.length + (includeCommercialPage ? 1 : 0) + 1;
+  const totalPages = showAsAnnex
+    ? 1 + contractPageChunks.length + proposalPageCount
+    : 1 + proposalPageCount;
 
   const lastEquipmentPageIndex = scopePages.reduce((last, page, index) => {
     if (page.equipmentItems.length > 0) {
@@ -388,11 +551,31 @@ export default function ProposalPrintDocument({
     ),
   });
 
+  if (showAsAnnex) {
+    contractPageChunks.forEach((chunk, idx) => {
+      pages.push({
+        key: `contract-body-${idx}`,
+        content: (
+          <A4Page className="proposal-standard-page">
+            <ProposalHeader issueLine={issueLine} documentId={quotation.documentId} tipo={quotation.tipo} />
+            <div className="proposal-standard-body proposal-contract-body-container">
+              <ContractBody text={chunk.join('\n')} />
+            </div>
+            <ProposalFooter pageNumber={idx + 2} totalPages={totalPages} />
+          </A4Page>
+        ),
+      });
+    });
+  }
+
+  const proposalPageOffset = contractPageChunks.length;
+  const proposalAnnexLabel = showAsAnnex ? 'ANEXO0001' : annexLabel;
+
   pages.push({
     key: 'intro',
     content: (
       <A4Page className="proposal-standard-page">
-        <ProposalHeader issueLine={issueLine} documentId={quotation.documentId} />
+        <ProposalHeader issueLine={issueLine} documentId={quotation.documentId} tipo={quotation.tipo} annexLabel={proposalAnnexLabel} />
 
         <div className="proposal-standard-body proposal-intro-page-body">
           <section className="proposal-client-panel">
@@ -404,7 +587,7 @@ export default function ProposalPrintDocument({
 
             <p className="proposal-client-line proposal-client-separator"><strong>Cliente:</strong> {textValue(quotation.cliente.nome)}</p>
             <p className="proposal-client-line"><strong>CPF/CNPJ:</strong> {textValue(quotation.cliente.documento)}</p>
-            <p className="proposal-client-line"><strong>Endereco:</strong> {textValue(quotation.cliente.endereco)}</p>
+            <p className="proposal-client-line"><strong>Endereço:</strong> {textValue(quotation.cliente.endereco)}</p>
             <p className="proposal-client-line"><strong>Cidade/UF:</strong> {textValue(quotation.cliente.cidadeUf)}</p>
 
             <div className="proposal-client-contact-row">
@@ -422,7 +605,7 @@ export default function ProposalPrintDocument({
             <section className="proposal-intro-panel">
               <h3 className="proposal-blue-section-title">INTRODUÇÃO:</h3>
               <p>
-                A EGEN Geradores é especializada venda e locação de Grupos Geradores de Energia,
+                A EGEN Geradores é especializada em venda e locação de Grupos Geradores de Energia,
                 entregando soluções completas e personalizadas para os mais diversos setores,
                 como mineração, agronegócio, indústria, construção civil e comércio.
               </p>
@@ -470,7 +653,7 @@ export default function ProposalPrintDocument({
           alt="Gerador"
           className="proposal-brand-generator proposal-brand-generator-overlap"
         />
-        <ProposalFooter pageNumber={2} totalPages={totalPages} />
+        <ProposalFooter pageNumber={2 + proposalPageOffset} totalPages={totalPages} />
       </A4Page>
     ),
   });
@@ -483,13 +666,13 @@ export default function ProposalPrintDocument({
     // Only render a table on continuation pages if it actually has items on this page
     const showEquipmentTable = index === 0 || slice.equipmentItems.length > 0;
     const showServiceTable = index === 0 || slice.serviceItems.length > 0;
-    const pageNumber = index + 3;
+    const pageNumber = index + 3 + proposalPageOffset;
 
     pages.push({
       key: `scope-${index + 1}`,
       content: (
         <A4Page className="proposal-standard-page">
-          <ProposalHeader issueLine={issueLine} documentId={quotation.documentId} />
+          <ProposalHeader issueLine={issueLine} documentId={quotation.documentId} tipo={quotation.tipo} annexLabel={proposalAnnexLabel} />
 
           <div className="proposal-standard-body proposal-scope-body">
             {showEquipmentTable ? (
@@ -498,9 +681,9 @@ export default function ProposalPrintDocument({
                 <thead>
                   <tr>
                     <th className="col-item">Item</th>
-                    <th className="col-desc">Descricao</th>
+                    <th className="col-desc">Descrição</th>
                     <th className="col-qty">Qtd.</th>
-                    <th className="col-unit">Valor Unitario</th>
+                    <th className="col-unit">Valor Unitário</th>
                     <th className="col-total">Valor Total</th>
                     <th className="col-franquia">Franquia</th>
                   </tr>
@@ -508,7 +691,7 @@ export default function ProposalPrintDocument({
                 <tbody>
                   {slice.equipmentItems.length === 0 ? (
                     <tr>
-                      <td className="proposal-empty-row" colSpan={6}>Nenhum item periodico informado</td>
+                      <td className="proposal-empty-row" colSpan={6}>Nenhum item periódico informado</td>
                     </tr>
                   ) : (
                     slice.equipmentItems.map((item, rowIndex) => (
@@ -526,9 +709,9 @@ export default function ProposalPrintDocument({
                 {isLastEquipmentPage ? (
                   <tfoot>
                     <tr className="proposal-table-subtotal">
-                      <td colSpan={4} className="proposal-table-subtotal-label">TOTAL PERIÓDICOS</td>
-                      <td className="proposal-table-subtotal-value">{formatCurrency(quotation.totalPeriodicos)}</td>
-                      <td></td>
+                      <td colSpan={6} className="proposal-table-subtotal-value">
+                        TOTAL PERIÓDICOS&nbsp;&nbsp;{formatCurrency(quotation.totalPeriodicos)}
+                      </td>
                     </tr>
                   </tfoot>
                 ) : null}
@@ -542,16 +725,17 @@ export default function ProposalPrintDocument({
                 <thead>
                   <tr>
                     <th className="col-item">Item</th>
-                    <th className="col-desc">Servicos de outros</th>
+                    <th className="col-desc">Serviços Spot</th>
                     <th className="col-qty">Qtd.</th>
-                    <th className="col-unit">Valor Unitario</th>
+                    <th className="col-unit">Valor Unitário</th>
                     <th className="col-total">Valor Total</th>
+                    <th className="col-franquia"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {slice.serviceItems.length === 0 ? (
                     <tr>
-                      <td className="proposal-empty-row" colSpan={5}>Nenhum servico informado</td>
+                      <td className="proposal-empty-row" colSpan={6}>Nenhum serviço informado</td>
                     </tr>
                   ) : (
                     slice.serviceItems.map((item, rowIndex) => (
@@ -561,6 +745,7 @@ export default function ProposalPrintDocument({
                         <td>{item.quantidade}</td>
                         <td>{formatCurrency(item.valorUnitario)}</td>
                         <td>{formatCurrency(item.valorTotal)}</td>
+                        <td></td>
                       </tr>
                     ))
                   )}
@@ -568,8 +753,9 @@ export default function ProposalPrintDocument({
                 {isLastServicePage ? (
                   <tfoot>
                     <tr className="proposal-table-subtotal">
-                      <td colSpan={4} className="proposal-table-subtotal-label">TOTAL SPOT</td>
-                      <td className="proposal-table-subtotal-value">{formatCurrency(quotation.totalSpot)}</td>
+                      <td colSpan={6} className="proposal-table-subtotal-value">
+                        TOTAL SPOT&nbsp;&nbsp;{formatCurrency(quotation.totalSpot)}
+                      </td>
                     </tr>
                   </tfoot>
                 ) : null}
@@ -586,20 +772,34 @@ export default function ProposalPrintDocument({
               </div>
             ) : null}
 
+            {isLastScopePage ? (
             <section className="proposal-table-block">
               <ExceedingHoursTable rows={quotation.horasExcedentes} />
             </section>
+            ) : null}
 
             {includeInlineSections ? (
               <section className="proposal-inline-commercial-sections">
                 <ConditionColumns rows={conditionRows} />
 
                 <div className="proposal-dispositions-inline">
-                  <h3 className="proposal-blue-section-title">DISPOSICOES GERAIS:</h3>
+                  <h3 className="proposal-blue-section-title">DISPOSIÇÕES GERAIS:</h3>
                   <p>{DISPOSITION_PARAGRAPHS[0]}</p>
                   <p>{DISPOSITION_PARAGRAPHS[1]}</p>
                 </div>
               </section>
+            ) : null}
+
+            {isLastScopePage && showCommercialInline ? (
+              <>
+                <ConditionColumns rows={conditionRows} />
+                <div className="proposal-dispositions-inline">
+                  <h3 className="proposal-blue-section-title">DISPOSIÇÕES GERAIS:</h3>
+                  {DISPOSITION_PARAGRAPHS.slice(0, inlineParagraphCount).map((paragraph, i) => (
+                    <p key={`inline-disp-${i}`}>{paragraph}</p>
+                  ))}
+                </div>
+              </>
             ) : null}
           </div>
 
@@ -614,20 +814,20 @@ export default function ProposalPrintDocument({
       key: 'commercial',
       content: (
         <A4Page className="proposal-standard-page">
-          <ProposalHeader issueLine={issueLine} documentId={quotation.documentId} />
+          <ProposalHeader issueLine={issueLine} documentId={quotation.documentId} tipo={quotation.tipo} annexLabel={proposalAnnexLabel} />
 
           <div className="proposal-standard-body proposal-commercial-body">
             <ConditionColumns rows={conditionRows} />
 
             <div className="proposal-dispositions-inline">
-              <h3 className="proposal-blue-section-title">DISPOSICOES GERAIS:</h3>
-              <p>{DISPOSITION_PARAGRAPHS[0]}</p>
-              <p>{DISPOSITION_PARAGRAPHS[1]}</p>
-              <p>{DISPOSITION_PARAGRAPHS[2]}</p>
+              <h3 className="proposal-blue-section-title">DISPOSIÇÕES GERAIS:</h3>
+              {DISPOSITION_PARAGRAPHS.slice(0, 7).map((paragraph, index) => (
+                <p key={`comm-disp-${index}`}>{paragraph}</p>
+              ))}
             </div>
           </div>
 
-          <ProposalFooter pageNumber={scopePages.length + 3} totalPages={totalPages} />
+          <ProposalFooter pageNumber={scopePages.length + 3 + proposalPageOffset} totalPages={totalPages} />
         </A4Page>
       ),
     });
@@ -635,13 +835,15 @@ export default function ProposalPrintDocument({
 
   const acceptanceParagraphs = shouldInlineCommercialSections
     ? DISPOSITION_PARAGRAPHS.slice(2)
-    : DISPOSITION_PARAGRAPHS.slice(3);
+    : showCommercialInline
+      ? DISPOSITION_PARAGRAPHS.slice(inlineParagraphCount)
+      : DISPOSITION_PARAGRAPHS.slice(7);
 
   pages.push({
     key: 'acceptance',
     content: (
       <A4Page className="proposal-standard-page">
-        <ProposalHeader issueLine={issueLine} documentId={quotation.documentId} />
+        <ProposalHeader issueLine={issueLine} documentId={quotation.documentId} tipo={quotation.tipo} annexLabel={proposalAnnexLabel} />
 
         <div className="proposal-standard-body proposal-acceptance-body">
           <section className="proposal-dispositions-final">
@@ -653,8 +855,8 @@ export default function ProposalPrintDocument({
           <section className="proposal-accept-section">
             <h3 className="proposal-blue-section-title">ACEITE:</h3>
             <p>
-              Declaro estar ciente e concordo com as condicoes comerciais propostas para a
-              contratacao dos servicos mencionados.
+              Declaro estar ciente e concordo com as condições comerciais propostas para a
+              contratação dos serviços mencionados.
             </p>
 
             <p className="proposal-signature-line">ASSINATURA: _______________________________________________</p>

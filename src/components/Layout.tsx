@@ -230,7 +230,7 @@ const isActive = isItemActive(item.href, item.subItems);
         </div>
 
         {/* Page content */}
-        <main className={`min-h-screen animate-fade-in ${location.pathname === '/' ? '' : 'py-4 px-4 sm:px-6 lg:px-8'}`}>
+        <main className={`min-h-screen animate-fade-in ${location.pathname === '/' || location.pathname.startsWith('/propostas/') ? '' : 'py-4 px-4 sm:px-6 lg:px-8'}`}>
           {children}
         </main>
       </div>

@@ -249,6 +249,12 @@ export interface SalesQuotation {
   
   // Notas internas
   notasInternas: string;
+
+  // Contrato: texto gerado pelo template após a conversão (só em tipo === 'contrato')
+  contractText: string;
+
+  // Proposta original vinculada a um contrato (true quando tipo === 'proposta' e foi convertida)
+  isAnnex: boolean;
 }
 
 // ============================================

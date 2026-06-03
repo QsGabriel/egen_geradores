@@ -4,6 +4,7 @@
  */
 import { supabase } from '../../../lib/supabase';
 import type { SalesQuotation, DocumentStatus } from '../types/proposal';
+import { buildContractVars, renderContractText } from './contractTemplate';
 
 // ============================================
 // DATABASE ROW TYPE
@@ -56,6 +57,8 @@ function quotationToRow(quotation: SalesQuotation): Omit<QuotationRow, 'created_
       condicoes: quotation.condicoes,
       observacoesGerais: quotation.observacoesGerais,
       exibirTotaisPorTabela: quotation.exibirTotaisPorTabela,
+      contractText: quotation.contractText || '',
+      isAnnex: quotation.isAnnex ?? false,
     },
     total_equipamentos: quotation.totalPeriodicos,
     total_servicos: quotation.totalSpot,
@@ -111,6 +114,8 @@ function rowToQuotation(row: QuotationRow): SalesQuotation {
     version: row.version,
     parentId: row.parent_id,
     notasInternas: row.notas_internas || '',
+    contractText: conteudo.contractText || '',
+    isAnnex: conteudo.isAnnex ?? false,
   };
 }
 
@@ -365,35 +370,104 @@ export async function duplicateQuotation(
 
 /**
  * Convert quotation to contract
+ *
+ * Flow:
+ *  1. Validates that the proposal can be converted (not already a contract/annex)
+ *  2. Generates a sequential CONT-YYYY-NNNN document ID
+ *  3. Interpolates the contract template with proposal data
+ *  4. Creates the new contract record (tipo='contrato', parentId = original.id)
+ *  5. Marks the original proposal as isAnnex=true and status='closed'
  */
 export async function convertToContract(
   id: string,
   userId?: string
 ): Promise<SalesQuotation> {
   const quotation = await getQuotationById(id);
-  if (!quotation) {
-    throw new Error('Proposta não encontrada');
-  }
+  if (!quotation) throw new Error('Proposta não encontrada.');
+  if (quotation.tipo === 'contrato') throw new Error('Este documento já é um contrato.');
+  if (quotation.isAnnex) throw new Error('Esta proposta já foi vinculada a um contrato.');
 
-  // Update original status to closed when converted to contract
-  await updateQuotationStatus(id, 'closed', userId);
+  // --- 1. Generate sequential contract documentId ---
+  const year = new Date().getFullYear();
+  const { data: existingContracts } = await supabase
+    .from('sales_quotations')
+    .select('document_id')
+    .eq('tipo', 'contrato')
+    .like('document_id', `CONT-${year}-%`)
+    .order('document_id', { ascending: false })
+    .limit(1);
 
-  // Create contract version
+  const lastNum =
+    existingContracts?.[0]
+      ? parseInt(existingContracts[0].document_id.split('-')[2] ?? '0', 10)
+      : 0;
+  const contractDocumentId = `CONT-${year}-${String(lastNum + 1).padStart(4, '0')}`;
+
+  // --- 2. Render contract template ---
+  const vars = buildContractVars(quotation, contractDocumentId);
+  const contractText = renderContractText(vars);
+
+  // --- 3. Create contract record ---
   const contract: SalesQuotation = {
     ...quotation,
     id: crypto.randomUUID(),
-    documentId: quotation.documentId.replace(/^(PROP|ORC)/, 'CONT'),
+    documentId: contractDocumentId,
     tipo: 'contrato',
     status: 'draft',
     version: 1,
     parentId: quotation.id,
+    contractText,
+    isAnnex: false,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     createdBy: userId || null,
     updatedBy: userId || null,
   };
 
-  return createQuotation(contract, userId);
+  // Use a plain INSERT (no .select().single()) to avoid PostgREST 406 on
+  // content-negotiation mismatch, then fetch the created row separately.
+  const contractRow = quotationToRow(contract);
+  contractRow.created_by = userId || null;
+  contractRow.updated_by = userId || null;
+
+  const { error: insertError } = await supabase
+    .from('sales_quotations')
+    .insert(contractRow);
+
+  if (insertError) {
+    console.error('[convertToContract] Insert error:', insertError);
+    throw new Error(`Erro ao criar contrato: ${insertError.message} (${insertError.code})`);
+  }
+
+  const created = await getQuotationById(contract.id);
+  if (!created) {
+    throw new Error('Contrato criado mas não encontrado na base. Verifique as permissões RLS.');
+  }
+
+  // --- 4. Mark original proposal as annex + close it ---
+  const updatedConteudo = {
+    ...((quotation as any)._rawConteudo || {}),
+    cliente: quotation.cliente,
+    itensPeriodicos: quotation.itensPeriodicos,
+    itensSpot: quotation.itensSpot,
+    horasExcedentes: quotation.horasExcedentes,
+    condicoes: quotation.condicoes,
+    observacoesGerais: quotation.observacoesGerais,
+    exibirTotaisPorTabela: quotation.exibirTotaisPorTabela,
+    contractText: '',
+    isAnnex: true,
+  };
+
+  await supabase
+    .from('sales_quotations')
+    .update({
+      status: 'closed',
+      conteudo: updatedConteudo,
+      updated_by: userId || null,
+    })
+    .eq('id', id);
+
+  return created;
 }
 
 // ============================================

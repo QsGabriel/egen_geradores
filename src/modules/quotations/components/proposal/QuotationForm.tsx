@@ -14,7 +14,6 @@ import {
   ChevronDown,
   ChevronUp,
   Save,
-  Send,
   AlertCircle,
   Calculator,
   Percent,
@@ -26,6 +25,8 @@ import { ClientSelector } from './ClientSelector';
 import { EquipmentSelector } from './EquipmentSelector';
 import { ServiceSelector } from './ServiceSelector';
 import { ConditionsEditor } from './ConditionsEditor';
+import { ExceedingHoursEditor } from './ExceedingHoursEditor';
+import { Select } from './Select';
 import { DocumentTipoLabels, DocumentStatusLabels } from '../../types/proposal';
 import type { DocumentTipo, DocumentStatus } from '../../types/proposal';
 
@@ -35,7 +36,6 @@ import type { DocumentTipo, DocumentStatus } from '../../types/proposal';
 
 interface QuotationFormProps {
   onSave?: () => void;
-  onSend?: () => void;
   className?: string;
 }
 
@@ -72,7 +72,8 @@ function AccordionSection({
           w-full flex items-center justify-between px-4 py-3 
           bg-white dark:bg-gray-800 
           hover:bg-gray-50 dark:hover:bg-gray-750 
-          transition-colors
+          active:bg-gray-100 dark:active:bg-gray-700
+          transition-all duration-150
           rounded-t-lg
           ${isOpen ? 'border-b border-gray-200 dark:border-gray-700' : 'rounded-b-lg'}
         `}
@@ -111,7 +112,7 @@ function AccordionSection({
 // MAIN COMPONENT
 // ============================================
 
-export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormProps) {
+export function QuotationForm({ onSave, className = '' }: QuotationFormProps) {
   // Get state and actions from store separately to avoid infinite loops
   const current = useQuotationStore((state) => state.current);
   const isDirty = useQuotationStore((state) => state.isDirty);
@@ -124,6 +125,7 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
   const totalComDesconto = useQuotationStore((state) => state.current?.totalComDesconto ?? 0);
   const itensPeriodicos = useQuotationStore((state) => state.current?.itensPeriodicos ?? []);
   const itensSpot = useQuotationStore((state) => state.current?.itensSpot ?? []);
+  const horasExcedentes = useQuotationStore((state) => state.current?.horasExcedentes ?? []);
   
   // Memoize totals object
   const totals = useMemo(() => ({
@@ -215,23 +217,16 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
           )}
           <button
             onClick={handleSave}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 active:scale-[0.97] transition-all duration-150"
           >
             <Save className="w-4 h-4" />
-            Salvar
-          </button>
-          <button
-            onClick={onSend}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-egen-navy text-white rounded-lg hover:bg-egen-navy/90 transition-colors"
-          >
-            <Send className="w-4 h-4" />
-            Enviar
+            Salvar rascunho
           </button>
         </div>
       </div>
 
       {/* Form Content */}
-      <div className="flex-1 overflow-auto p-4 space-y-4">
+      <div className="flex-1 overflow-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
         {/* Identificação */}
         <AccordionSection
           id="identificacao"
@@ -246,17 +241,17 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
               <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
                 Tipo de Documento
               </label>
-              <select
+              <Select
                 value={current.tipo}
-                onChange={(e) => setTipo(e.target.value as DocumentTipo)}
-                className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+                onChange={(value) => setTipo(value as DocumentTipo)}
+                className="bg-white dark:bg-gray-800"
               >
                 {Object.entries(DocumentTipoLabels).map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
 
             {/* Data de Emissão */}
@@ -268,7 +263,7 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
                 type="date"
                 value={current.dataEmissao}
                 onChange={(e) => setDataEmissao(e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+                className="w-full px-3 py-2 text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30 placeholder:text-gray-400 dark:placeholder:text-gray-500"
               />
             </div>
 
@@ -313,7 +308,7 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
                     type="text"
                     value={current.cliente.nome}
                     onChange={(e) => updateCliente('nome', e.target.value)}
-                    className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+                    className="w-full px-3 py-2 text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   />
                 </div>
                 <div>
@@ -324,7 +319,7 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
                     type="text"
                     value={current.cliente.documento}
                     onChange={(e) => updateCliente('documento', e.target.value)}
-                    className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+                    className="w-full px-3 py-2 text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   />
                 </div>
                 <div>
@@ -335,7 +330,7 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
                     type="text"
                     value={current.cliente.responsavel}
                     onChange={(e) => updateCliente('responsavel', e.target.value)}
-                    className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+                    className="w-full px-3 py-2 text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   />
                 </div>
                 <div>
@@ -346,7 +341,7 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
                     type="text"
                     value={current.cliente.telefone}
                     onChange={(e) => updateCliente('telefone', e.target.value)}
-                    className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+                    className="w-full px-3 py-2 text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   />
                 </div>
                 <div>
@@ -357,7 +352,7 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
                     type="email"
                     value={current.cliente.email}
                     onChange={(e) => updateCliente('email', e.target.value)}
-                    className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+                    className="w-full px-3 py-2 text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   />
                 </div>
                 <div>
@@ -368,7 +363,7 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
                     type="text"
                     value={current.cliente.cidadeUf}
                     onChange={(e) => updateCliente('cidadeUf', e.target.value)}
-                    className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+                    className="w-full px-3 py-2 text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -379,7 +374,7 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
                     type="text"
                     value={current.cliente.endereco}
                     onChange={(e) => updateCliente('endereco', e.target.value)}
-                    className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+                    className="w-full px-3 py-2 text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   />
                 </div>
               </div>
@@ -434,6 +429,24 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
           <ConditionsEditor />
         </AccordionSection>
 
+        {/* Horas Excedentes */}
+        <AccordionSection
+          id="horasExcedentes"
+          title="Horas Excedentes"
+          icon={<Clock className="w-5 h-5" />}
+          isOpen={openSections.includes('horasExcedentes')}
+          onToggle={() => toggleSection('horasExcedentes')}
+          badge={
+            horasExcedentes.length > 0 ? (
+              <span className="text-xs px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded">
+                {horasExcedentes.length} configurada(s)
+              </span>
+            ) : null
+          }
+        >
+          <ExceedingHoursEditor />
+        </AccordionSection>
+
         {/* Observações Gerais */}
         <AccordionSection
           id="observacoes"
@@ -447,7 +460,7 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
             onChange={(e) => setObservacoesGerais(e.target.value)}
             placeholder="Observações gerais que aparecerão na proposta final..."
             rows={5}
-            className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+            className="w-full px-3 py-2 text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30 placeholder:text-gray-400 dark:placeholder:text-gray-500"
           />
         </AccordionSection>
 
@@ -464,16 +477,16 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
             onChange={(e) => setNotasInternas(e.target.value)}
             placeholder="Notas internas (não aparecem no documento final)..."
             rows={4}
-            className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+            className="w-full px-3 py-2 text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30 placeholder:text-gray-400 dark:placeholder:text-gray-500"
           />
         </AccordionSection>
       </div>
 
       {/* Footer with Totals */}
-      <div className="px-4 py-3 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between">
+      <div className="px-3 sm:px-4 py-3 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:justify-between">
           {/* Discount */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-2">
               <Percent className="w-4 h-4 text-gray-400" />
               <label className="text-sm text-gray-600 dark:text-gray-400">Desconto:</label>
@@ -484,7 +497,7 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
                 step={0.5}
                 value={current.descontoPercent}
                 onChange={(e) => setDescontoPercent(parseFloat(e.target.value) || 0)}
-                className="w-16 px-2 py-1 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded focus:outline-none focus:ring-1 focus:ring-egen-navy/30"
+                className="w-16 px-2 py-1 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-egen-navy/30 transition-all duration-150"
               />
               <span className="text-sm text-gray-500">%</span>
             </div>
@@ -496,16 +509,16 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
           </div>
 
           {/* Totals */}
-          <div className="flex items-center gap-4">
-            {/* Totais display mode toggle: Opção A / Opção B */}
+          <div className="flex items-center gap-3 sm:gap-4 flex-wrap w-full sm:w-auto">
+            {/* Totais display mode toggle */}
             <div className="flex items-center gap-2">
-              <LayoutList className="w-4 h-4 text-gray-400" />
-              <span className="text-xs text-gray-500 dark:text-gray-400">Exibir totais:</span>
+              <LayoutList className="w-4 h-4 text-gray-400 hidden sm:block" />
+              <span className="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">Exibir totais:</span>
               <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 text-xs font-medium">
                 <button
                   onClick={() => setExibirTotaisPorTabela(true)}
                   title="Opção A — subtotal por tabela"
-                  className={`px-3 py-1.5 transition-colors ${
+                  className={`px-3 py-1.5 transition-all duration-150 active:scale-[0.97] ${
                     current.exibirTotaisPorTabela
                       ? 'bg-egen-navy text-white'
                       : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
@@ -516,7 +529,7 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
                 <button
                   onClick={() => setExibirTotaisPorTabela(false)}
                   title="Opção B — total geral único"
-                  className={`px-3 py-1.5 border-l border-gray-200 dark:border-gray-700 transition-colors ${
+                  className={`px-3 py-1.5 border-l border-gray-200 dark:border-gray-700 transition-all duration-150 active:scale-[0.97] ${
                     !current.exibirTotaisPorTabela
                       ? 'bg-egen-navy text-white'
                       : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
@@ -526,27 +539,27 @@ export function QuotationForm({ onSave, onSend, className = '' }: QuotationFormP
                 </button>
               </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-6">
-            <div className="text-right">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Periódicos</p>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {formatCurrency(totals.periodicos)}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Spot</p>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {formatCurrency(totals.spot)}
-              </p>
-            </div>
-            <div className="text-right pl-4 border-l border-gray-200 dark:border-gray-700">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Total</p>
-              <p className="text-lg font-bold text-egen-navy dark:text-egen-yellow flex items-center gap-2">
-                <Calculator className="w-4 h-4" />
-                {formatCurrency(totals.final)}
-              </p>
+            <div className="flex items-center gap-4 sm:gap-6 ml-auto sm:ml-0">
+              <div className="text-right">
+                <p className="text-xs text-gray-500 dark:text-gray-400">Periódicos</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {formatCurrency(totals.periodicos)}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-gray-500 dark:text-gray-400">Spot</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {formatCurrency(totals.spot)}
+                </p>
+              </div>
+              <div className="text-right pl-4 border-l border-gray-200 dark:border-gray-700">
+                <p className="text-xs text-gray-500 dark:text-gray-400">Total</p>
+                <p className="text-lg font-bold text-egen-navy dark:text-egen-yellow flex items-center gap-2">
+                  <Calculator className="w-4 h-4" />
+                  {formatCurrency(totals.final)}
+                </p>
+              </div>
             </div>
           </div>
         </div>

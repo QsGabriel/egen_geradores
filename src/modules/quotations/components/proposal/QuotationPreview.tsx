@@ -4,8 +4,9 @@
  */
 import React, { useRef, useMemo, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Printer, Download, ZoomIn, ZoomOut, Maximize2, Loader2 } from 'lucide-react';
+import { Printer, Download, ZoomIn, ZoomOut, Maximize2, Loader2, FileCheck2 } from 'lucide-react';
 import { useQuotationStore, selectCurrent } from '../../stores/quotationStore';
+import { convertToContract } from '../../services/quotationService';
 import ProposalPrintDocument from './ProposalPrintDocument';
 import { useAuth } from '../../../../hooks/useAuth';
 import { DepartmentLabels } from '../../../../types';
@@ -145,6 +146,8 @@ export function QuotationPreview({
   const documentRef = useRef<HTMLDivElement>(null);
   const [zoomLevel, setZoomLevel] = useState(initialScale);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
+  const [convertError, setConvertError] = useState<string | null>(null);
 
   const seller = useMemo(() => {
     const metadataPhone = typeof user?.user_metadata?.phone === 'string'
@@ -168,6 +171,20 @@ export function QuotationPreview({
 
     return <ProposalPrintDocument quotation={current} seller={seller} />;
   }, [current, seller]);
+
+  // Convert proposal to contract
+  const handleConvert = useCallback(async () => {
+    if (!current || current.tipo === 'contrato' || current.isAnnex) return;
+    setConvertError(null);
+    setIsConverting(true);
+    try {
+      const created = await convertToContract(current.id, user?.id);
+      window.location.href = `/propostas/${created.id}`;
+    } catch (err) {
+      setConvertError(err instanceof Error ? err.message : 'Erro ao converter proposta.');
+      setIsConverting(false);
+    }
+  }, [current, user?.id]);
 
   // Zoom controls
   const handleZoomIn = useCallback(() => {
@@ -375,10 +392,31 @@ export function QuotationPreview({
             </div>
 
             {/* Action Buttons */}
+            {/* Convert to Contract — only when current doc is a proposal/quotation not yet converted */}
+            {current && current.tipo !== 'contrato' && !current.isAnnex && (
+              <button
+                onClick={handleConvert}
+                disabled={isConverting}
+                title="Gerar contrato a partir desta proposta"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-lg hover:from-emerald-700 hover:to-emerald-600 active:from-emerald-800 active:to-emerald-700 active:scale-[0.97] shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150"
+              >
+                {isConverting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <FileCheck2 className="w-4 h-4" />
+                )}
+                {isConverting ? 'Convertendo...' : 'Converter em contrato'}
+              </button>
+            )}
+            {convertError && (
+              <span className="text-xs text-red-500 max-w-[180px] truncate" title={convertError}>
+                {convertError}
+              </span>
+            )}
             <button
               onClick={handlePrint}
               disabled={!current}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-egen-navy text-white rounded hover:bg-egen-navy/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-egen-navy rounded-lg hover:bg-egen-navy/90 active:bg-egen-navy/80 active:scale-[0.97] shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150"
             >
               <Printer className="w-4 h-4" />
               Imprimir
@@ -386,7 +424,7 @@ export function QuotationPreview({
             <button
               onClick={handleDownload}
               disabled={!current || isDownloading}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600 active:scale-[0.97] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150"
             >
               {isDownloading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

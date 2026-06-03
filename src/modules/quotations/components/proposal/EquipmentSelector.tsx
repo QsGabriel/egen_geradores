@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useQuotationStore, selectItensPeriodicos } from '../../stores/quotationStore';
 import { usePricing } from '../../../pricing';
+import { Select } from './Select';
 import type { ProposalItemPeriodico, FranquiaHoras, PeriodoLocacao, ItemTipoPeriodico } from '../../types/proposal';
 import { FranquiaHorasLabels, PeriodoLocacaoLabels, ItemTipoPeriodicoLabels } from '../../types/proposal';
 
@@ -197,7 +198,7 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
                   value={item.descricao}
                   onChange={(e) => handleFieldUpdate(item.id, 'descricao', e.target.value)}
                   placeholder={item.tipo === 'gerador' ? 'Ex: Gerador 150 kVA' : ItemTipoPeriodicoLabels[item.tipo]}
-                  className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+                  className="w-full px-3 py-2 text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 />
               </div>
 
@@ -209,16 +210,15 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                       Potência
                     </label>
-                    <select
+                    <Select
                       value={item.potenciaKva ?? ''}
-                      onChange={(e) => handleFieldUpdate(item.id, 'potenciaKva', e.target.value)}
-                      className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+                      onChange={(value) => handleFieldUpdate(item.id, 'potenciaKva', value)}
                     >
                       <option value="">Selecione...</option>
                       {availablePowers.map(power => (
                         <option key={power} value={power}>{power}</option>
                       ))}
-                    </select>
+                    </Select>
                   </div>
                 )}
 
@@ -232,7 +232,7 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
                     min={1}
                     value={item.quantidade}
                     onChange={(e) => handleFieldUpdate(item.id, 'quantidade', parseInt(e.target.value) || 1)}
-                    className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+                    className="w-full px-3 py-2 text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   />
                 </div>
 
@@ -241,15 +241,14 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                     Franquia
                   </label>
-                  <select
+                  <Select
                     value={item.franquiaHoras}
-                    onChange={(e) => handleFieldUpdate(item.id, 'franquiaHoras', e.target.value as FranquiaHoras)}
-                    className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+                    onChange={(value) => handleFieldUpdate(item.id, 'franquiaHoras', value as FranquiaHoras)}
                   >
                     {Object.entries(FranquiaHorasLabels).map(([value, label]) => (
                       <option key={value} value={value}>{label}</option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
 
                 {/* Período */}
@@ -257,15 +256,14 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                     Período
                   </label>
-                  <select
+                  <Select
                     value={item.periodoLocacao}
-                    onChange={(e) => handleFieldUpdate(item.id, 'periodoLocacao', e.target.value as PeriodoLocacao)}
-                    className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+                    onChange={(value) => handleFieldUpdate(item.id, 'periodoLocacao', value as PeriodoLocacao)}
                   >
                     {Object.entries(PeriodoLocacaoLabels).map(([value, label]) => (
                       <option key={value} value={value}>{label}</option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
               </div>
 
@@ -283,7 +281,7 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
                       step="0.01"
                       value={item.valorUnitario}
                       onChange={(e) => handleFieldUpdate(item.id, 'valorUnitario', parseFloat(e.target.value) || 0)}
-                      className="w-full pl-10 pr-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+                      className="w-full pl-10 pr-3 py-2 text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                     />
                   </div>
                 </div>
@@ -298,7 +296,7 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
                     value={item.observacoes}
                     onChange={(e) => handleFieldUpdate(item.id, 'observacoes', e.target.value)}
                     placeholder="Ex: backup para área de TI"
-                    className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+                    className="w-full px-3 py-2 text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   />
                 </div>
 

@@ -19,7 +19,6 @@ import {
   Download,
   ChevronDown,
   AlertCircle,
-  CheckCircle,
   Loader2,
   RefreshCw,
   Split,
@@ -32,6 +31,8 @@ import { quotationService } from '../../services';
 import QuotationForm from './QuotationForm';
 import QuotationPreview from './QuotationPreview';
 import type { DocumentTipo, DocumentStatus } from '../../types/proposal';
+import { useNotification } from '../../../../hooks/useNotification';
+import Notification from '../../../../components/Notification';
 
 // ============================================
 // TYPES
@@ -54,10 +55,8 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('split');
   const [isSaving, setIsSaving] = useState(false);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
-  const [notification, setNotification] = useState<{
-    type: 'success' | 'error' | 'info';
-    message: string;
-  } | null>(null);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const { notification, showSuccess, showError, showInfo, hideNotification } = useNotification();
 
   // Store
   const {
@@ -74,13 +73,14 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
   // Load quotation if editing
   useEffect(() => {
     if (quotationId) {
+      setIsInitialLoading(true);
       loadExistingQuotation(quotationId);
     } else {
+      setIsInitialLoading(false);
       createNew('proposta');
     }
     
     return () => {
-      // Cleanup on unmount
       clearCurrent();
     };
   }, [quotationId]);
@@ -91,20 +91,17 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
       const quotation = await quotationService.getById(id);
       if (quotation) {
         loadQuotation(quotation);
+        setIsInitialLoading(false);
       } else {
-        showNotification('error', 'Proposta não encontrada');
+        showError('Proposta não encontrada');
+        setIsInitialLoading(false);
         navigate('/propostas');
       }
     } catch (err) {
       console.error('Error loading quotation:', err);
-      showNotification('error', 'Erro ao carregar proposta');
+      showError('Erro ao carregar proposta');
+      setIsInitialLoading(false);
     }
-  };
-
-  // Show notification
-  const showNotification = (type: 'success' | 'error' | 'info', message: string) => {
-    setNotification({ type, message });
-    setTimeout(() => setNotification(null), 4000);
   };
 
   // Save quotation
@@ -116,16 +113,16 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
       if (current.id && quotationId) {
         // Update existing
         await quotationService.update(current);
-        showNotification('success', 'Proposta salva com sucesso!');
+        showSuccess('Sucesso', 'Proposta salva com sucesso!');
       } else {
         // Create new
         const created = await quotationService.create(current);
         loadQuotation(created);
-        showNotification('success', 'Proposta criada com sucesso!');
+        showSuccess('Sucesso', 'Proposta criada com sucesso!');
       }
     } catch (err) {
       console.error('Error saving:', err);
-      showNotification('error', 'Erro ao salvar proposta');
+      showError('Erro', 'Erro ao salvar proposta');
     } finally {
       setIsSaving(false);
     }
@@ -134,17 +131,17 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
   // Update status
   const handleStatusChange = async (newStatus: DocumentStatus) => {
     if (!current?.id) {
-      showNotification('error', 'Salve a proposta antes de alterar o status');
+      showError('Ação não permitida', 'Salve a proposta antes de alterar o status');
       return;
     }
     
     try {
       await quotationService.updateStatus(current.id, newStatus);
       loadQuotation({ ...current, status: newStatus });
-      showNotification('success', `Status alterado para ${newStatus}`);
+      showSuccess('Status atualizado', `Status alterado para ${newStatus}`);
     } catch (err) {
       console.error('Error updating status:', err);
-      showNotification('error', 'Erro ao alterar status');
+      showError('Erro', 'Erro ao alterar status');
     }
     setShowStatusMenu(false);
   };
@@ -156,10 +153,10 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
     try {
       const duplicate = await quotationService.duplicate(current.id);
       loadQuotation(duplicate);
-      showNotification('success', 'Proposta duplicada! Editando nova versão.');
+      showSuccess('Proposta duplicada', 'Editando nova versão.');
     } catch (err) {
       console.error('Error duplicating:', err);
-      showNotification('error', 'Erro ao duplicar proposta');
+      showError('Erro', 'Erro ao duplicar proposta');
     }
   };
 
@@ -175,7 +172,7 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
       negotiating: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300',
       price_survey: 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300',
       lost: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300',
-      cancelled: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500',
+      cancelled: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
       closed: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300',
     };
     return colors[status] || colors.draft;
@@ -197,7 +194,7 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
   // RENDER
   // ============================================
 
-  if (isLoading) {
+  if (isLoading || isInitialLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
@@ -208,7 +205,7 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
     );
   }
 
-  if (!current) {
+  if (!current && !isInitialLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
@@ -229,12 +226,12 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 print:bg-white print:min-h-0">
       {/* ========== HEADER (hidden on print) ========== */}
       <header className="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 print:hidden">
-        <div className="flex items-center justify-between px-4 h-16">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 min-h-16 py-2">
           {/* Left: Back + Title */}
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate(-1)}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-90 rounded-lg transition-all duration-150"
             >
               <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
@@ -257,7 +254,7 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
             <div className="relative">
               <button
                 onClick={() => setShowStatusMenu(!showStatusMenu)}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${getStatusColor(current.status)}`}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-150 active:scale-[0.97] ${getStatusColor(current.status)}`}
               >
                 {getStatusLabel(current.status)}
                 <ChevronDown className="w-4 h-4" />
@@ -275,7 +272,7 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
                       <button
                         key={status}
                         onClick={() => handleStatusChange(status)}
-                        className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                        className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 transition-colors duration-150 ${
                           current.status === status ? 'bg-gray-100 dark:bg-gray-700' : ''
                         }`}
                       >
@@ -298,12 +295,12 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
           </div>
 
           {/* Right: Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             {/* View Mode Toggle */}
-            <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+            <div className="hidden sm:flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
               <button
                 onClick={() => setViewMode('form')}
-                className={`p-2 rounded-md transition-colors ${
+                className={`p-2 rounded-md transition-all duration-150 active:scale-90 ${
                   viewMode === 'form' 
                     ? 'bg-white dark:bg-gray-600 shadow-sm' 
                     : 'hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -314,7 +311,7 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
               </button>
               <button
                 onClick={() => setViewMode('split')}
-                className={`p-2 rounded-md transition-colors ${
+                className={`p-2 rounded-md transition-all duration-150 active:scale-90 ${
                   viewMode === 'split' 
                     ? 'bg-white dark:bg-gray-600 shadow-sm' 
                     : 'hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -325,7 +322,7 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
               </button>
               <button
                 onClick={() => setViewMode('preview')}
-                className={`p-2 rounded-md transition-colors ${
+                className={`p-2 rounded-md transition-all duration-150 active:scale-90 ${
                   viewMode === 'preview' 
                     ? 'bg-white dark:bg-gray-600 shadow-sm' 
                     : 'hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -336,12 +333,12 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
               </button>
             </div>
 
-            <div className="w-px h-8 bg-gray-200 dark:bg-gray-700" />
+            <div className="hidden sm:block w-px h-8 bg-gray-200 dark:bg-gray-700" />
 
             {/* Quick Actions */}
             <button
               onClick={handlePrint}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              className="hidden sm:flex p-2 hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-90 rounded-lg transition-all duration-150"
               title="Imprimir"
             >
               <Printer className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -350,36 +347,36 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
             <button
               onClick={handleDuplicate}
               disabled={!current.id}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
+              className="hidden sm:flex p-2 hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-90 rounded-lg transition-all duration-150 disabled:opacity-50"
               title="Duplicar"
             >
               <Copy className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
 
-            <div className="w-px h-8 bg-gray-200 dark:bg-gray-700" />
+            <div className="hidden sm:block w-px h-8 bg-gray-200 dark:bg-gray-700" />
 
             {/* Save Button */}
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="flex items-center gap-2 px-4 py-2 bg-[#0D2A59] text-white rounded-lg hover:bg-[#0D2A59]/90 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 bg-[#0D2A59] text-white rounded-lg hover:bg-[#0D2A59]/90 active:bg-[#0D2A59]/80 active:scale-[0.97] transition-all duration-150 disabled:opacity-50"
             >
               {isSaving ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <Save className="w-4 h-4" />
               )}
-              Salvar
+              <span className="hidden sm:inline">Salvar</span>
             </button>
 
             {/* Send Button */}
             <button
               onClick={() => handleStatusChange('negotiating')}
               disabled={!current.id || current.status === 'closed' || current.status === 'cancelled'}
-              className="flex items-center gap-2 px-4 py-2 bg-[#F3B229] text-[#0D2A59] rounded-lg hover:bg-[#F3B229]/90 transition-colors disabled:opacity-50 font-medium"
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 bg-[#F3B229] text-[#0D2A59] rounded-lg hover:bg-[#F3B229]/90 active:bg-[#F3B229]/80 active:scale-[0.97] transition-all duration-150 disabled:opacity-50 font-medium"
             >
               <Send className="w-4 h-4" />
-              Enviar
+              <span className="hidden sm:inline">Enviar</span>
             </button>
           </div>
         </div>
@@ -405,7 +402,7 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
                   bg-white dark:bg-gray-800 overflow-y-auto print:hidden
                   ${viewMode === 'split' ? 'w-1/2 border-r border-gray-200 dark:border-gray-700' : 'w-full'}
                 `}
-                style={{ height: 'calc(100vh - 64px)' }}
+                style={{ height: 'calc(100vh - 72px)' }}
               >
                 <QuotationForm />
               </motion.div>
@@ -434,27 +431,14 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
         </div>
       </main>
 
-      {/* ========== NOTIFICATIONS ========== */}
-      <AnimatePresence>
-        {notification && (
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            className={`
-              fixed bottom-6 right-6 px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 z-50
-              ${notification.type === 'success' ? 'bg-green-600 text-white' : ''}
-              ${notification.type === 'error' ? 'bg-red-600 text-white' : ''}
-              ${notification.type === 'info' ? 'bg-blue-600 text-white' : ''}
-            `}
-          >
-            {notification.type === 'success' && <CheckCircle className="w-5 h-5" />}
-            {notification.type === 'error' && <AlertCircle className="w-5 h-5" />}
-            {notification.type === 'info' && <AlertCircle className="w-5 h-5" />}
-            {notification.message}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* ========== TOAST NOTIFICATION ========== */}
+      <Notification
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+        isVisible={notification.isVisible}
+        onClose={hideNotification}
+      />
 
       {/* ========== ERROR BANNER ========== */}
       {error && (

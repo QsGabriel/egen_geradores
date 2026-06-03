@@ -27,6 +27,8 @@ import {
 import { quotationService } from '../../services';
 import type { SalesQuotation, DocumentStatus } from '../../types/proposal';
 import { DocumentStatusLabels, DocumentStatusColors, DocumentTipoLabels } from '../../types/proposal';
+import { useNotification } from '../../../../hooks/useNotification';
+import Notification from '../../../../components/Notification';
 
 // ============================================
 // HELPERS
@@ -67,7 +69,7 @@ function StatusCard({ label, count, active, colorClass, icon, onClick }: StatusC
   return (
     <button
       onClick={onClick}
-      className={`group flex items-center gap-3 p-4 rounded-xl border-2 text-left transition-all duration-200 w-full
+      className={`group flex items-center gap-3 p-4 rounded-xl border-2 text-left transition-all duration-200 w-full active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-yellow-500 dark:focus-visible:ring-offset-gray-900
         ${active
           ? `${colorClass} border-current shadow-md`
           : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm'
@@ -124,14 +126,14 @@ function DeleteDialog({ proposal, onConfirm, onCancel, loading }: DeleteDialogPr
           <button
             onClick={onCancel}
             disabled={loading}
-            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-all duration-150 active:scale-[0.97] disabled:opacity-50"
           >
             Cancelar
           </button>
           <button
             onClick={onConfirm}
             disabled={loading}
-            className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg transition-all duration-150 active:scale-[0.97] disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 flex items-center gap-2"
           >
             {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
             Excluir
@@ -160,6 +162,8 @@ function StatusBadge({ status }: { status: DocumentStatus }) {
 
 export default function ProposalManagementPage() {
   const navigate = useNavigate();
+
+  const { notification, showSuccess, showError, hideNotification } = useNotification();
 
   const [proposals, setProposals] = useState<SalesQuotation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -237,10 +241,18 @@ export default function ProposalManagementPage() {
     setDeleting(true);
     try {
       await quotationService.delete(deleteTarget.id);
+      showSuccess(
+        'Proposta excluída',
+        `${deleteTarget.documentId || 'Proposta'} foi removida com sucesso.`
+      );
       setDeleteTarget(null);
       load();
     } catch (err) {
       console.error('[ProposalManagementPage] delete error:', err);
+      showError(
+        'Erro ao excluir',
+        'Não foi possível excluir a proposta. Tente novamente.'
+      );
     } finally {
       setDeleting(false);
     }
@@ -253,12 +265,12 @@ export default function ProposalManagementPage() {
   const isEmpty = !loading && proposals.length === 0;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-5 lg:space-y-6 animate-fade-in">
 
       {/* ===== PAGE HEADER ===== */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
             <FileText className="h-8 w-8 text-yellow-500" />
             Gestão de Propostas
           </h1>
@@ -272,14 +284,14 @@ export default function ProposalManagementPage() {
             onClick={load}
             disabled={loading}
             title="Atualizar lista"
-            className="p-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors shadow-sm"
+            className="p-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 active:scale-[0.93] transition-all duration-150 shadow-sm"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
 
           <button
             onClick={handleNew}
-            className="flex items-center gap-2 px-4 py-2.5 bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-xl font-semibold text-sm transition-all shadow-md"
+            className="flex items-center gap-2 px-4 py-2.5 bg-yellow-500 hover:bg-yellow-600 active:bg-yellow-700 text-gray-900 rounded-xl font-semibold text-sm transition-all duration-150 shadow-md hover:shadow-lg active:scale-[0.97]"
           >
             <Plus className="w-4 h-4" />
             <span>Nova Proposta</span>
@@ -340,11 +352,11 @@ export default function ProposalManagementPage() {
       </div>
 
       {/* ===== SEARCH & FILTER BAR ===== */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-3 sm:p-4">
         <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
           {/* Search */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500 pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-400 pointer-events-none" />
             <input
               type="text"
               value={search}
@@ -355,7 +367,7 @@ export default function ProposalManagementPage() {
             {search && (
               <button
                 onClick={() => setSearch('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 active:scale-90 transition-transform duration-150"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -368,7 +380,7 @@ export default function ProposalManagementPage() {
               <span className="text-xs text-gray-500 dark:text-gray-400">Filtro:</span>
               <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${DocumentStatusColors[statusFilter]}`}>
                 {DocumentStatusLabels[statusFilter]}
-                <button onClick={() => setStatusFilter('all')} className="hover:opacity-70">
+                <button onClick={() => setStatusFilter('all')} className="hover:opacity-70 active:scale-90 transition-transform duration-150">
                   <X className="w-3 h-3" />
                 </button>
               </span>
@@ -390,7 +402,7 @@ export default function ProposalManagementPage() {
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-sm text-red-700 dark:text-red-300 flex items-center gap-3">
           <AlertTriangle className="w-5 h-5 flex-shrink-0" />
           {error}
-          <button onClick={load} className="ml-auto underline hover:no-underline">Tentar novamente</button>
+          <button onClick={load} className="ml-auto underline hover:no-underline active:scale-95 transition-all duration-150">Tentar novamente</button>
         </div>
       )}
 
@@ -399,13 +411,13 @@ export default function ProposalManagementPage() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="divide-y divide-gray-100 dark:divide-gray-700">
             {[1, 2, 3, 4, 5].map(i => (
-              <div key={i} className="px-6 py-4 flex items-center gap-4 animate-pulse">
-                <div className="w-16 h-4 bg-gray-200 dark:bg-gray-700 rounded" />
-                <div className="flex-1 h-4 bg-gray-200 dark:bg-gray-700 rounded" />
-                <div className="w-24 h-4 bg-gray-200 dark:bg-gray-700 rounded hidden sm:block" />
-                <div className="w-28 h-4 bg-gray-200 dark:bg-gray-700 rounded hidden md:block" />
-                <div className="w-24 h-6 bg-gray-200 dark:bg-gray-700 rounded-full hidden lg:block" />
-                <div className="w-20 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+              <div key={i} className="px-6 py-4 flex items-center gap-4">
+                <div className="w-16 h-4 skeleton" />
+                <div className="flex-1 h-4 skeleton" />
+                <div className="w-24 h-4 skeleton hidden sm:block" />
+                <div className="w-28 h-4 skeleton hidden md:block" />
+                <div className="w-24 h-6 skeleton-circle hidden lg:block" />
+                <div className="w-20 h-8 skeleton rounded-lg" />
               </div>
             ))}
           </div>
@@ -414,7 +426,7 @@ export default function ProposalManagementPage() {
 
       {/* ===== EMPTY STATE ===== */}
       {isEmpty && (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-12 text-center">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm px-6 py-10 sm:p-12 text-center">
           <div className="w-16 h-16 bg-yellow-50 dark:bg-yellow-900/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <FileText className="w-8 h-8 text-yellow-500" />
           </div>
@@ -429,7 +441,7 @@ export default function ProposalManagementPage() {
           {!search && statusFilter === 'all' && (
             <button
               onClick={handleNew}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-xl font-semibold text-sm transition-colors shadow-md"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-yellow-500 hover:bg-yellow-600 active:bg-yellow-700 text-gray-900 rounded-xl font-semibold text-sm transition-all duration-150 shadow-md hover:shadow-lg active:scale-[0.97]"
             >
               <Plus className="w-4 h-4" />
               Nova Proposta
@@ -442,8 +454,8 @@ export default function ProposalManagementPage() {
       {!loading && proposals.length > 0 && (
         <>
           {/* Desktop table */}
-          <div className="hidden md:block bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="hidden md:block bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-x-auto">
+            <table className="w-full min-w-[800px] text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                   <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-36">
@@ -470,7 +482,7 @@ export default function ProposalManagementPage() {
                 {proposals.map((p, idx) => (
                   <tr
                     key={p.id}
-                    className="group hover:bg-yellow-50/40 dark:hover:bg-yellow-900/10 transition-colors"
+                    className="group hover:bg-yellow-50/40 dark:hover:bg-yellow-900/10 active:bg-yellow-50/70 dark:active:bg-yellow-900/20 transition-colors"
                     style={{ animationDelay: `${Math.min(idx * 0.03, 0.18)}s` }}
                   >
                     {/* Número */}
@@ -483,7 +495,7 @@ export default function ProposalManagementPage() {
                           <span className="font-mono font-semibold text-gray-800 dark:text-gray-100 text-xs">
                             {p.documentId || `#${p.id.slice(0, 6).toUpperCase()}`}
                           </span>
-                          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+                          <p className="text-[10px] text-gray-400 dark:text-gray-400 mt-0.5">
                             {DocumentTipoLabels[p.tipo] || p.tipo}
                           </p>
                         </div>
@@ -493,13 +505,13 @@ export default function ProposalManagementPage() {
                     {/* Cliente */}
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2">
-                        <Building2 className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                        <Building2 className="w-4 h-4 text-gray-400 dark:text-gray-400 flex-shrink-0" />
                         <div className="min-w-0">
                           <p className="font-medium text-gray-800 dark:text-gray-100 truncate max-w-xs">
                             {p.cliente.nome || <span className="text-gray-400 italic">Não informado</span>}
                           </p>
                           {p.cliente.responsavel && (
-                            <p className="text-xs text-gray-400 dark:text-gray-500 truncate max-w-xs">
+                            <p className="text-xs text-gray-400 dark:text-gray-400 truncate max-w-xs">
                               {p.cliente.responsavel}
                             </p>
                           )}
@@ -538,21 +550,21 @@ export default function ProposalManagementPage() {
                         <button
                           onClick={() => handleView(p)}
                           title="Visualizar / Exportar PDF"
-                          className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors"
+                          className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 hover:text-yellow-600 dark:hover:text-yellow-400 active:scale-90 transition-all duration-150"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleEdit(p)}
                           title="Editar"
-                          className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+                          className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:text-amber-600 dark:hover:text-amber-400 active:scale-90 transition-all duration-150"
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => setDeleteTarget(p)}
                           title="Excluir"
-                          className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                          className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 active:scale-90 transition-all duration-150"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -565,11 +577,11 @@ export default function ProposalManagementPage() {
 
             {/* Table footer */}
             <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30 flex items-center justify-between">
-              <span className="text-xs text-gray-400 dark:text-gray-500">
+              <span className="text-xs text-gray-400 dark:text-gray-400">
                 {proposals.length} proposta{proposals.length !== 1 ? 's' : ''}
                 {statusFilter !== 'all' ? ` com status "${DocumentStatusLabels[statusFilter]}"` : ' no total'}
               </span>
-              <span className="text-xs text-gray-400 dark:text-gray-500">
+              <span className="text-xs text-gray-400 dark:text-gray-400">
                 Valor total em aberto:{' '}
                 <span className="font-semibold text-gray-600 dark:text-gray-300">
                   {formatCurrency(metrics.totalValue)}
@@ -583,7 +595,7 @@ export default function ProposalManagementPage() {
             {proposals.map(p => (
               <div
                 key={p.id}
-                className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-4 space-y-3"
+                className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-4 space-y-3 active:scale-[0.985] transition-transform duration-150"
               >
                 {/* Card header */}
                 <div className="flex items-start justify-between gap-3">
@@ -595,7 +607,7 @@ export default function ProposalManagementPage() {
                       <p className="font-mono font-bold text-gray-800 dark:text-gray-100 text-sm">
                         {p.documentId || `#${p.id.slice(0, 6).toUpperCase()}`}
                       </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">
+                      <p className="text-xs text-gray-400 dark:text-gray-400">
                         {DocumentTipoLabels[p.tipo] || p.tipo}
                       </p>
                     </div>
@@ -606,13 +618,13 @@ export default function ProposalManagementPage() {
                 {/* Client + date */}
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">Cliente</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-400 mb-0.5">Cliente</p>
                     <p className="font-medium text-gray-800 dark:text-gray-100 truncate">
                       {p.cliente.nome || <span className="text-gray-400 italic text-xs">Não informado</span>}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">Data de Emissão</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-400 mb-0.5">Data de Emissão</p>
                     <p className="font-medium text-gray-700 dark:text-gray-300">{formatDate(p.dataEmissao)}</p>
                   </div>
                 </div>
@@ -620,7 +632,7 @@ export default function ProposalManagementPage() {
                 {/* Value + actions */}
                 <div className="flex items-center justify-between pt-1 border-t border-gray-100 dark:border-gray-700">
                   <div>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">Valor Total</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-400 mb-0.5">Valor Total</p>
                     <p className="font-bold text-gray-800 dark:text-gray-100">
                       {formatCurrency(p.totalComDesconto || p.totalGeral || 0)}
                     </p>
@@ -632,21 +644,21 @@ export default function ProposalManagementPage() {
                     <button
                       onClick={() => handleView(p)}
                       title="Visualizar"
-                      className="p-2.5 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors"
+                      className="p-2.5 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 hover:text-yellow-600 dark:hover:text-yellow-400 active:scale-90 transition-all duration-150"
                     >
                       <Eye className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleEdit(p)}
                       title="Editar"
-                      className="p-2.5 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+                      className="p-2.5 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:text-amber-600 dark:hover:text-amber-400 active:scale-90 transition-all duration-150"
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => setDeleteTarget(p)}
                       title="Excluir"
-                      className="p-2.5 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                      className="p-2.5 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 active:scale-90 transition-all duration-150"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -667,6 +679,15 @@ export default function ProposalManagementPage() {
           loading={deleting}
         />
       )}
+
+      {/* ===== TOAST NOTIFICATION ===== */}
+      <Notification
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+        isVisible={notification.isVisible}
+        onClose={hideNotification}
+      />
     </div>
   );
 }

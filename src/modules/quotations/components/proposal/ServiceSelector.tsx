@@ -6,6 +6,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, Truck, Wrench, PackageOpen, PenLine, Calculator } from 'lucide-react';
 import { useQuotationStore, selectItensSpot } from '../../stores/quotationStore';
+import { Select } from './Select';
 import type { ProposalItemSpot, ItemTipoSpot } from '../../types/proposal';
 import { ItemTipoSpotLabels } from '../../types/proposal';
 
@@ -117,22 +118,21 @@ export function ServiceSelector({ className = '' }: ServiceSelectorProps) {
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                     Tipo
                   </label>
-                  <select
+                  <Select
                     value={item.tipo}
-                    onChange={(e) => {
-                      const newTipo = e.target.value as ItemTipoSpot;
+                    onChange={(value) => {
+                      const newTipo = value as ItemTipoSpot;
                       updateItemSpot(item.id, {
                         tipo: newTipo,
                         descricao: newTipo === 'personalizado' ? '' : ItemTipoSpotLabels[newTipo],
                       });
                       recalculateTotals();
                     }}
-                    className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
                   >
                     {QUICK_ADD_TYPES.map((t) => (
                       <option key={t} value={t}>{ItemTipoSpotLabels[t]}</option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
 
                 {/* Descrição */}
@@ -172,7 +172,7 @@ export function ServiceSelector({ className = '' }: ServiceSelectorProps) {
                     min={1}
                     value={item.quantidade}
                     onChange={(e) => handleFieldUpdate(item.id, 'quantidade', parseInt(e.target.value) || 1)}
-                    className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+                    className="w-full px-3 py-2 text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   />
                 </div>
 
@@ -188,7 +188,7 @@ export function ServiceSelector({ className = '' }: ServiceSelectorProps) {
                       step="0.01"
                       value={item.valorUnitario}
                       onChange={(e) => handleFieldUpdate(item.id, 'valorUnitario', parseFloat(e.target.value) || 0)}
-                      className="w-full pl-10 pr-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+                      className="w-full pl-10 pr-3 py-2 text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                     />
                   </div>
                 </div>
@@ -205,7 +205,7 @@ export function ServiceSelector({ className = '' }: ServiceSelectorProps) {
                     value={item.observacoes}
                     onChange={(e) => handleFieldUpdate(item.id, 'observacoes', e.target.value)}
                     placeholder="Campo livre..."
-                    className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+                    className="w-full px-3 py-2 text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   />
                 </div>
 
