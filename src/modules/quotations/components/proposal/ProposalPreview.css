@@ -226,6 +226,7 @@
   font-weight: 700;
   color: #ffffff;
   text-transform: uppercase;
+  line-height: 1.2;
 }
 
 .proposal-intro-panel p {
@@ -246,10 +247,10 @@
   border-top: 0.4mm solid #d9d9d9;
   display: flex;
   align-items: center;
-  gap: 3mm;
+  gap: 4mm;
   box-sizing: border-box;
   min-height: 44mm;
-  padding: 4mm 8mm 4mm 115mm;
+  padding: 4mm 12mm 4mm 98mm;
 }
 
 .proposal-brand-generator {
@@ -292,6 +293,9 @@
   font-size: 10pt;
   line-height: 1.5;
   color: #111111;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  min-width: 0;
 }
 
 .proposal-brand-contact p {
@@ -328,6 +332,8 @@
   color: #ffffff;
   font-weight: 700;
   border-color: #173172;
+  vertical-align: middle;
+  line-height: 1.25;
 }
 
 .proposal-table-main .col-item {
@@ -407,7 +413,44 @@
 
 /* ── Contract body — styled ── */
 .proposal-contract-body-container {
-  overflow-y: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+/* ── Continuous-flow contract page (browser handles pagination) ── */
+.proposal-contract-flow-page {
+  height: auto;
+  min-height: 297mm;
+  overflow: visible;
+  background: #ffffff;
+  position: relative;
+}
+
+.proposal-contract-flow-page .proposal-master-header {
+  position: relative;
+}
+
+.proposal-contract-flow-body {
+  padding: 10mm 12mm 20mm;
+  box-sizing: border-box;
+  width: 210mm;
+}
+
+.proposal-contract-flow-footer {
+  width: 210mm;
+  height: 8mm;
+  box-sizing: border-box;
+  background: linear-gradient(90deg, #c9a43f 0%, #4f9bdc 50%, #5caf5d 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4mm;
+  font-size: 9pt;
+  font-weight: 500;
+  margin-top: 2mm;
 }
 
 .proposal-contract-body-wrapper {
@@ -442,12 +485,17 @@
 
 .proposal-contract-section-title {
   margin: 4mm 0 2mm;
-  padding: 1mm 2mm;
+  padding: 0 2mm;
+  height: 6.5mm;
+  line-height: 6.5mm;
   background: #173172;
   color: #ffffff;
   font-size: 10pt;
   font-weight: 700;
   text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
 }
 
 .proposal-contract-subsection {
@@ -570,9 +618,14 @@
 }
 
 .proposal-dispositions-inline .proposal-blue-section-title {
-  padding: 0.7mm 1.2mm;
+  padding: 0 2mm;
+  height: 6.5mm;
+  line-height: 6.5mm;
   background: #173172;
   margin-bottom: 2.2mm;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
 }
 
 .proposal-dispositions-inline p {
@@ -610,9 +663,14 @@
 }
 
 .proposal-accept-section .proposal-blue-section-title {
-  padding: 0.7mm 1.2mm;
+  padding: 0 2mm;
+  height: 6.5mm;
+  line-height: 6.5mm;
   background: #173172;
   margin-bottom: 6mm;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
 }
 
 .proposal-accept-section p {
@@ -664,17 +722,59 @@
   margin-top: 0.5mm;
 }
 
-/* ─── Print media: hard page-breaks per A4 page ─── */
+/* ─── Print media: browser-native pagination (react-to-print) ─── */
+@page {
+  size: A4;
+  margin: 0;
+}
+
 @media print {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    width: auto;
+    height: auto;
+    background: white;
+  }
+
+  /* Preserve all backgrounds, gradients and colors */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Hide the preview toolbar and any non-document chrome */
+  .preview-toolbar,
+  .document-preview-container,
+  .document-preview-stage {
+    display: block !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
+    min-width: 0 !important;
+  }
+
+  /* Remove preview zoom so the document renders at true A4 dimensions */
   .proposal-document-wrapper {
     zoom: 1 !important;
     transform: none !important;
+    width: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
+  /* Force a page break after every A4 page */
   .a4-page {
     page-break-after: always;
     break-after: page;
+    width: 210mm;
+    height: 297mm;
     overflow: hidden;
+    margin: 0;
+    box-shadow: none;
   }
 
   .a4-page:last-child {
@@ -682,24 +782,109 @@
     break-after: auto;
   }
 
+  /* Compatibility spacer (kept for legacy html2canvas approach) */
   .html2pdf__page-break {
     page-break-after: always;
     break-after: page;
   }
 
-  .proposal-table thead,
-  .proposal-table tfoot {
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
-
-  .proposal-dispositions-inline .proposal-blue-section-title,
-  .proposal-dispositions-final .proposal-blue-section-title {
-    page-break-after: avoid;
-    break-after: avoid;
-  }
-
+  /* Remove box-shadow and any screen-only decorations from the document */
   .proposal-print-document {
     box-shadow: none;
+    width: 210mm;
+  }
+
+  /* --- Avoid splitting critical blocks across pages --- */
+
+  /* Headers and footers must stay intact */
+  .proposal-master-header,
+  .proposal-master-footer {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Table headers and footers must stay intact */
+  .proposal-table thead,
+  .proposal-table tfoot {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Individual table rows should not be split */
+  .proposal-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Single-cell rows (totals band, subtotals) must stay intact */
+  .proposal-totals-band,
+  .proposal-table-subtotal {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Blue section titles — keep with the content that follows */
+  .proposal-blue-section-title,
+  .proposal-contract-section-title,
+  .proposal-contract-subsection-title {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  /* Dispositions / accept sections — keep title with first paragraph */
+  .proposal-dispositions-inline .proposal-blue-section-title,
+  .proposal-dispositions-final .proposal-blue-section-title,
+  .proposal-accept-section .proposal-blue-section-title,
+  .proposal-contract-section-title {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  /* Contract body subsections should not be broken internally */
+  .proposal-contract-subsection {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Keep contract intro panel together */
+  .proposal-intro-panel {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Keep conditions columns together */
+  .proposal-conditions-grid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Allow natural breaks inside contract flow pages */
+  .proposal-contract-flow-page {
+    page-break-after: always;
+    break-after: page;
+    break-inside: auto;
+    page-break-inside: auto;
+    width: 210mm;
+    height: auto !important;
+    min-height: 297mm;
+    overflow: visible !important;
+    margin: 0;
+    box-shadow: none;
+  }
+
+  .proposal-contract-flow-body {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  .proposal-contract-flow-footer {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Cover page should not have extra page breaks inside */
+  .proposal-cover-page {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 }

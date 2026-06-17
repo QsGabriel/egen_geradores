@@ -44,9 +44,9 @@ const DOCUMENT_TITLES: Record<DocumentTipo, string> = {
   contrato: 'CONTRATO DE LOCAÇÃO',
 };
 
-const MAX_SCOPE_ROWS_PER_PAGE = 22;
-const EQUIPMENT_ROWS_WHEN_BOTH_TABLES = 7;
-const SERVICE_ROWS_WHEN_BOTH_TABLES = 5;
+const MAX_SCOPE_ROWS_PER_PAGE = 18;
+const EQUIPMENT_ROWS_WHEN_BOTH_TABLES = 5;
+const SERVICE_ROWS_WHEN_BOTH_TABLES = 4;
 
 const DISPOSITION_PARAGRAPHS = [
   'Este orçamento não garante a reserva dos equipamentos, que somente será confirmada com a assinatura do contrato e pedido de compra.',
@@ -207,11 +207,8 @@ function buildSellerQrPayload(seller: Required<ProposalSellerInfo>): string {
 function renderPageBreaks(
   pages: Array<{ key: string; content: React.ReactNode }>,
 ): React.ReactNode {
-  return pages.map((page, index) => (
-    <Fragment key={page.key}>
-      {index > 0 ? <div className="html2pdf__page-break" /> : null}
-      {page.content}
-    </Fragment>
+  return pages.map((page) => (
+    <Fragment key={page.key}>{page.content}</Fragment>
   ));
 }
 
@@ -294,6 +291,77 @@ function ConditionColumns({ rows }: { rows: ConditionRow[] }) {
 // ============================================
 // CONTRACT BODY RENDERER
 // ============================================
+
+const CONTRACT_PAGE_MAX_HEIGHT_MM = 215;
+
+function estimateContractLineHeight(line: string): number {
+  const trimmed = line.trim();
+
+  if (!trimmed) return 0;
+
+  // Separator
+  if (/^[─═]{5,}$/.test(trimmed)) return 5;
+
+  // Main title
+  if (/CONTRATO DE LOCAÇÃO/.test(trimmed)) return 8;
+
+  // Date line
+  if (/Goiânia,.*\|.*Contrato/.test(trimmed)) return 7.5;
+
+  // Section header: "1. PARTES CONTRATANTES E LOCAL"
+  if (/^\d+\.\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ\s]{5,}$/.test(trimmed) && !trimmed.includes(':')) {
+    return 12.5;
+  }
+
+  // Subsection or signature section: "1.1 LOCADORA:" / "ASSINATURAS"
+  if (/^\d+\.\d+\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ\s]{3,}:$/.test(trimmed) || /^ASSINATURAS/.test(trimmed)) {
+    return 8.5;
+  }
+
+  // Signature line with underscores
+  if (/^(.+):\s_{3,}$/.test(trimmed) || /^(.+):\s_{3,}\s+(.+):\s_{3,}$/.test(trimmed)) {
+    return 10;
+  }
+
+  // KV pair
+  if (/^[A-Za-zÀ-úçãõ\s]+:\s+.+$/.test(trimmed)) {
+    return 5.8;
+  }
+
+  // Regular body text
+  return 5.5;
+}
+
+function chunkContractByHeight(text: string): string[][] {
+  const lines = text.split('\n');
+  const chunks: string[][] = [];
+  let currentChunk: string[] = [];
+  let currentHeight = 0;
+
+  for (const line of lines) {
+    const h = estimateContractLineHeight(line);
+
+    if (currentHeight + h > CONTRACT_PAGE_MAX_HEIGHT_MM && currentChunk.length > 0 && h > 0) {
+      // Avoid breaking right after a blank line — carry the blank to the next page
+      const lastIdx = currentChunk.length - 1;
+      if (lastIdx >= 0 && !currentChunk[lastIdx].trim()) {
+        currentChunk.pop();
+      }
+      chunks.push(currentChunk);
+      currentChunk = [];
+      currentHeight = 0;
+    }
+
+    currentChunk.push(line);
+    currentHeight += h;
+  }
+
+  if (currentChunk.length > 0) {
+    chunks.push(currentChunk);
+  }
+
+  return chunks;
+}
 
 function ContractBody({ text }: { text: string }) {
   const lines = text.split('\n');
@@ -489,13 +557,7 @@ export default function ProposalPrintDocument({
 
   const contractPageChunks = useMemo(() => {
     if (quotation.tipo !== 'contrato' || !quotation.contractText) return [];
-    const LINES_PER_PAGE = 55;
-    const lines = quotation.contractText.split('\n');
-    const chunks: string[][] = [];
-    for (let i = 0; i < lines.length; i += LINES_PER_PAGE) {
-      chunks.push(lines.slice(i, i + LINES_PER_PAGE));
-    }
-    return chunks;
+    return chunkContractByHeight(quotation.contractText);
   }, [quotation.tipo, quotation.contractText]);
 
   const issueLine = formatIssueLine(quotation.dataEmissao);
@@ -513,7 +575,7 @@ export default function ProposalPrintDocument({
   const lastScopeTotalItems = lastScopeSlice
     ? lastScopeSlice.equipmentItems.length + lastScopeSlice.serviceItems.length
     : 0;
-  const COMMERCIAL_INLINE_THRESHOLD = 8;
+  const COMMERCIAL_INLINE_THRESHOLD = 4;
   const showCommercialInline = lastScopeTotalItems < COMMERCIAL_INLINE_THRESHOLD;
   const includeCommercialPage = !showCommercialInline;
 
@@ -563,7 +625,7 @@ export default function ProposalPrintDocument({
     ),
   });
 
-  if (showAsAnnex) {
+  if (showAsAnnex && contractPageChunks.length > 0) {
     contractPageChunks.forEach((chunk, idx) => {
       pages.push({
         key: `contract-body-${idx}`,
