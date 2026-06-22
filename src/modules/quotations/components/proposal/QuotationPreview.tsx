@@ -4,7 +4,7 @@
  */
 import React, { useRef, useMemo, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Printer, Download, ZoomIn, ZoomOut, Maximize2, Loader2, FileCheck2 } from 'lucide-react';
+import { Download, ZoomIn, ZoomOut, Maximize2, Loader2, FileCheck2 } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 import { useQuotationStore, selectCurrent } from '../../stores/quotationStore';
 import { convertToContract } from '../../services/quotationService';
@@ -190,14 +190,6 @@ export function QuotationPreview({
                 {convertError}
               </span>
             )}
-            <button
-              onClick={handlePrintToPdf}
-              disabled={!current}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-egen-navy rounded-lg hover:bg-egen-navy/90 active:bg-egen-navy/80 active:scale-[0.97] shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150"
-            >
-              <Printer className="w-4 h-4" />
-              Imprimir
-            </button>
             <button
               onClick={handlePrintToPdf}
               disabled={!current}

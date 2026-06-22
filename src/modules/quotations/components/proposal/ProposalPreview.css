@@ -414,9 +414,6 @@
 /* ── Contract body — styled ── */
 .proposal-contract-body-container {
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
 }
 
 /* ── Continuous-flow contract page (browser handles pagination) ── */
@@ -458,11 +455,11 @@
   margin: 0 auto;
   color: #111111;
   font-size: 9.5pt;
-  line-height: 1.5;
+  line-height: 1.42;
 }
 
 .proposal-contract-main-title {
-  margin: 0 0 3mm;
+  margin: 0 0 1.2mm;
   font-size: 12pt;
   font-weight: 700;
   text-align: center;
@@ -471,23 +468,23 @@
 }
 
 .proposal-contract-date-line {
-  margin: 0 0 3mm;
+  margin: 0 0 1.2mm;
   font-size: 9pt;
   text-align: center;
   color: #444;
 }
 
 .proposal-contract-separator {
-  margin: 2.5mm 0;
+  margin: 1.4mm 0;
   border: none;
   border-top: 0.3mm solid #173172;
 }
 
 .proposal-contract-section-title {
-  margin: 4mm 0 2mm;
+  margin: 2.2mm 0 1.2mm;
   padding: 0 2mm;
-  height: 6.5mm;
-  line-height: 6.5mm;
+  height: 5.5mm;
+  line-height: 5.5mm;
   background: #173172;
   color: #ffffff;
   font-size: 10pt;
@@ -503,30 +500,30 @@
 }
 
 .proposal-contract-subsection-title {
-  margin: 2mm 0 1.5mm;
+  margin: 1.2mm 0 0.6mm;
   font-size: 10pt;
   font-weight: 700;
   color: #173172;
 }
 
 .proposal-contract-subsection-end {
-  margin-bottom: 1.5mm;
+  margin-bottom: 0.6mm;
 }
 
 .proposal-contract-body {
-  margin: 0 0 1.2mm;
+  margin: 0 0 0.6mm;
   font-size: 9.5pt;
   text-align: justify;
 }
 
 .proposal-contract-standalone {
-  margin: 0 0 2mm;
+  margin: 0 0 0.8mm;
   font-size: 9.5pt;
   text-align: justify;
 }
 
 .proposal-contract-kv {
-  margin: 0 0 0.8mm;
+  margin: 0 0 0.3mm;
   font-size: 9.5pt;
 }
 
@@ -543,6 +540,52 @@
   margin: 0 0 5mm;
   font-size: 9.5pt;
   word-spacing: 0.5mm;
+}
+
+/* ── Contract signature rows (Locadora / Locatária) ── */
+.contract-signature-row {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: baseline;
+  gap: 2.5mm;
+  margin-bottom: 4.5mm;
+  font-size: 10pt;
+  color: #111111;
+}
+
+.contract-signature-left {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.contract-signature-right {
+  flex: 1 1 0;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* ── Contract witness rows (Testemunhas) ── */
+.contract-witness-row {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: baseline;
+  gap: 2.5mm;
+  margin-bottom: 4mm;
+  font-size: 10pt;
+  color: #111111;
+}
+
+.contract-witness-left {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.contract-witness-right {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 /* ── Deprecated raw text (keep for backward compat) ── */

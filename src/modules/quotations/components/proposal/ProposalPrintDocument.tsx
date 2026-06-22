@@ -44,9 +44,9 @@ const DOCUMENT_TITLES: Record<DocumentTipo, string> = {
   contrato: 'CONTRATO DE LOCAÇÃO',
 };
 
-const MAX_SCOPE_ROWS_PER_PAGE = 18;
-const EQUIPMENT_ROWS_WHEN_BOTH_TABLES = 5;
-const SERVICE_ROWS_WHEN_BOTH_TABLES = 4;
+const MAX_SCOPE_ROWS_PER_PAGE = 24;
+const EQUIPMENT_ROWS_WHEN_BOTH_TABLES = 12;
+const SERVICE_ROWS_WHEN_BOTH_TABLES = 10;
 
 const DISPOSITION_PARAGRAPHS = [
   'Este orçamento não garante a reserva dos equipamentos, que somente será confirmada com a assinatura do contrato e pedido de compra.',
@@ -292,7 +292,17 @@ function ConditionColumns({ rows }: { rows: ConditionRow[] }) {
 // CONTRACT BODY RENDERER
 // ============================================
 
-const CONTRACT_PAGE_MAX_HEIGHT_MM = 215;
+const CONTRACT_PAGE_MAX_HEIGHT_MM = 262;
+
+function isSectionTitleLine(line: string): boolean {
+  const t = line.trim();
+  return /^\d+\.\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ\s]{5,}$/.test(t) && !t.includes(':');
+}
+
+function isSubsectionOrSigLine(line: string): boolean {
+  const t = line.trim();
+  return /^\d+\.\d+\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ\s]{3,}:$/.test(t) || /^ASSINATURAS/.test(t);
+}
 
 function estimateContractLineHeight(line: string): number {
   const trimmed = line.trim();
@@ -300,36 +310,40 @@ function estimateContractLineHeight(line: string): number {
   if (!trimmed) return 0;
 
   // Separator
-  if (/^[─═]{5,}$/.test(trimmed)) return 5;
+  if (/^[─═]{5,}$/.test(trimmed)) return 3.1;
 
   // Main title
-  if (/CONTRATO DE LOCAÇÃO/.test(trimmed)) return 8;
+  if (/CONTRATO DE LOCAÇÃO/.test(trimmed)) return 5.8;
 
   // Date line
-  if (/Goiânia,.*\|.*Contrato/.test(trimmed)) return 7.5;
+  if (/Goiânia,.*\|.*Contrato/.test(trimmed)) return 4.8;
 
-  // Section header: "1. PARTES CONTRATANTES E LOCAL"
-  if (/^\d+\.\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ\s]{5,}$/.test(trimmed) && !trimmed.includes(':')) {
-    return 12.5;
-  }
+  // Section header (digit-based, no colon)
+  if (isSectionTitleLine(line)) return 8.9;
 
-  // Subsection or signature section: "1.1 LOCADORA:" / "ASSINATURAS"
-  if (/^\d+\.\d+\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ\s]{3,}:$/.test(trimmed) || /^ASSINATURAS/.test(trimmed)) {
-    return 8.5;
-  }
+  // ASSINATURAS heading
+  if (/^ASSINATURAS/.test(trimmed)) return 8.9;
 
-  // Signature line with underscores
+  // Subsection title (digit.digit-based)
+  if (/^\d+\.\d+\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ\s]{3,}:$/.test(trimmed)) return 5.3;
+
+  // Signature line with underscores (legacy)
   if (/^(.+):\s_{3,}$/.test(trimmed) || /^(.+):\s_{3,}\s+(.+):\s_{3,}$/.test(trimmed)) {
-    return 10;
+    return 7;
+  }
+
+  // Flex-separated signature/witness row
+  if (trimmed.includes(' || ')) {
+    return /^Testemunha\s+\d+:/.test(trimmed) ? 7.5 : 8.5;
   }
 
   // KV pair
   if (/^[A-Za-zÀ-úçãõ\s]+:\s+.+$/.test(trimmed)) {
-    return 5.8;
+    return 5.1;
   }
 
   // Regular body text
-  return 5.5;
+  return 5;
 }
 
 function chunkContractByHeight(text: string): string[][] {
@@ -338,18 +352,54 @@ function chunkContractByHeight(text: string): string[][] {
   let currentChunk: string[] = [];
   let currentHeight = 0;
 
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     const h = estimateContractLineHeight(line);
 
     if (currentHeight + h > CONTRACT_PAGE_MAX_HEIGHT_MM && currentChunk.length > 0 && h > 0) {
-      // Avoid breaking right after a blank line — carry the blank to the next page
-      const lastIdx = currentChunk.length - 1;
-      if (lastIdx >= 0 && !currentChunk[lastIdx].trim()) {
-        currentChunk.pop();
+      // Look for a paragraph break (blank line) within the last 10mm only —
+      // tighter window avoids large empty gaps at page bottoms
+      let breakAt = -1;
+      let lookbackHeight = 0;
+      for (let j = currentChunk.length - 1; j >= 0 && lookbackHeight < 10; j--) {
+        if (!currentChunk[j].trim()) {
+          // Don't orphan a section/subsection title
+          if (j + 1 < currentChunk.length) {
+            const nextLine = currentChunk[j + 1].trim();
+            if (isSectionTitleLine(currentChunk[j + 1]) || isSubsectionOrSigLine(currentChunk[j + 1])) {
+              lookbackHeight += estimateContractLineHeight(currentChunk[j]);
+              continue;
+            }
+          }
+          breakAt = j;
+          break;
+        }
+        lookbackHeight += estimateContractLineHeight(currentChunk[j]);
       }
-      chunks.push(currentChunk);
-      currentChunk = [];
-      currentHeight = 0;
+
+      if (breakAt >= 0) {
+        const carriedLines = currentChunk.slice(breakAt + 1);
+        currentChunk = currentChunk.slice(0, breakAt);
+        while (currentChunk.length > 0 && !currentChunk[currentChunk.length - 1].trim()) {
+          currentChunk.pop();
+        }
+        chunks.push(currentChunk);
+        currentChunk = carriedLines;
+        currentHeight = carriedLines.reduce(
+          (sum, l) => sum + estimateContractLineHeight(l),
+          0,
+        );
+      } else {
+        while (
+          currentChunk.length > 0
+          && !currentChunk[currentChunk.length - 1].trim()
+        ) {
+          currentChunk.pop();
+        }
+        chunks.push(currentChunk);
+        currentChunk = [];
+        currentHeight = 0;
+      }
     }
 
     currentChunk.push(line);
@@ -363,6 +413,10 @@ function chunkContractByHeight(text: string): string[][] {
   return chunks;
 }
 
+function isContinuationLine(line: string): boolean {
+  return line !== line.trim() && (line.startsWith(' ') || line.startsWith('\t'));
+}
+
 function ContractBody({ text }: { text: string }) {
   const lines = text.split('\n');
 
@@ -371,12 +425,49 @@ function ContractBody({ text }: { text: string }) {
   let inSubsection = false;
   let inSignatureBlock = false;
 
+  // Accumulate consecutive body-text lines so they render as a single <p>
+  let pendingBody: string[] = [];
+  let pendingBodyType: 'subsection' | 'standalone' | null = null;
+
+  function flushBody() {
+    if (pendingBody.length === 0) return;
+    const merged = pendingBody
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .join(' ');
+
+    const segments = merged.split(/\{br\}/g);
+    const content = segments.map((seg, idx) => (
+      <React.Fragment key={idx}>
+        {idx > 0 && <br />}
+        {seg.trim()}
+      </React.Fragment>
+    ));
+
+    if (pendingBodyType === 'subsection') {
+      elements.push(
+        <p key={key++} className="proposal-contract-body">
+          {content}
+        </p>,
+      );
+    } else if (pendingBodyType === 'standalone') {
+      elements.push(
+        <p key={key++} className="proposal-contract-standalone">
+          {content}
+        </p>,
+      );
+    }
+    pendingBody = [];
+    pendingBodyType = null;
+  }
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const trimmed = line.trim();
 
     // Blank line
     if (!trimmed) {
+      flushBody();
       if (inSubsection) {
         inSubsection = false;
         elements.push(<div key={key++} className="proposal-contract-subsection-end" />);
@@ -386,6 +477,7 @@ function ContractBody({ text }: { text: string }) {
 
     // Separator line (all ─ or similar)
     if (/^[─═]{5,}$/.test(trimmed)) {
+      flushBody();
       elements.push(<hr key={key++} className="proposal-contract-separator" />);
       inSubsection = false;
       continue;
@@ -393,82 +485,169 @@ function ContractBody({ text }: { text: string }) {
 
     // Main title (first non-separator line)
     if (key === 0 && /CONTRATO DE LOCAÇÃO/.test(trimmed)) {
+      flushBody();
       elements.push(<h2 key={key++} className="proposal-contract-main-title">{trimmed}</h2>);
       continue;
     }
 
     // Date line (Goiânia, ... | Contrato ...)
     if (/Goiânia,.*\|.*Contrato/.test(trimmed)) {
+      flushBody();
       elements.push(<p key={key++} className="proposal-contract-date-line">{trimmed}</p>);
       continue;
     }
 
     // Section header: "1. PARTES CONTRATANTES E LOCAL"
-    if (/^\d+\.\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ\s]{5,}$/.test(trimmed) && !trimmed.includes(':')) {
+    if (isSectionTitleLine(line)) {
+      flushBody();
       elements.push(<h3 key={key++} className="proposal-contract-section-title">{trimmed}</h3>);
       inSubsection = false;
       continue;
     }
 
+    // ASSINATURAS heading — blue bar like numbered sections
+    if (trimmed === 'ASSINATURAS' || trimmed.startsWith('ASSINATURAS')) {
+      flushBody();
+      inSignatureBlock = true;
+      inSubsection = false;
+      elements.push(<h3 key={key++} className="proposal-contract-section-title">{trimmed}</h3>);
+      continue;
+    }
+
     // Subsection header: "1.1 LOCADORA:" or "1.2 LOCATÁRIO:"
     if (/^\d+\.\d+\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ\s]{3,}:$/.test(trimmed)) {
+      flushBody();
       if (inSubsection) {
         elements.push(<div key={key++} className="proposal-contract-subsection-end" />);
       }
       inSubsection = true;
 
-      // Signature block
-      if (trimmed === 'ASSINATURAS' || trimmed.startsWith('ASSINATURAS')) {
-        inSignatureBlock = true;
-        elements.push(<h3 key={key++} className="proposal-contract-section-title">{trimmed}</h3>);
-        continue;
-      }
-
       elements.push(
         <div key={key++} className="proposal-contract-subsection">
           <h4 className="proposal-contract-subsection-title">{trimmed}</h4>
-        </div>
+        </div>,
+      );
+      continue;
+    }
+
+    // Signature-block flex-separated rows: "Left || Right"
+    if (inSignatureBlock && trimmed.includes(' || ')) {
+      flushBody();
+      const sepIdx = trimmed.indexOf(' || ');
+      const leftPart = trimmed.slice(0, sepIdx);
+      const rightPart = trimmed.slice(sepIdx + 4);
+      const isWitness = /^Testemunha\s+\d+:/.test(leftPart);
+
+      const renderPart = (text: string): React.ReactNode => {
+        const colonIdx = text.indexOf(':');
+        if (colonIdx === -1) return text;
+        return (
+          <>
+            <strong>{text.slice(0, colonIdx + 1)}</strong>
+            {text.slice(colonIdx + 1)}
+          </>
+        );
+      };
+
+      elements.push(
+        <div
+          key={key++}
+          className={
+            isWitness ? 'contract-witness-row' : 'contract-signature-row'
+          }
+        >
+          <div
+            className={
+              isWitness ? 'contract-witness-left' : 'contract-signature-left'
+            }
+          >
+            {renderPart(leftPart)}
+          </div>
+          <div
+            className={
+              isWitness ? 'contract-witness-right' : 'contract-signature-right'
+            }
+          >
+            {renderPart(rightPart)}
+          </div>
+        </div>,
       );
       continue;
     }
 
     // Body text inside subsection or standalone paragraph
     if (inSubsection) {
-      // Key-value pair: "Nome: EGEN GERADORES"
+      // Key-value pair: "Nome: EGEN GERADORES" (with continuation support)
       const kvMatch = trimmed.match(/^([A-Za-zÀ-úçãõ\s]+):\s+(.+)$/);
       if (kvMatch && !trimmed.startsWith('Assinatura:')) {
+        flushBody();
+        let valStr = kvMatch[2];
+        // Consume continuation lines for this KV value
+        while (i + 1 < lines.length) {
+          const nextLine = lines[i + 1];
+          const nextTrimmed = nextLine.trim();
+          if (!nextTrimmed) break;
+          if (/^[─═]{5,}$/.test(nextTrimmed)) break;
+          // Stop if next line looks like a new KV pair or section header
+          if (/^([A-Za-zÀ-úçãõ\s]+):\s+.+$/.test(nextTrimmed)) break;
+          if (/^\d+\.\d+\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ\s]{3,}:$/.test(nextTrimmed)) break;
+          if (isContinuationLine(nextLine)) {
+            i++;
+            valStr += ' ' + nextTrimmed;
+          } else {
+            break;
+          }
+        }
         elements.push(
           <p key={key++} className="proposal-contract-kv">
             <span className="proposal-contract-kv-key">{kvMatch[1]}:</span>{' '}
-            <span className="proposal-contract-kv-value">{kvMatch[2]}</span>
-          </p>
+            <span className="proposal-contract-kv-value">{valStr}</span>
+          </p>,
         );
         continue;
       }
 
       // Signature lines
       if (inSignatureBlock && /^(.+):\s_{3,}$/.test(trimmed)) {
+        flushBody();
         const sigMatch = trimmed.match(/^(.+):\s(_{3,})$/);
         elements.push(
           <p key={key++} className="proposal-contract-signature-line">
             <strong>{sigMatch![1]}:</strong> {sigMatch![2]}
-          </p>
+          </p>,
         );
         continue;
       }
 
       if (inSignatureBlock && /^(.+):\s_{3,}\s+(.+):\s_{3,}$/.test(trimmed)) {
+        flushBody();
         elements.push(
-          <p key={key++} className="proposal-contract-signature-line">{trimmed}</p>
+          <p key={key++} className="proposal-contract-signature-line">{trimmed}</p>,
         );
         continue;
       }
 
-      elements.push(<p key={key++} className="proposal-contract-body">{trimmed}</p>);
+      // Regular body text inside subsection — accumulate continuation lines
+      if (isContinuationLine(line) && pendingBodyType === 'subsection' && pendingBody.length > 0) {
+        pendingBody.push(trimmed);
+      } else {
+        flushBody();
+        pendingBody = [trimmed];
+        pendingBodyType = 'subsection';
+      }
     } else {
-      elements.push(<p key={key++} className="proposal-contract-standalone">{trimmed}</p>);
+      // Standalone paragraph — accumulate continuation lines
+      if (isContinuationLine(line) && pendingBodyType === 'standalone' && pendingBody.length > 0) {
+        pendingBody.push(trimmed);
+      } else {
+        flushBody();
+        pendingBody = [trimmed];
+        pendingBodyType = 'standalone';
+      }
     }
   }
+
+  flushBody();
 
   if (inSubsection) {
     elements.push(<div key={key++} className="proposal-contract-subsection-end" />);
