@@ -186,9 +186,9 @@ cláusulas e condições devidamente assinadas pelas partes.
 ─────────────────────────────────────────────────────────────────────────────
 ASSINATURAS
 
-Locadora: EGEN GERADORES LTDA || Assinatura: _______________________________________________________________________
+Locadora: EGEN GERADORES LTDA || Assinatura: ______________________________________
 
-Locatária: {{LOCATARIO_NOME}} || Assinatura: _______________________________________________________________________
+Locatária: {{LOCATARIO_NOME}} || Assinatura: ______________________________________
 
 Testemunha 1: Nome: _________________________ || CPF: _________________________
 
