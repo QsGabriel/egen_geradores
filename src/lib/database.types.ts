@@ -177,6 +177,41 @@ export interface Database {
           updated_at?: string
         }
       }
+      product_change_logs: {
+        Row: {
+          id: string
+          product_id: string
+          product_name: string
+          changed_by: string
+          change_reason: string
+          change_date: string
+          change_time: string
+          field_changes: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          product_id: string
+          product_name: string
+          changed_by?: string
+          change_reason?: string
+          change_date?: string
+          change_time?: string
+          field_changes?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          product_id?: string
+          product_name?: string
+          changed_by?: string
+          change_reason?: string
+          change_date?: string
+          change_time?: string
+          field_changes?: Json
+          created_at?: string
+        }
+      }
       suppliers: {
         Row: {
           id: string

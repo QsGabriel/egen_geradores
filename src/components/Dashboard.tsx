@@ -1,1671 +1,742 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  Package,
-  AlertTriangle,
-  Calendar,
-  TrendingUp,
-  Loader2,
-  DollarSign,
-  BarChart3,
-  ArrowUpRight,
-  ArrowDownRight,
-  Minus,
-  PieChart as PieChartIcon,
-  Activity,
-  Eye,
-  EyeOff,
-  LineChart,
-  Building2,
-  ClipboardList
+  Users, UserPlus, TrendingUp, Building2, Target,
+  PhoneCall, FileText, DollarSign, ArrowUpRight,
+  ArrowDownRight, Loader2, Calendar, Clock, Activity,
+  PieChart as PieChartIcon, BarChart3, Eye, EyeOff,
+  TrendingDown, ChevronRight, Sparkles, Zap,
 } from 'lucide-react';
-import { useInventory } from '../hooks/useInventory';
-import PurchaseComparison from './PurchaseComparison';
-import DetailModal from './DetailModal';
+import { useAuth } from '../hooks/useAuth';
+import { useCRMDashboard } from '../hooks/useCRMDashboard';
+import type { CRMDashboardMetrics } from '../hooks/useCRMDashboard';
+import type { LeadStatus } from '../modules/crm/types';
 import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-  AreaChart,
-  Area
+  LEAD_STATUS_LABELS,
+  LEAD_STATUS_COLORS,
+  CLIENT_STATUS_LABELS,
+  CLIENT_STATUS_COLORS,
+} from '../modules/crm/types';
+import {
+  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
+  CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  AreaChart, Area, ComposedChart, Line,
 } from 'recharts';
 
-// Cores para gráficos - EGEN palette
-const CHART_COLORS = [
-  '#0D2A59', '#F3B229', '#6A93C7', '#7AC15F', 
-  '#E5484D', '#2B2B2B', '#6B6B6B', '#102140'
-];
+// ============================================
+// PALETA DE CORES EGEN
+// ============================================
+const EGEN = {
+  navy: '#0D2A59',
+  yellow: '#F3B229',
+  blue: '#6A93C7',
+  green: '#7AC15F',
+  red: '#E5484D',
+  dark: '#1a1a2e',
+  gray: '#6B7280',
+  lightGray: '#9CA3AF',
+};
 
-// Skeleton Component para loading
+const CHART_COLORS = [EGEN.navy, EGEN.yellow, EGEN.blue, EGEN.green, EGEN.red, '#8B5CF6', '#EC4899', '#F97316'];
+const GRADIENT_BG = 'bg-gradient-to-br from-egen-navy via-[#0D2A59] to-[#162d4a] dark:from-[#0a1628] dark:via-[#0d1f33] dark:to-[#0a1628]';
+
+// ============================================
+// SKELETON
+// ============================================
 const SkeletonCard: React.FC = () => (
-  <div className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card border border-gray-100 dark:border-white/5 p-6 animate-pulse">
+  <div className="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-100 dark:border-white/[0.06] p-5 animate-pulse backdrop-blur-sm">
     <div className="flex items-center justify-between">
       <div className="space-y-3 flex-1">
-        <div className="h-4 bg-gray-200 dark:bg-white/10 rounded w-24 skeleton"></div>
-        <div className="h-8 bg-gray-200 dark:bg-white/10 rounded w-16 skeleton"></div>
+        <div className="h-3.5 bg-gray-200 dark:bg-white/[0.06] rounded-full w-20" />
+        <div className="h-7 bg-gray-200 dark:bg-white/[0.06] rounded-full w-14" />
+        <div className="h-3 bg-gray-100 dark:bg-white/[0.04] rounded-full w-24" />
       </div>
-      <div className="w-12 h-12 bg-gray-200 dark:bg-white/10 rounded-card skeleton"></div>
+      <div className="w-11 h-11 bg-gray-200 dark:bg-white/[0.06] rounded-xl" />
     </div>
   </div>
 );
 
+const SkeletonChart: React.FC<{ h?: string }> = ({ h = 'h-64' }) => (
+  <div className={`bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-100 dark:border-white/[0.06] p-6 ${h} animate-pulse backdrop-blur-sm`}>
+    <div className="h-4 bg-gray-200 dark:bg-white/[0.06] rounded-full w-36 mb-6" />
+    <div className="h-full bg-gray-100 dark:bg-white/[0.04] rounded-xl" />
+  </div>
+);
+
+// ============================================
+// HELPERS
+// ============================================
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
+const formatNumber = (value: number) => new Intl.NumberFormat('pt-BR').format(value);
+
+const formatPercent = (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`;
+
+const getGreeting = (): string => {
+  const h = new Date().getHours();
+  if (h < 12) return 'Bom dia';
+  if (h < 18) return 'Boa tarde';
+  return 'Boa noite';
+};
+
+// ============================================
+// STAT CARD COMPONENT
+// ============================================
+interface StatCardProps {
+  label: string;
+  value: string | number;
+  icon: React.ElementType;
+  trend?: { value: number; positive: boolean } | null;
+  color: string;
+  bgColor: string;
+  onClick?: () => void;
+  sublabel?: string;
+}
+
+const StatCard: React.FC<StatCardProps> = ({ label, value, icon: Icon, trend, color, bgColor, onClick, sublabel }) => (
+  <div
+    onClick={onClick}
+    className={`group relative bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-100 dark:border-white/[0.06] p-5 transition-all duration-300 hover:shadow-lg hover:shadow-gray-200/50 dark:hover:shadow-black/20 hover:-translate-y-0.5 backdrop-blur-sm ${onClick ? 'cursor-pointer' : ''}`}
+  >
+    <div className="flex items-start justify-between">
+      <div className="space-y-1.5 min-w-0 flex-1">
+        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider truncate">{label}</p>
+        <p className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{value}</p>
+        {trend && (
+          <div className="flex items-center gap-1">
+            {trend.positive ? (
+              <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500" />
+            ) : (
+              <ArrowDownRight className="w-3.5 h-3.5 text-red-500" />
+            )}
+            <span className={`text-xs font-semibold ${trend.positive ? 'text-emerald-500' : 'text-red-500'}`}>
+              {formatPercent(trend.value)}
+            </span>
+            <span className="text-xs text-gray-400 ml-0.5">este mês</span>
+          </div>
+        )}
+        {sublabel && <p className="text-xs text-gray-400">{sublabel}</p>}
+      </div>
+      <div className={`p-2.5 rounded-xl ${bgColor} transition-transform duration-300 group-hover:scale-110 flex-shrink-0`}>
+        <Icon className={`w-5 h-5 ${color}`} />
+      </div>
+    </div>
+  </div>
+);
+
+// ============================================
+// CHART CARD WRAPPER
+// ============================================
+const ChartCard: React.FC<{ title: string; icon: React.ElementType; children: React.ReactNode; className?: string }> = ({
+  title, icon: Icon, children, className = '',
+}) => (
+  <div className={`bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-100 dark:border-white/[0.06] p-5 sm:p-6 backdrop-blur-sm ${className}`}>
+    <div className="flex items-center gap-2.5 mb-4">
+      <div className="p-1.5 rounded-lg bg-egen-navy/5 dark:bg-egen-yellow/10">
+        <Icon className="w-4 h-4 text-egen-navy dark:text-egen-yellow" />
+      </div>
+      <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h3>
+    </div>
+    {children}
+  </div>
+);
+
+// ============================================
+// MAIN DASHBOARD
+// ============================================
 const Dashboard: React.FC = () => {
-  const { getDashboardData, getFinancialMetrics, equipment, movements, requests, loading, error } = useInventory();
-  const [selectedDetail, setSelectedDetail] = useState<string | null>(null);
-  const [showCharts, setShowCharts] = useState<boolean>(true);
-  const [movementsPeriod, setMovementsPeriod] = useState<7 | 15 | 30 | 'custom'>(7);
-  const [customStartDate, setCustomStartDate] = useState<string>('');
-  const [customEndDate, setCustomEndDate] = useState<string>('');
+  const { userProfile } = useAuth();
+  const { metrics, loading, error } = useCRMDashboard();
+  const [showCharts, setShowCharts] = useState(true);
 
-  // Mover dashboardData e financialMetrics para antes dos hooks
-  const dashboardData = !loading && !error ? getDashboardData() : null;
-  const financialMetrics = !loading && !error ? getFinancialMetrics() : null;
+  const userName = userProfile?.name?.split(' ')[0] || 'Usuário';
 
-  // Dados para gráficos - DEVE estar antes de qualquer return condicional
-  const chartData = useMemo(() => {
-    if (!dashboardData || !equipment || !movements) {
-      return {
-        categoryPieData: [],
-        categoryValueData: [],
-        movementsAreaData: [],
-        statusData: []
-      };
-    }
-
-    // Verificação de segurança para evitar erros
-    const allCategories = dashboardData?.allCategories || {};
-    const allCategoryValues = dashboardData?.allCategoryValues || {};
-
-    // Dados para gráfico de pizza - Categorias
-    const categoryPieData = Object.entries(allCategories).map(([name, count], index) => ({
-      name: name.charAt(0).toUpperCase() + name.slice(1),
-      value: count as number,
-      color: CHART_COLORS[index % CHART_COLORS.length]
-    }));
-
-    // Dados para gráfico de barras - Valor por categoria
-    const categoryValueData = Object.entries(allCategoryValues)
-      .map(([name, value]) => ({
-        name: name.length > 12 ? name.substring(0, 12) + '...' : name,
-        fullName: name,
-        valor: (value as number) || 0
-      }))
-      .sort((a, b) => b.valor - a.valor)
-      .slice(0, 6);
-
-    // Dados para gráfico de área - Movimentações por período
-    const now = new Date();
-    let startDate = new Date();
-    
-    // Definir período de filtro
-    if (movementsPeriod === 'custom' && customStartDate && customEndDate) {
-      startDate = new Date(customStartDate);
-    } else if (typeof movementsPeriod === 'number') {
-      startDate.setDate(now.getDate() - movementsPeriod);
-    }
-    
-    const filteredMovements = (movements || []).filter(movement => {
-      if (!movement?.date) return false;
-      const movDate = new Date(movement.date);
-      if (movementsPeriod === 'custom' && customEndDate) {
-        return movDate >= startDate && movDate <= new Date(customEndDate);
-      }
-      return movDate >= startDate;
-    });
-    
-    const movementsByPeriod = filteredMovements.reduce((acc: Record<string, { entradas: number; saidas: number }>, movement) => {
-      if (!movement?.date) return acc;
-      const date = new Date(movement.date);
-      const key = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-      
-      if (!acc[key]) {
-        acc[key] = { entradas: 0, saidas: 0 };
-      }
-      
-      acc[key].saidas += 1; // Conta o número de movimentações, não a quantidade
-      return acc;
-    }, {});
-
-    const movementsAreaData = Object.entries(movementsByPeriod)
-      .sort((a, b) => {
-        const [dayA, monthA] = a[0].split('/').map(Number);
-        const [dayB, monthB] = b[0].split('/').map(Number);
-        return monthA === monthB ? dayA - dayB : monthA - monthB;
-      })
-      .map(([date, values]) => ({
-        date,
-        ...values
-      }));
-
-    // Dados para indicadores de status
-    const statusData = [
-      { name: 'Ativos', value: (equipment || []).filter(p => p.status === 'active').length, color: '#10B981' },
-      { name: 'Estoque Baixo', value: (equipment || []).filter(p => p.status === 'low-stock').length, color: '#F59E0B' },
-      { name: 'Vencidos', value: (equipment || []).filter(p => {
-        if (!p?.expirationDate) return false;
-        const expDate = new Date(p.expirationDate);
-        return expDate < new Date();
-      }).length, color: '#EF4444' }
-    ].filter(item => item.value > 0);
-
-    // Dados para ranking de solicitações por departamento
-    const departmentRanking = (requests || []).reduce((acc: Record<string, { total: number; pending: number; approved: number; rejected: number }>, request) => {
-      const dept = request.department || 'Não informado';
-      if (!acc[dept]) {
-        acc[dept] = { total: 0, pending: 0, approved: 0, rejected: 0 };
-      }
-      acc[dept].total += 1;
-      if (request.status === 'pending') acc[dept].pending += 1;
-      else if (request.status === 'approved' || request.status === 'completed') acc[dept].approved += 1;
-      else if (request.status === 'rejected') acc[dept].rejected += 1;
-      return acc;
-    }, {});
-
-    const departmentRankingData = Object.entries(departmentRanking)
-      .map(([name, data]) => ({
-        name,
-        ...data
-      }))
-      .sort((a, b) => b.total - a.total);
-
-    return {
-      categoryPieData,
-      categoryValueData,
-      movementsAreaData,
-      statusData,
-      departmentRankingData
-    };
-  }, [dashboardData, equipment, movements, requests, movementsPeriod, customStartDate, customEndDate]);
-
-  if (loading) {
+  if (loading) return <DashboardSkeleton />;
+  if (error && !metrics) {
     return (
-      <div className="space-y-6 animate-fade-in">
-        <div className="flex items-center space-x-3 mb-8">
-          <div className="w-48 h-8 bg-gray-200 rounded skeleton"></div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {[...Array(4)].map((_, i) => <SkeletonCard key={i} />)}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          {[...Array(3)].map((_, i) => <SkeletonCard key={i} />)}
-        </div>
+      <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+        <Activity className="w-12 h-12 mb-4 opacity-40" />
+        <p className="text-lg font-medium">Erro ao carregar dados</p>
+        <p className="text-sm mt-1">{error}</p>
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-xl p-6 animate-fade-in">
-        <div className="flex items-center">
-          <AlertTriangle className="w-6 h-6 text-red-500 mr-3" />
-          <span className="text-red-700 dark:text-red-300 font-medium">Erro ao carregar dados: {error}</span>
-        </div>
-      </div>
-    );
-  }
+  if (!metrics) return null;
 
-  if (!dashboardData || !financialMetrics) {
-    return null;
-  }
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
-  const formatPercentage = (value: number) => {
-    return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`;
-  };
-
-  const getTrendIcon = (value: number) => {
-    if (value > 0) return <ArrowUpRight className="w-4 h-4 text-green-600 dark:text-green-400" />;
-    if (value < 0) return <ArrowDownRight className="w-4 h-4 text-red-600 dark:text-red-400" />;
-    return <Minus className="w-4 h-4 text-gray-600 dark:text-gray-400" />;
-  };
-
-  const getTrendColor = (value: number) => {
-    if (value > 0) return 'text-green-600 dark:text-green-400';
-    if (value < 0) return 'text-red-600 dark:text-red-400';
-    return 'text-gray-600 dark:text-gray-400';
-  };
-
-  const stats = [
-    {
-      name: 'Total de Equipamentos',
-      value: dashboardData.totalEquipment,
-      icon: Package,
-      color: 'bg-blue-500',
-      textColor: 'text-blue-600',
-      detailKey: 'allEquipment'
-    },
-    {
-      name: 'Estoque Baixo',
-      value: dashboardData.lowStockEquipment,
-      icon: AlertTriangle,
-      color: 'bg-orange-500',
-      textColor: 'text-orange-600',
-      detailKey: 'lowStock'
-    },
-    {
-      name: 'Próximos ao Vencimento',
-      value: dashboardData.expiringEquipment,
-      icon: Calendar,
-      color: 'bg-red-500',
-      textColor: 'text-red-600',
-      detailKey: 'expiring'
-    },
-    {
-      name: 'Movimentações Recentes',
-      value: dashboardData.recentMovements,
-      icon: TrendingUp,
-      color: 'bg-green-500',
-      textColor: 'text-green-600',
-      detailKey: 'recentMovements'
-    }
-  ];
-
-  const financialStats = [
-    {
-      name: 'Valor Total do Estoque',
-      value: formatCurrency(dashboardData.totalInventoryValue),
-      change: dashboardData.monthlyInventoryChangePercent,
-      changeValue: formatCurrency(dashboardData.monthlyInventoryChange),
-      icon: DollarSign,
-      color: 'bg-emerald-500',
-      detailKey: 'financialStats'
-    },
-    {
-      name: 'Movimentações do Mês',
-      value: formatCurrency(dashboardData.monthlyMovementsValue),
-      change: dashboardData.monthlyMovementsChangePercent,
-      changeValue: formatCurrency(dashboardData.monthlyMovementsChange),
-      icon: BarChart3,
-      color: 'bg-purple-500',
-      detailKey: 'financialStats'
-    },
-    {
-      name: 'Valor Médio por Equipamento',
-      value: formatCurrency(dashboardData.averageEquipmentValue),
-      change: 0, // Pode ser calculado se necessário
-      changeValue: formatCurrency(0),
-      icon: Package,
-      color: 'bg-indigo-500',
-      detailKey: 'financialStats'
-    }
-  ];
-
-  const lowStockEquipment = equipment.filter(p => p.status === 'low-stock');
-  const expiringEquipment = equipment.filter(p => {
-    if (p.quantity <= 0) return false; // Não exibir equipamentos sem estoque
-    const expirationDate = new Date(p.expirationDate);
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-    return expirationDate <= thirtyDaysFromNow;
-  });
-
-  const recentMovements = movements.slice(0, 5);
-
-  const getModalTitle = (detail: string): string => {
-    const titles: Record<string, string> = {
-      lowStock: 'Equipamentos com Estoque Baixo',
-      expiring: 'Equipamentos Próximos ao Vencimento',
-      recentMovements: 'Movimentações Recentes',
-      topValue: 'Equipamentos de Maior Valor',
-      financialStats: 'Métricas Financeiras Detalhadas',
-      categories: 'Equipamentos por Categoria',
-      allEquipment: 'Todos os Equipamentos',
-      departmentRanking: 'Solicitações por Departamento - Controle de Custos'
-    };
-    return titles[detail] || 'Detalhes';
-  };
-
-  const renderModalContent = (
-    detail: string, 
-    dashboardData: any, 
-    financialMetrics: any, 
-    equipment: any[], 
-    movements: any[], 
-    formatCurrency: (value: number) => string
-  ) => {
-    switch (detail) {
-      case 'lowStock':
-        const lowStockProducts = equipment.filter(p => p.status === 'low-stock');
-        return (
-          <div className="space-y-4">
-            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-              {lowStockProducts.length} equipamento(s) com estoque abaixo do mínimo
-            </p>
-            <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-xs sm:text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-700/50">
-                  <tr>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Equipamento</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Atual</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Mín</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden sm:table-cell">Valor</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden md:table-cell">Local</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {lowStockProducts.map((product) => (
-                    <tr key={product.id}>
-                      <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">{product.name}</div>
-                          <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{product.code}</div>
-                        </div>
-                      </td>
-                      <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-orange-600 dark:text-orange-400 font-medium">
-                        {product.quantity} {product.unit}
-                      </td>
-                      <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-gray-100">
-                        {product.minStock} {product.unit}
-                      </td>
-                      <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-gray-100 hidden sm:table-cell">
-                        {formatCurrency(product.totalValue || 0)}
-                      </td>
-                      <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">
-                        {product.location}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        );
-
-      case 'expiring':
-        const expiringProducts = equipment
-          .filter(p => {
-            if (p.quantity <= 0) return false; // Não exibir equipamentos sem estoque
-            const expirationDate = new Date(p.expirationDate);
-            const thirtyDaysFromNow = new Date();
-            thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-            return expirationDate <= thirtyDaysFromNow;
-          })
-          .sort((a, b) => new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime());
-        
-        return (
-          <div className="space-y-4">
-            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-              {expiringProducts.length} equipamento(s) próximos ao vencimento (próximos 30 dias)
-            </p>
-            <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-xs sm:text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-700/50">
-                  <tr>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Equipamento</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Validade</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Dias</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden sm:table-cell">Qtd</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden md:table-cell">Valor</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {expiringProducts.map((product) => {
-                    const daysUntilExpiration = Math.ceil(
-                      (new Date(product.expirationDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-                    );
-                    return (
-                      <tr key={product.id}>
-                        <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">{product.name}</div>
-                            <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{product.code}</div>
-                          </div>
-                        </td>
-                        <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-gray-100">
-                          {product.expirationDate}
-                        </td>
-                        <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap">
-                          <span className={`text-xs sm:text-sm font-medium ${
-                            daysUntilExpiration < 0 ? 'text-red-600 dark:text-red-400' : 
-                            daysUntilExpiration <= 7 ? 'text-red-600 dark:text-red-400' : 'text-orange-600 dark:text-orange-400'
-                          }`}>
-                            {daysUntilExpiration < 0 ? `${Math.abs(daysUntilExpiration)}d` : 
-                             `${daysUntilExpiration}d`}
-                          </span>
-                        </td>
-                        <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-gray-100 hidden sm:table-cell">
-                          {product.quantity} {product.unit}
-                        </td>
-                        <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-gray-100 hidden md:table-cell">
-                          {formatCurrency(product.totalValue || 0)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        );
-
-      case 'recentMovements':
-        const currentMonth = new Date().getMonth();
-        const currentYear = new Date().getFullYear();
-        const monthlyMovements = movements.filter(movement => {
-          const moveDate = new Date(movement.date);
-          return moveDate.getMonth() === currentMonth && moveDate.getFullYear() === currentYear;
-        });
-        
-        return (
-          <div className="space-y-4">
-            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-              {monthlyMovements.length} movimentação(ões) no mês atual
-            </p>
-            <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-xs sm:text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-700/50">
-                  <tr>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Data</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Equipamento</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Qtd</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden sm:table-cell">Motivo</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden md:table-cell">Valor</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden lg:table-cell">Por</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {monthlyMovements.map((movement) => (
-                    <tr key={movement.id}>
-                      <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-gray-100">
-                        {movement.date}
-                      </td>
-                      <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-gray-100">
-                        {movement.equipmentName}
-                      </td>
-                      <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-red-600 dark:text-red-400 font-medium">
-                        -{movement.quantity}
-                      </td>
-                      <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap hidden sm:table-cell">
-                        <span className="px-2 py-1 text-[10px] sm:text-xs font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 rounded-full">
-                          {movement.reason === 'sale' && 'Saída'}
-                          {movement.reason === 'internal-consumption' && 'Consumo'}
-                          {movement.reason === 'internal-transfer' && 'Transfer.'}
-                          {movement.reason === 'return' && 'Devolução'}
-                          {movement.reason === 'other' && 'Outros'}
-                        </span>
-                      </td>
-                      <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-gray-100 hidden md:table-cell">
-                        {formatCurrency(movement.totalValue || 0)}
-                      </td>
-                      <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden lg:table-cell">
-                        {movement.authorizedBy || '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        );
-
-      case 'topValue':
-        const sortedProducts = [...equipment].sort((a, b) => (b.totalValue || 0) - (a.totalValue || 0));
-        
-        return (
-          <div className="space-y-3 sm:space-y-4">
-            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-              Todos os equipamentos ordenados por valor total (decrescente)
-            </p>
-            <div className="overflow-x-auto -mx-2 sm:mx-0">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-700/50">
-                  <tr>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Pos.</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Equipamento</th>
-                    <th className="hidden sm:table-cell px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Qtd</th>
-                    <th className="hidden md:table-cell px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Preço Unit.</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Total</th>
-                    <th className="hidden lg:table-cell px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Categoria</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {sortedProducts.map((product, index) => (
-                    <tr key={product.id}>
-                      <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
-                        #{index + 1}
-                      </td>
-                      <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">{product.name}</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">{product.code}</div>
-                          <div className="sm:hidden text-xs text-gray-500 dark:text-gray-400">{product.quantity} {product.unit}</div>
-                        </div>
-                      </td>
-                      <td className="hidden sm:table-cell px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-gray-100">
-                        {product.quantity} {product.unit}
-                      </td>
-                      <td className="hidden md:table-cell px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-gray-100">
-                        {formatCurrency(product.unitPrice || 0)}
-                      </td>
-                      <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-green-600 dark:text-green-400">
-                        {formatCurrency(product.totalValue || 0)}
-                      </td>
-                      <td className="hidden lg:table-cell px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          product.category === 'general' ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200' : 'bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200'
-                        }`}>
-                          {product.category === 'general' ? 'Uso Geral' : 'Insumo Técnico'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        );
-
-      case 'financialStats':
-        return (
-          <div className="space-y-4 sm:space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-              <div className="bg-blue-50 dark:bg-blue-900/30 p-3 sm:p-4 rounded-lg">
-                <h4 className="text-base sm:text-lg font-semibold text-blue-800 dark:text-blue-200 mb-2 sm:mb-3">Mês Atual</h4>
-                <div className="space-y-1 sm:space-y-2">
-                  <div className="flex justify-between text-sm sm:text-base">
-                    <span className="text-blue-700 dark:text-blue-300">Valor do Estoque:</span>
-                    <span className="font-medium text-blue-900 dark:text-blue-100">{formatCurrency(financialMetrics.currentMonth.inventoryValue)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm sm:text-base">
-                    <span className="text-blue-700 dark:text-blue-300">Movimentações:</span>
-                    <span className="font-medium text-blue-900 dark:text-blue-100">{formatCurrency(financialMetrics.currentMonth.movementsValue)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm sm:text-base">
-                    <span className="text-blue-700 dark:text-blue-300">Nº Movimentações:</span>
-                    <span className="font-medium text-blue-900 dark:text-blue-100">{financialMetrics.currentMonth.movementsCount}</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-gray-50 dark:bg-gray-700/50 p-3 sm:p-4 rounded-lg">
-                <h4 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2 sm:mb-3">Mês Anterior</h4>
-                <div className="space-y-1 sm:space-y-2">
-                  <div className="flex justify-between text-sm sm:text-base">
-                    <span className="text-gray-700 dark:text-gray-300">Valor do Estoque:</span>
-                    <span className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(financialMetrics.previousMonth.inventoryValue)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm sm:text-base">
-                    <span className="text-gray-700 dark:text-gray-300">Movimentações:</span>
-                    <span className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(financialMetrics.previousMonth.movementsValue)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm sm:text-base">
-                    <span className="text-gray-700 dark:text-gray-300">Nº Movimentações:</span>
-                    <span className="font-medium text-gray-900 dark:text-gray-100">{financialMetrics.previousMonth.movementsCount}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg">
-              <h4 className="text-lg font-semibold text-green-800 dark:text-green-200 mb-3">Variações</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center">
-                  <div className="text-xs sm:text-sm text-green-700 dark:text-green-300">Valor do Estoque</div>
-                  <div className={`text-base sm:text-lg font-bold ${getTrendColor(financialMetrics.trends.inventoryValueChangePercent)}`}>
-                    {formatCurrency(financialMetrics.trends.inventoryValueChange)}
-                  </div>
-                  <div className={`text-xs sm:text-sm ${getTrendColor(financialMetrics.trends.inventoryValueChangePercent)}`}>
-                    {formatPercentage(financialMetrics.trends.inventoryValueChangePercent)}
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xs sm:text-sm text-green-700 dark:text-green-300">Movimentações</div>
-                  <div className={`text-base sm:text-lg font-bold ${getTrendColor(financialMetrics.trends.movementsValueChangePercent)}`}>
-                    {formatCurrency(financialMetrics.trends.movementsValueChange)}
-                  </div>
-                  <div className={`text-xs sm:text-sm ${getTrendColor(financialMetrics.trends.movementsValueChangePercent)}`}>
-                    {formatPercentage(financialMetrics.trends.movementsValueChangePercent)}
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xs sm:text-sm text-green-700 dark:text-green-300">Nº Movimentações</div>
-                  <div className={`text-base sm:text-lg font-bold ${getTrendColor(financialMetrics.trends.movementsCountChangePercent)}`}>
-                    {financialMetrics.trends.movementsCountChange >= 0 ? '+' : ''}{financialMetrics.trends.movementsCountChange}
-                  </div>
-                  <div className={`text-xs sm:text-sm ${getTrendColor(financialMetrics.trends.movementsCountChangePercent)}`}>
-                    {formatPercentage(financialMetrics.trends.movementsCountChangePercent)}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 'categories':
-        // Gerar dados de categoria dinamicamente a partir de todas as categorias
-        const categoryColors = [
-          { bg: 'bg-blue-50 dark:bg-blue-900/20', border: 'border-blue-200 dark:border-blue-800', text: 'text-blue-700 dark:text-blue-300', accent: 'bg-blue-500' },
-          { bg: 'bg-green-50 dark:bg-green-900/20', border: 'border-green-200 dark:border-green-800', text: 'text-green-700 dark:text-green-300', accent: 'bg-green-500' },
-          { bg: 'bg-purple-50 dark:bg-purple-900/20', border: 'border-purple-200 dark:border-purple-800', text: 'text-purple-700 dark:text-purple-300', accent: 'bg-purple-500' },
-          { bg: 'bg-orange-50 dark:bg-orange-900/20', border: 'border-orange-200 dark:border-orange-800', text: 'text-orange-700 dark:text-orange-300', accent: 'bg-orange-500' },
-          { bg: 'bg-red-50 dark:bg-red-900/20', border: 'border-red-200 dark:border-red-800', text: 'text-red-700 dark:text-red-300', accent: 'bg-red-500' },
-          { bg: 'bg-indigo-50 dark:bg-indigo-900/20', border: 'border-indigo-200 dark:border-indigo-800', text: 'text-indigo-700 dark:text-indigo-300', accent: 'bg-indigo-500' },
-          { bg: 'bg-pink-50 dark:bg-pink-900/20', border: 'border-pink-200 dark:border-pink-800', text: 'text-pink-700 dark:text-pink-300', accent: 'bg-pink-500' },
-          { bg: 'bg-teal-50 dark:bg-teal-900/20', border: 'border-teal-200 dark:border-teal-800', text: 'text-teal-700 dark:text-teal-300', accent: 'bg-teal-500' }
-        ];
-
-        const allCategoryData = Object.entries(dashboardData.allCategories)
-          .sort(([, a], [, b]) => (b as number) - (a as number))
-          .map(([categoryName, count], index) => ({
-            name: categoryName,
-            count: count as number,
-            value: dashboardData.allCategoryValues[categoryName] || 0,
-            equipment: equipment.filter(p => p.category === categoryName),
-            colors: categoryColors[index % categoryColors.length]
-          }));
-        
-        return (
-          <div className="space-y-4 sm:space-y-6">
-            {/* Resumo Geral */}
-            <div className="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-800 dark:to-slate-800 rounded-xl p-3 sm:p-4 border border-gray-200 dark:border-gray-700">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                <div className="text-center">
-                  <p className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100">{allCategoryData.length}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Categorias</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">{equipment.length}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Total Equipamentos</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(dashboardData.totalInventoryValue)}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Valor Total</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-lg sm:text-2xl font-bold text-purple-600 dark:text-purple-400">{formatCurrency(dashboardData.averageEquipmentValue)}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Valor Médio</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Grid de Categorias */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {allCategoryData.map((category) => (
-                <div 
-                  key={category.name} 
-                  className={`${category.colors.bg} ${category.colors.border} border rounded-xl p-4 transition-all duration-200 hover:shadow-md`}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${category.colors.accent}`}></div>
-                      <h4 className={`text-sm font-semibold ${category.colors.text} capitalize`}>{category.name}</h4>
-                    </div>
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${category.colors.bg} ${category.colors.text} border ${category.colors.border}`}>
-                      {category.count} {category.count === 1 ? 'item' : 'itens'}
-                    </span>
-                  </div>
-                  
-                  <div className="space-y-2 mb-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600 dark:text-gray-400">Valor Total:</span>
-                      <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">{formatCurrency(category.value)}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600 dark:text-gray-400">Valor Médio:</span>
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                        {formatCurrency(category.count > 0 ? category.value / category.count : 0)}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  {/* Lista de Equipamentos da Categoria */}
-                  {category.equipment.length > 0 && (
-                    <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
-                      <h5 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Equipamentos:</h5>
-                      <div className="max-h-32 overflow-y-auto pr-1 space-y-1.5 scrollbar-thin">
-                        {category.equipment.map((item) => (
-                          <div key={item.id} className="flex justify-between items-center text-xs bg-white/50 dark:bg-gray-700/50 rounded-lg px-2 py-1.5">
-                            <span className="text-gray-700 dark:text-gray-300 truncate flex-1 mr-2">{item.name}</span>
-                            <span className="text-gray-800 dark:text-gray-100 font-medium whitespace-nowrap">{formatCurrency(item.totalValue || 0)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-
-      case 'allEquipment':
-        return (
-          <div className="space-y-3 sm:space-y-4">
-            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-              {equipment.length} equipamento(s) cadastrado(s) no sistema
-            </p>
-            <div className="overflow-x-auto -mx-2 sm:mx-0">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-700/50">
-                  <tr>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Equipamento</th>
-                    <th className="hidden md:table-cell px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Categoria</th>
-                    <th className="hidden sm:table-cell px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Qtd</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Valor</th>
-                    <th className="hidden lg:table-cell px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Validade</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {equipment.map((product) => (
-                    <tr key={product.id}>
-                      <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">{product.name}</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">{product.code}</div>
-                          <div className="sm:hidden text-xs text-gray-500 dark:text-gray-400">{product.quantity} {product.unit}</div>
-                        </div>
-                      </td>
-                      <td className="hidden md:table-cell px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          product.category === 'general' ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200' : 'bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200'
-                        }`}>
-                          {product.category === 'general' ? 'Uso Geral' : 'Insumo Técnico'}
-                        </span>
-                      </td>
-                      <td className="hidden sm:table-cell px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-gray-100">
-                        {product.quantity} {product.unit}
-                      </td>
-                      <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap">
-                        <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-medium rounded-full ${
-                          product.status === 'active' ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200' :
-                          product.status === 'low-stock' ? 'bg-orange-100 dark:bg-orange-900/50 text-orange-800 dark:text-orange-200' :
-                          'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200'
-                        }`}>
-                          {product.status === 'active' ? 'Ativo' :
-                           product.status === 'low-stock' ? 'Baixo' : 'Vencido'}
-                        </span>
-                      </td>
-                      <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-gray-100">
-                        {formatCurrency(product.totalValue || 0)}
-                      </td>
-                      <td className="hidden lg:table-cell px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-gray-100">
-                        {product.expirationDate}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        );
-
-      case 'departmentRanking':
-        return (
-          <div className="space-y-3 sm:space-y-4">
-            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-              Análise de solicitações por centro de custo - Total de {requests.length} solicitação(ões)
-            </p>
-            <div className="overflow-x-auto -mx-2 sm:mx-0">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-slate-50 dark:bg-slate-700/50">
-                  <tr>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">#</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">Depto</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">Total</th>
-                    <th className="hidden sm:table-cell px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">Pend.</th>
-                    <th className="hidden sm:table-cell px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">Aprov.</th>
-                    <th className="hidden md:table-cell px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">Rejeit.</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">Taxa</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {chartData.departmentRankingData.map((dept, index) => {
-                    const approvalRate = dept.total > 0 ? ((dept.approved / dept.total) * 100).toFixed(1) : '0.0';
-                    return (
-                      <tr key={dept.name} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                        <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap">
-                          <span className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">{index + 1}</span>
-                        </td>
-                        <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="hidden sm:block p-2 rounded-lg bg-slate-100 dark:bg-slate-700 mr-3">
-                              <Building2 className="w-4 h-4 text-slate-600 dark:text-slate-300" />
-                            </div>
-                            <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">{dept.name}</span>
-                          </div>
-                        </td>
-                        <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap">
-                          <span className="text-xs sm:text-sm font-bold text-gray-900 dark:text-gray-100">{dept.total}</span>
-                        </td>
-                        <td className="hidden sm:table-cell px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap">
-                          <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-medium rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200">
-                            {dept.pending}
-                          </span>
-                        </td>
-                        <td className="hidden sm:table-cell px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap">
-                          <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-medium rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200">
-                            {dept.approved}
-                          </span>
-                        </td>
-                        <td className="hidden md:table-cell px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap">
-                          <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-medium rounded-full bg-rose-100 dark:bg-rose-900/50 text-rose-800 dark:text-rose-200">
-                            {dept.rejected}
-                          </span>
-                        </td>
-                        <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="hidden sm:block w-16 bg-gray-200 dark:bg-gray-600 rounded-full h-2 mr-2">
-                              <div
-                                className="bg-emerald-500 h-2 rounded-full transition-all"
-                                style={{ width: `${approvalRate}%` }}
-                              ></div>
-                            </div>
-                            <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">{approvalRate}%</span>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        );
-
-      default:
-        return <div className="text-gray-500 dark:text-gray-400">Conteúdo não encontrado</div>;
-    }
-  };
+  const chartData = buildChartData(metrics);
 
   return (
-    <>
-      <div className="space-y-6 animate-fade-in">
-        {/* Stats Grid Básicos */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div 
-              key={stat.name} 
-              className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card p-3 sm:p-6 border border-gray-100 dark:border-white/5 cursor-pointer hover:shadow-card-hover hover:border-egen-yellow/30 dark:hover:border-egen-yellow/20 transition-all duration-300 hover-lift card-interactive animate-fade-in-up"
-              style={{ animationDelay: `${index * 0.05}s` }}
-              onClick={() => setSelectedDetail(stat.detailKey)}
-            >
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs sm:text-sm font-medium text-egen-gray-mid dark:text-white/60 truncate">{stat.name}</p>
-                  <p className={`text-xl sm:text-3xl font-bold ${stat.textColor} mt-1 sm:mt-2`}>{stat.value}</p>
-                </div>
-                <div className={`p-2 sm:p-4 rounded-card ${stat.color} shadow-lg flex-shrink-0 ml-2`}>
-                  <Icon className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
-                </div>
-              </div>
+    <div className="space-y-5 animate-fade-in">
+      {/* ============================================ */}
+      {/* HEADER */}
+      {/* ============================================ */}
+      <div className={`${GRADIENT_BG} rounded-2xl p-5 sm:p-7 text-white relative overflow-hidden`}>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-egen-yellow/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
+        <div className="absolute bottom-0 left-1/4 w-48 h-48 bg-blue-400/5 rounded-full translate-y-1/2 blur-3xl" />
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Sparkles className="w-4 h-4 text-egen-yellow" />
+              <span className="text-xs font-medium text-egen-yellow uppercase tracking-widest">Dashboard</span>
             </div>
-          );
-        })}
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
+              {getGreeting()}, {userName}
+            </h1>
+            <p className="text-sm text-white/60 mt-1">
+              {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2.5 text-center">
+              <p className="text-2xl font-bold text-egen-yellow">{metrics.totalClients}</p>
+              <p className="text-xs text-white/60">Clientes</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2.5 text-center">
+              <p className="text-2xl font-bold text-blue-300">{metrics.totalLeads}</p>
+              <p className="text-xs text-white/60">Leads</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2.5 text-center">
+              <p className="text-2xl font-bold text-emerald-300">{metrics.totalProposals}</p>
+              <p className="text-xs text-white/60">Propostas</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Botão para Toggle dos Gráficos */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="p-1.5 sm:p-2 rounded-card bg-egen-navy shadow-lg flex-shrink-0">
-            <LineChart className="w-4 h-4 sm:w-5 sm:h-5 text-egen-yellow" />
+      {/* ============================================ */}
+      {/* KEY METRICS CARDS */}
+      {/* ============================================ */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <StatCard
+          label="Total de Clientes"
+          value={metrics.totalClients}
+          icon={Users}
+          trend={{ value: metrics.newClientsThisMonth, positive: true }}
+          color="text-egen-navy"
+          bgColor="bg-egen-navy/10"
+          sublabel={`${metrics.activeClients} ativos`}
+        />
+        <StatCard
+          label="Leads Ativos"
+          value={metrics.totalLeads}
+          icon={UserPlus}
+          trend={{ value: metrics.newLeadsThisMonth, positive: metrics.newLeadsThisMonth > 0 }}
+          color="text-blue-600"
+          bgColor="bg-blue-50 dark:bg-blue-500/10"
+          sublabel={`${metrics.convertedLeads} convertidos`}
+        />
+        <StatCard
+          label="Taxa de Conversão"
+          value={`${metrics.conversionRate.toFixed(1)}%`}
+          icon={Target}
+          color="text-emerald-600"
+          bgColor="bg-emerald-50 dark:bg-emerald-500/10"
+          sublabel={`${metrics.convertedLeads}/${metrics.totalLeads} leads`}
+        />
+        <StatCard
+          label="Valor em Propostas"
+          value={formatCurrency(metrics.proposalsTotalValue)}
+          icon={DollarSign}
+          color="text-amber-600"
+          bgColor="bg-amber-50 dark:bg-amber-500/10"
+          sublabel={`${metrics.totalProposals} propostas`}
+        />
+      </div>
+
+      {/* ============================================ */}
+      {/* ACTION CARDS ROW */}
+      {/* ============================================ */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <ActionCard
+          icon={PhoneCall}
+          label="A Contatar"
+          value={metrics.leadsRequiringContact}
+          color="bg-blue-500"
+          pulse
+        />
+        <ActionCard
+          icon={Calendar}
+          label="Follow-up"
+          value={metrics.leadsRequiringFollowUp}
+          color="bg-amber-500"
+        />
+        <ActionCard
+          icon={FileText}
+          label="Propostas Ativas"
+          value={metrics.proposalsByStatus['draft'] || 0 + metrics.proposalsByStatus['sent'] || 0}
+          color="bg-egen-navy"
+        />
+        <ActionCard
+          icon={Building2}
+          label="Novos este Mês"
+          value={metrics.newClientsThisMonth + metrics.newLeadsThisMonth}
+          color="bg-emerald-500"
+        />
+      </div>
+
+      {/* ============================================ */}
+      {/* CHARTS TOGGLE */}
+      {/* ============================================ */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-egen-navy/5 dark:bg-egen-yellow/10">
+            <BarChart3 className="w-4 h-4 text-egen-navy dark:text-egen-yellow" />
           </div>
-          <h2 className="text-sm sm:text-lg font-semibold text-egen-gray-dark dark:text-egen-dark-text truncate">Gráficos e Indicadores</h2>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Análises e Gráficos</h2>
         </div>
         <button
           onClick={() => setShowCharts(!showCharts)}
-          className={`flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium text-xs sm:text-sm transition-all duration-300 flex-shrink-0 ${
-            showCharts 
-              ? 'bg-egen-navy/10 dark:bg-egen-yellow/10 text-egen-navy dark:text-egen-yellow hover:bg-egen-navy/20 dark:hover:bg-egen-yellow/20' 
-              : 'bg-gray-100 dark:bg-white/5 text-egen-gray-mid dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/10'
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 ${
+            showCharts
+              ? 'bg-egen-navy/5 dark:bg-egen-yellow/10 text-egen-navy dark:text-egen-yellow'
+              : 'bg-gray-100 dark:bg-white/5 text-gray-500'
           }`}
         >
-          {showCharts ? (
-            <>
-              <EyeOff className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden xs:inline">Ocultar</span>
-              <span className="hidden sm:inline"> Gráficos</span>
-            </>
-          ) : (
-            <>
-              <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden xs:inline">Mostrar</span>
-              <span className="hidden sm:inline"> Gráficos</span>
-            </>
-          )}
+          {showCharts ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+          {showCharts ? 'Ocultar' : 'Mostrar'}
         </button>
       </div>
 
-      {/* Seção de Gráficos Interativos */}
       {showCharts && (
-      <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {/* Gráfico de Pizza - Status dos Equipamentos */}
-        <div className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card p-4 sm:p-6 border border-gray-100 dark:border-white/5 hover:shadow-card-hover transition-all duration-300">
-          <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <h3 className="text-sm sm:text-lg font-semibold text-egen-gray-dark dark:text-egen-dark-text flex items-center">
-              <div className="p-1.5 sm:p-2 rounded-card bg-egen-green shadow-lg mr-2 sm:mr-3">
-                <PieChartIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+        <>
+          {/* ============================================ */}
+          {/* CHARTS ROW 1 - Client Status + Lead Status */}
+          {/* ============================================ */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+            <ChartCard title="Clientes por Status" icon={PieChartIcon}>
+              <div className="h-64 sm:h-72">
+                {chartData.clientStatusPie.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={chartData.clientStatusPie}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={55}
+                        outerRadius={95}
+                        paddingAngle={3}
+                        dataKey="value"
+                        cornerRadius={4}
+                      >
+                        {chartData.clientStatusPie.map((_, i) => (
+                          <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'rgba(255,255,255,0.95)',
+                          borderRadius: '14px',
+                          border: '1px solid rgba(0,0,0,0.06)',
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                          fontSize: '13px',
+                        }}
+                        formatter={(value: number, name: string) => [`${value} clientes`, name]}
+                      />
+                      <Legend
+                        verticalAlign="bottom"
+                        height={32}
+                        formatter={(value) => <span className="text-xs text-gray-600 dark:text-gray-300">{value}</span>}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <EmptyChart icon={PieChartIcon} text="Sem dados de clientes" />
+                )}
               </div>
-              Status do Estoque
-            </h3>
-          </div>
-          <div className="h-40 sm:h-48">
-            {chartData.statusData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={chartData.statusData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={40}
-                    outerRadius={70}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {chartData.statusData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'white', 
-                      borderRadius: '12px', 
-                      border: '1px solid #e5e7eb',
-                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                    }}
-                  />
-                  <Legend 
-                    verticalAlign="bottom" 
-                    height={36}
-                    formatter={(value) => <span className="text-sm text-gray-600 dark:text-gray-300">{value}</span>}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full flex items-center justify-center text-gray-400">
-                <div className="text-center">
-                  <PieChartIcon className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Sem dados de status</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+            </ChartCard>
 
-        {/* Gráfico de Pizza - Distribuição por Categoria */}
-        <div className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card p-4 sm:p-6 border border-gray-100 dark:border-white/5 hover:shadow-card-hover transition-all duration-300">
-          <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <h3 className="text-sm sm:text-lg font-semibold text-egen-gray-dark dark:text-egen-dark-text flex items-center">
-              <div className="p-1.5 sm:p-2 rounded-card bg-egen-navy shadow-lg mr-2 sm:mr-3">
-                <Package className="w-4 h-4 sm:w-5 sm:h-5 text-egen-yellow" />
+            <ChartCard title="Pipeline de Leads" icon={BarChart3}>
+              <div className="h-64 sm:h-72">
+                {chartData.leadPipelineBar.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData.leadPipelineBar} layout="vertical" margin={{ left: 20, right: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
+                      <XAxis type="number" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                      <YAxis
+                        type="category"
+                        dataKey="name"
+                        width={110}
+                        tick={{ fontSize: 11, fill: '#6B7280' }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'rgba(255,255,255,0.95)',
+                          borderRadius: '14px',
+                          border: '1px solid rgba(0,0,0,0.06)',
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                          fontSize: '13px',
+                        }}
+                        formatter={(value: number) => [`${value} leads`, 'Quantidade']}
+                      />
+                      <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={20}>
+                        {chartData.leadPipelineBar.map((_, i) => (
+                          <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <EmptyChart icon={BarChart3} text="Sem dados de leads" />
+                )}
               </div>
-              Categorias
-            </h3>
+            </ChartCard>
           </div>
-          <div className="h-40 sm:h-48">
-            {chartData.categoryPieData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={chartData.categoryPieData}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={70}
-                    dataKey="value"
-                    label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
-                    labelLine={false}
-                  >
-                    {chartData.categoryPieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'white', 
-                      borderRadius: '12px', 
-                      border: '1px solid #e5e7eb',
-                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                    }}
-                    formatter={(value: number) => [`${value} equipamentos`, 'Quantidade']}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full flex items-center justify-center text-gray-400">
-                <div className="text-center">
-                  <Package className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Sem categorias cadastradas</p>
-                </div>
-              </div>
-            )}
-          </div>
-          {chartData.categoryPieData.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-2 justify-center">
-              {chartData.categoryPieData.slice(0, 4).map((cat, i) => (
-                <div key={i} className="flex items-center gap-1.5 text-xs">
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }}></div>
-                  <span className="text-gray-600 dark:text-gray-300 capitalize">{cat.name}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
 
-        {/* Gráfico de Área - Movimentações */}
-        <div className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card p-4 sm:p-6 border border-gray-100 dark:border-white/5 hover:shadow-card-hover transition-all duration-300 sm:col-span-2 lg:col-span-1">
-          <div className="mb-3 sm:mb-4">
-            <div className="flex items-center justify-between mb-2 sm:mb-3">
-              <h3 className="text-sm sm:text-lg font-semibold text-egen-gray-dark dark:text-egen-dark-text flex items-center">
-                <div className="p-1.5 sm:p-2 rounded-card bg-egen-blue shadow-lg mr-2 sm:mr-3">
-                  <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                </div>
-                Movimentações
-              </h3>
-            </div>
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-              <button
-                onClick={() => setMovementsPeriod(7)}
-                className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-medium rounded-lg transition-all ${
-                  movementsPeriod === 7
-                    ? 'bg-egen-navy text-white shadow-sm dark:bg-egen-yellow dark:text-egen-navy'
-                    : 'bg-gray-100 dark:bg-white/5 text-egen-gray-mid dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/10'
-                }`}
-              >
-                7d
-              </button>
-              <button
-                onClick={() => setMovementsPeriod(15)}
-                className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-medium rounded-lg transition-all ${
-                  movementsPeriod === 15
-                    ? 'bg-egen-navy text-white shadow-sm dark:bg-egen-yellow dark:text-egen-navy'
-                    : 'bg-gray-100 dark:bg-white/5 text-egen-gray-mid dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/10'
-                }`}
-              >
-                15d
-              </button>
-              <button
-                onClick={() => setMovementsPeriod(30)}
-                className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-medium rounded-lg transition-all ${
-                  movementsPeriod === 30
-                    ? 'bg-egen-navy text-white shadow-sm dark:bg-egen-yellow dark:text-egen-navy'
-                    : 'bg-gray-100 dark:bg-white/5 text-egen-gray-mid dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/10'
-                }`}
-              >
-                30d
-              </button>
-              <button
-                onClick={() => setMovementsPeriod('custom')}
-                className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-medium rounded-lg transition-all ${
-                  movementsPeriod === 'custom'
-                    ? 'bg-egen-navy text-white shadow-sm dark:bg-egen-yellow dark:text-egen-navy'
-                    : 'bg-gray-100 dark:bg-white/5 text-egen-gray-mid dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/10'
-                }`}
-              >
-                Custom
-              </button>
-              {movementsPeriod === 'custom' && (
-                <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto mt-2 sm:mt-0 sm:ml-2">
-                  <input
-                    type="date"
-                    value={customStartDate}
-                    onChange={(e) => setCustomStartDate(e.target.value)}
-                    className="flex-1 sm:flex-none px-2 py-1 text-xs border border-gray-300 dark:border-white/10 bg-white dark:bg-egen-dark-surface text-gray-900 dark:text-egen-dark-text rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-blue"
-                  />
-                  <span className="text-xs text-egen-gray-mid dark:text-white/60">até</span>
-                  <input
-                    type="date"
-                    value={customEndDate}
-                    onChange={(e) => setCustomEndDate(e.target.value)}
-                    className="flex-1 sm:flex-none px-2 py-1 text-xs border border-gray-300 dark:border-white/10 bg-white dark:bg-egen-dark-surface text-gray-900 dark:text-egen-dark-text rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-blue"
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="h-40 sm:h-48">
-            {chartData.movementsAreaData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData.movementsAreaData}>
-                  <defs>
-                    <linearGradient id="colorSaidas" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis 
-                    dataKey="date" 
-                    tick={{ fontSize: 11, fill: '#6b7280' }}
-                    axisLine={{ stroke: '#e5e7eb' }}
-                  />
-                  <YAxis 
-                    tick={{ fontSize: 11, fill: '#6b7280' }}
-                    axisLine={{ stroke: '#e5e7eb' }}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'white', 
-                      borderRadius: '12px', 
-                      border: '1px solid #e5e7eb',
-                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                    }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="saidas" 
-                    stroke="#EF4444" 
-                    fillOpacity={1} 
-                    fill="url(#colorSaidas)"
-                    name="Saídas"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full flex items-center justify-center text-gray-400">
-                <div className="text-center">
-                  <Activity className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Sem movimentações recentes</p>
-                </div>
+          {/* ============================================ */}
+          {/* CHARTS ROW 2 - Monthly Trends */}
+          {/* ============================================ */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+            <ChartCard title="Crescimento de Clientes (6 meses)" icon={TrendingUp}>
+              <div className="h-56 sm:h-64">
+                {chartData.clientTrend.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData.clientTrend}>
+                      <defs>
+                        <linearGradient id="clientGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={EGEN.navy} stopOpacity={0.15} />
+                          <stop offset="100%" stopColor={EGEN.navy} stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+                      <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'rgba(255,255,255,0.95)',
+                          borderRadius: '14px',
+                          border: '1px solid rgba(0,0,0,0.06)',
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                          fontSize: '13px',
+                        }}
+                        formatter={(value: number) => [`${value}`, 'Clientes']}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="count"
+                        stroke={EGEN.navy}
+                        strokeWidth={2.5}
+                        fill="url(#clientGrad)"
+                        dot={{ r: 4, fill: EGEN.navy, strokeWidth: 2, stroke: '#fff' }}
+                        activeDot={{ r: 6, fill: EGEN.navy, strokeWidth: 2, stroke: '#fff' }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <EmptyChart icon={TrendingUp} text="Sem dados de tendência" />
+                )}
               </div>
-            )}
-          </div>
-        </div>
-      </div>
+            </ChartCard>
 
-      {/* Gráfico de Barras - Valor por Categoria */}
-      <div className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card p-4 sm:p-6 border border-gray-100 dark:border-white/5 hover:shadow-card-hover transition-all duration-300">
-        <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <h3 className="text-sm sm:text-lg font-semibold text-egen-gray-dark dark:text-egen-dark-text flex items-center">
-            <div className="p-1.5 sm:p-2 rounded-card bg-egen-navy shadow-lg mr-2 sm:mr-3">
-              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-egen-yellow" />
-            </div>
-            <span className="hidden xs:inline">Valor em Estoque por </span>Categoria
-          </h3>
-          <span className="text-xs font-medium px-2 py-1 rounded-full bg-egen-navy/10 dark:bg-egen-yellow/10 text-egen-navy dark:text-egen-yellow">
-            Top 6
-          </span>
-        </div>
-        <div className="h-52 sm:h-64">
-          {chartData.categoryValueData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData.categoryValueData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={true} vertical={false} />
-                <XAxis 
-                  type="number" 
-                  tick={{ fontSize: 11, fill: '#6b7280' }}
-                  tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
-                  axisLine={{ stroke: '#e5e7eb' }}
-                />
-                <YAxis 
-                  type="category" 
-                  dataKey="name" 
-                  tick={{ fontSize: 11, fill: '#6b7280' }}
-                  width={100}
-                  axisLine={{ stroke: '#e5e7eb' }}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'white', 
-                    borderRadius: '12px', 
-                    border: '1px solid #e5e7eb',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                  }}
-                  formatter={(value: number) => [formatCurrency(value), 'Valor']}
-                  labelFormatter={(label, payload) => payload?.[0]?.payload?.fullName || label}
-                />
-                <Bar 
-                  dataKey="valor" 
-                  fill="#6366F1" 
-                  radius={[0, 8, 8, 0]}
-                  name="Valor em Estoque"
-                >
-                  {chartData.categoryValueData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-full flex items-center justify-center text-gray-400">
-              <div className="text-center">
-                <BarChart3 className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">Sem dados disponíveis</p>
+            <ChartCard title="Novos Leads (6 meses)" icon={Zap}>
+              <div className="h-56 sm:h-64">
+                {chartData.leadTrend.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData.leadTrend}>
+                      <defs>
+                        <linearGradient id="leadGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={EGEN.yellow} stopOpacity={0.3} />
+                          <stop offset="100%" stopColor={EGEN.yellow} stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+                      <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'rgba(255,255,255,0.95)',
+                          borderRadius: '14px',
+                          border: '1px solid rgba(0,0,0,0.06)',
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                          fontSize: '13px',
+                        }}
+                        formatter={(value: number) => [`${value}`, 'Leads']}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="count"
+                        stroke={EGEN.yellow}
+                        strokeWidth={2.5}
+                        fill="url(#leadGrad)"
+                        dot={{ r: 4, fill: EGEN.yellow, strokeWidth: 2, stroke: '#fff' }}
+                        activeDot={{ r: 6, fill: EGEN.yellow, strokeWidth: 2, stroke: '#fff' }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <EmptyChart icon={Zap} text="Sem dados de tendência" />
+                )}
               </div>
-            </div>
-          )}
-        </div>
-      </div>
-      </>
+            </ChartCard>
+          </div>
+
+          {/* ============================================ */}
+          {/* CHARTS ROW 3 - Proposal Status + Value */}
+          {/* ============================================ */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+            <ChartCard title="Propostas por Status" icon={FileText}>
+              <div className="h-64 sm:h-72">
+                {chartData.proposalStatusPie.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={chartData.proposalStatusPie}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={90}
+                        paddingAngle={3}
+                        dataKey="value"
+                        cornerRadius={4}
+                      >
+                        {chartData.proposalStatusPie.map((_, i) => (
+                          <Cell key={i} fill={CHART_COLORS[(i + 2) % CHART_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'rgba(255,255,255,0.95)',
+                          borderRadius: '14px',
+                          border: '1px solid rgba(0,0,0,0.06)',
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                          fontSize: '13px',
+                        }}
+                        formatter={(value: number, name: string) => [`${value} propostas`, name]}
+                      />
+                      <Legend
+                        verticalAlign="bottom"
+                        height={32}
+                        formatter={(value) => <span className="text-xs text-gray-600 dark:text-gray-300">{value}</span>}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <EmptyChart icon={FileText} text="Sem propostas cadastradas" />
+                )}
+              </div>
+            </ChartCard>
+
+            <ChartCard title="Resumo de Clientes" icon={Building2}>
+              <div className="space-y-3 pt-1">
+                {[
+                  { label: 'Ativos', value: metrics.activeClients, total: metrics.totalClients, color: 'bg-emerald-500', icon: Users },
+                  { label: 'Prospectos', value: metrics.prospectClients, total: metrics.totalClients, color: 'bg-amber-500', icon: Target },
+                  { label: 'Inativos', value: metrics.inactiveClients, total: metrics.totalClients, color: 'bg-gray-400', icon: TrendingDown },
+                  { label: 'Bloqueados', value: metrics.blockedClients, total: metrics.totalClients, color: 'bg-red-500', icon: EyeOff },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center gap-3">
+                    <div className={`p-1.5 rounded-lg ${item.color.replace('bg-', 'bg-')}/10`}>
+                      <item.icon className={`w-3.5 h-3.5 ${item.color.replace('bg-', 'text-')}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{item.label}</span>
+                        <span className="text-xs font-bold text-gray-900 dark:text-white">{item.value}</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-gray-100 dark:bg-white/[0.06] rounded-full overflow-hidden">
+                        <div
+                          className={`h-full ${item.color} rounded-full transition-all duration-700`}
+                          style={{ width: `${item.total > 0 ? (item.value / item.total) * 100 : 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ChartCard>
+          </div>
+        </>
       )}
 
-      {/* Stats Financeiros */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
-        {financialStats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div 
-              key={stat.name} 
-              className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card p-3 sm:p-6 border border-gray-100 dark:border-white/5 cursor-pointer hover:shadow-card-hover hover:border-egen-yellow/30 dark:hover:border-egen-yellow/20 transition-all duration-300 hover-lift card-interactive animate-fade-in-up"
-              style={{ animationDelay: `${(index + 4) * 0.05}s` }}
-              onClick={() => setSelectedDetail(stat.detailKey)}
-            >
-              <div className="flex items-center justify-between mb-2 sm:mb-4">
-                <div className={`p-2 sm:p-3 rounded-card ${stat.color} shadow-lg`}>
-                  <Icon className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
-                </div>
-                <div className="flex items-center space-x-1 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-gray-50 dark:bg-white/5">
-                  {getTrendIcon(stat.change)}
-                  <span className={`text-xs sm:text-sm font-medium ${getTrendColor(stat.change)}`}>
-                    {formatPercentage(stat.change)}
-                  </span>
-                </div>
-              </div>
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-egen-gray-mid dark:text-white/60">{stat.name}</p>
-                <p className="text-lg sm:text-2xl font-bold text-egen-gray-dark dark:text-egen-dark-text mt-0.5 sm:mt-1">{stat.value}</p>
-                <p className={`text-xs sm:text-sm mt-1 sm:mt-2 ${getTrendColor(stat.change)}`}>
-                  {stat.change >= 0 ? '+' : ''}{stat.changeValue} <span className="hidden xs:inline">vs mês anterior</span>
-                </p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        {/* Categories Chart */}
-        <div
-          className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card p-4 sm:p-6 border border-gray-100 dark:border-white/5 cursor-pointer hover:shadow-card-hover transition-all duration-300 hover-lift"
-          onClick={() => setSelectedDetail('categories')}
-        >
-          <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <h3 className="text-sm sm:text-lg font-semibold text-egen-gray-dark dark:text-egen-dark-text flex items-center">
-              <div className="p-1.5 sm:p-2 rounded-card bg-egen-navy shadow-lg mr-2 sm:mr-3">
-                <Package className="w-4 h-4 sm:w-5 sm:h-5 text-egen-yellow" />
-              </div>
-              Equipamentos por Categoria
-            </h3>
-            <span className="text-xs font-medium px-2 sm:px-3 py-1 rounded-full bg-egen-navy/10 dark:bg-egen-yellow/10 text-egen-navy dark:text-egen-yellow">
-              {Object.keys(dashboardData.allCategories).length} <span className="hidden xs:inline">categorias</span>
-            </span>
+      {/* ============================================ */}
+      {/* RECENT ACTIVITY */}
+      {/* ============================================ */}
+      <div className="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-100 dark:border-white/[0.06] p-5 sm:p-6 backdrop-blur-sm">
+        <div className="flex items-center gap-2.5 mb-4">
+          <div className="p-1.5 rounded-lg bg-egen-navy/5 dark:bg-egen-yellow/10">
+            <Activity className="w-4 h-4 text-egen-navy dark:text-egen-yellow" />
           </div>
-          <div className="space-y-2 sm:space-y-3 max-h-52 sm:max-h-64 overflow-y-auto pr-1">
-            {Object.entries(dashboardData.allCategories)
-              .sort(([, a], [, b]) => b - a)
-              .map(([category, count], index) => {
-                const colorStyles = [
-                  { bg: 'bg-blue-100 dark:bg-blue-900/30', bar: 'bg-blue-500', text: 'text-blue-700 dark:text-blue-300', dot: 'bg-blue-500' },
-                  { bg: 'bg-green-100 dark:bg-green-900/30', bar: 'bg-green-500', text: 'text-green-700 dark:text-green-300', dot: 'bg-green-500' },
-                  { bg: 'bg-purple-100 dark:bg-purple-900/30', bar: 'bg-purple-500', text: 'text-purple-700 dark:text-purple-300', dot: 'bg-purple-500' },
-                  { bg: 'bg-orange-100 dark:bg-orange-900/30', bar: 'bg-orange-500', text: 'text-orange-700 dark:text-orange-300', dot: 'bg-orange-500' },
-                  { bg: 'bg-red-100 dark:bg-red-900/30', bar: 'bg-red-500', text: 'text-red-700 dark:text-red-300', dot: 'bg-red-500' },
-                  { bg: 'bg-indigo-100 dark:bg-indigo-900/30', bar: 'bg-indigo-500', text: 'text-indigo-700 dark:text-indigo-300', dot: 'bg-indigo-500' },
-                  { bg: 'bg-pink-100 dark:bg-pink-900/30', bar: 'bg-pink-500', text: 'text-pink-700 dark:text-pink-300', dot: 'bg-pink-500' },
-                  { bg: 'bg-teal-100 dark:bg-teal-900/30', bar: 'bg-teal-500', text: 'text-teal-700 dark:text-teal-300', dot: 'bg-teal-500' }
-                ];
-                const style = colorStyles[index % colorStyles.length];
-                const percentage = dashboardData.totalEquipment > 0 ? (count / dashboardData.totalEquipment) * 100 : 0;
-
-                return (
-                  <div key={category} className={`flex items-center justify-between p-2 sm:p-2.5 rounded-lg sm:rounded-xl ${style.bg} hover:shadow-sm transition-all`}>
-                    <div className="flex items-center flex-1 min-w-0">
-                      <div className={`w-2.5 h-2.5 rounded-full ${style.dot} mr-2.5 flex-shrink-0`}></div>
-                      <span className={`text-sm font-medium ${style.text} capitalize truncate`}>{category}</span>
-                    </div>
-                    <div className="flex items-center ml-2 sm:ml-3">
-                      <div className="w-14 sm:w-20 bg-white/60 dark:bg-gray-600/40 rounded-full h-1 sm:h-1.5 mr-2 sm:mr-3">
-                        <div
-                          className={`${style.bar} h-1 sm:h-1.5 rounded-full transition-all duration-500`}
-                          style={{ width: `${percentage}%` }}
-                        ></div>
-                      </div>
-                      <div className="text-right min-w-[50px] sm:min-w-[70px]">
-                        <span className={`text-xs sm:text-sm font-bold ${style.text}`}>{count}</span>
-                        <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400">{formatCurrency(dashboardData.allCategoryValues[category] || 0)}</p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Atividade Recente</h3>
         </div>
-
-        {/* Solicitações por Departamento */}
-        <div 
-          className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card p-4 sm:p-6 border border-gray-100 dark:border-white/5 cursor-pointer hover:shadow-card-hover hover:border-egen-yellow/30 dark:hover:border-egen-yellow/20 transition-all duration-300 hover-lift"
-          onClick={() => setSelectedDetail('departmentRanking')}
-        >
-          <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <h3 className="text-sm sm:text-lg font-semibold text-egen-gray-dark dark:text-egen-dark-text flex items-center">
-              <div className="p-1.5 sm:p-2 rounded-card bg-egen-navy shadow-lg mr-2 sm:mr-3">
-                <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-              </div>
-              <span className="hidden xs:inline">Solicitações por </span>Departamento
-            </h3>
-            <span className="text-xs font-medium px-2 sm:px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-              {chartData.departmentRankingData.length} <span className="hidden sm:inline">centro(s)</span>
-            </span>
-          </div>
-          <div className="space-y-2 max-h-52 sm:max-h-64 overflow-y-auto pr-1">
-            {chartData.departmentRankingData.length > 0 ? (
-              chartData.departmentRankingData.slice(0, 8).map((dept, index) => {
-                const maxTotal = chartData.departmentRankingData[0]?.total || 1;
-                const percentage = (dept.total / maxTotal) * 100;
-                const approvalRate = dept.total > 0 ? ((dept.approved / dept.total) * 100).toFixed(0) : '0';
-
-                return (
-                  <div key={dept.name} className="flex items-center justify-between p-2 sm:p-3 rounded-lg sm:rounded-xl bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all">
-                    <div className="flex items-center flex-1 min-w-0">
-                      <span className="w-5 sm:w-6 text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400 mr-2 sm:mr-3">{index + 1}.</span>
-                      <div className="p-1 sm:p-1.5 rounded-md sm:rounded-lg bg-white dark:bg-gray-800 shadow-sm mr-2 sm:mr-3 hidden xs:block">
-                        <Building2 className="w-3 h-3 sm:w-4 sm:h-4 text-slate-600 dark:text-slate-300" />
-                      </div>
-                      <span className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{dept.name}</span>
-                    </div>
-                    <div className="flex items-center ml-2 sm:ml-3 gap-2 sm:gap-3">
-                      <div className="w-12 sm:w-20 bg-slate-200 dark:bg-slate-600 rounded-full h-1 sm:h-1.5 hidden xs:block">
-                        <div
-                          className="bg-slate-600 dark:bg-slate-400 h-1 sm:h-1.5 rounded-full transition-all duration-500"
-                          style={{ width: `${percentage}%` }}
-                        ></div>
-                      </div>
-                      <div className="flex items-center gap-1 sm:gap-2 min-w-[60px] sm:min-w-[90px] justify-end">
-                        <span className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200">{dept.total}</span>
-                        <span className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300">{approvalRate}%</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="text-center py-6 sm:py-8 text-gray-400">
-                <ClipboardList className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2 opacity-50" />
-                <p className="text-xs sm:text-sm">Nenhuma solicitação registrada</p>
-              </div>
-            )}
-          </div>
-          {chartData.departmentRankingData.length > 0 && (
-            <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between text-xs sm:text-sm">
-              <div className="flex items-center gap-2 sm:gap-4">
-                <span className="text-slate-500 dark:text-slate-400">Total:</span>
-                <span className="font-bold text-slate-800 dark:text-slate-100">{requests.length}</span>
-              </div>
-              <span className="text-slate-500 dark:text-slate-400 text-xs hidden sm:inline">Clique para análise detalhada →</span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Recent Movements */}
-      <div 
-        className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card p-4 sm:p-6 border border-gray-100 dark:border-white/5 cursor-pointer hover:shadow-card-hover hover:border-egen-blue/30 dark:hover:border-egen-blue/20 transition-all duration-300 hover-lift"
-        onClick={() => setSelectedDetail('recentMovements')}
-      >
-        <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <h3 className="text-sm sm:text-lg font-semibold text-egen-gray-dark dark:text-egen-dark-text flex items-center">
-            <div className="p-1.5 sm:p-2 rounded-card bg-egen-blue shadow-lg mr-2 sm:mr-3">
-              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-            </div>
-            Movimentações Recentes
-          </h3>
-          <span className="text-xs font-medium px-2 sm:px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300">
-            {recentMovements.length} <span className="hidden xs:inline">itens</span>
-          </span>
-        </div>
-        <div className="space-y-2 max-h-52 sm:max-h-64 overflow-y-auto pr-1">
-          {recentMovements.length > 0 ? (
-            recentMovements.map((movement) => (
-              <div key={movement.id} className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg sm:rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+        {metrics.recentActivity.length > 0 ? (
+          <div className="space-y-1">
+            {metrics.recentActivity.map((activity, i) => (
+              <div
+                key={activity.id}
+                className="flex items-center gap-3 py-2.5 px-3 rounded-xl hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors group"
+              >
+                <ActivityIcon type={activity.type} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs sm:text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{movement.equipmentName}</p>
-                  <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
-                    {movement.reason === 'sale' && 'Saída'}
-                    {movement.reason === 'internal-consumption' && 'Consumo Int.'}
-                    {movement.reason === 'internal-transfer' && 'Transferência'}
-                    {movement.reason === 'return' && 'Devolução'}
-                    {movement.reason === 'other' && 'Outros'}
-                  </p>
+                  <p className="text-sm text-gray-700 dark:text-gray-200 truncate">{activity.description}</p>
+                  <p className="text-xs text-gray-400 truncate">{activity.entity}</p>
                 </div>
-                <div className="text-right ml-3 sm:ml-4">
-                  <p className="text-xs sm:text-sm font-bold text-red-600 dark:text-red-400">-{movement.quantity}</p>
-                  <p className="text-[10px] sm:text-xs font-medium text-gray-600 dark:text-gray-300">{formatCurrency(movement.totalValue || 0)}</p>
-                  <p className="text-[10px] sm:text-xs text-gray-400">{movement.date}</p>
+                <div className="flex items-center gap-1.5 text-xs text-gray-400 flex-shrink-0">
+                  <Clock className="w-3 h-3" />
+                  {formatRelativeDate(activity.createdAt)}
                 </div>
-              </div>
-            ))
-          ) : (
-            <div className="flex flex-col items-center justify-center py-6 sm:py-8 text-gray-400">
-              <TrendingUp className="w-10 h-10 mb-2 opacity-50" />
-              <p className="text-sm">Nenhuma movimentação recente</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        {/* Top Value Products */}
-        <div 
-          className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card p-4 sm:p-6 border border-gray-100 dark:border-white/5 cursor-pointer hover:shadow-card-hover hover:border-egen-green/30 dark:hover:border-egen-green/20 transition-all duration-300 hover-lift"
-          onClick={() => setSelectedDetail('topValue')}
-        >
-          <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <h3 className="text-sm sm:text-lg font-semibold text-egen-gray-dark dark:text-egen-dark-text flex items-center">
-              <div className="p-1.5 sm:p-2 rounded-card bg-egen-green shadow-lg mr-2 sm:mr-3">
-                <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-              </div>
-              Equipamentos de Maior Valor
-            </h3>
-            <span className="text-xs font-medium px-2 sm:px-3 py-1 rounded-full bg-green-50 dark:bg-green-900/50 text-green-600 dark:text-green-300">
-              Top 5
-            </span>
-          </div>
-          <div className="space-y-2 max-h-52 sm:max-h-64 overflow-y-auto pr-1">
-            {dashboardData.topValueEquipment.slice(0, 5).map((item, index) => (
-              <div key={item.id} className="flex items-center justify-between p-2 sm:p-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 rounded-lg sm:rounded-xl hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/50 dark:hover:to-emerald-900/50 transition-colors">
-                <div className="flex items-center flex-1 min-w-0">
-                  <span className="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-green-500 text-white text-[10px] sm:text-xs font-bold mr-2 sm:mr-3 flex-shrink-0">
-                    {index + 1}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-xs sm:text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{item.name}</p>
-                    <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{item.code}</p>
-                  </div>
-                </div>
-                <div className="text-right ml-3 sm:ml-4">
-                  <p className="text-xs sm:text-sm font-bold text-green-600 dark:text-green-400">{formatCurrency(item.totalValue || 0)}</p>
-                  <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{item.quantity} {item.unit}</p>
-                </div>
+                <ChevronRight className="w-4 h-4 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
               </div>
             ))}
           </div>
-        </div>
-
-        {/* Low Stock Alert */}
-        {lowStockEquipment.length > 0 && (
-          <div 
-            className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card p-4 sm:p-6 border border-gray-100 dark:border-white/5 cursor-pointer hover:shadow-card-hover hover:border-egen-yellow/30 dark:hover:border-egen-yellow/20 transition-all duration-300 hover-lift"
-            onClick={() => setSelectedDetail('lowStock')}
-          >
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <h3 className="text-sm sm:text-lg font-semibold text-egen-gray-dark dark:text-egen-dark-text flex items-center">
-                <div className="p-1.5 sm:p-2 rounded-card bg-orange-500 shadow-lg mr-2 sm:mr-3">
-                  <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                </div>
-                <span className="hidden xs:inline">Equipamentos com </span>Estoque Baixo
-              </h3>
-              <span className="text-xs font-medium px-2 sm:px-3 py-1 rounded-full bg-orange-50 dark:bg-orange-900/50 text-orange-600 dark:text-orange-300">
-                {lowStockEquipment.length} <span className="hidden xs:inline">{lowStockEquipment.length === 1 ? 'item' : 'itens'}</span>
-              </span>
-            </div>
-            <div className="space-y-2 max-h-52 sm:max-h-64 overflow-y-auto pr-1">
-              {lowStockEquipment.slice(0, 10).map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-2 sm:p-3 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/30 dark:to-amber-900/30 rounded-lg sm:rounded-xl hover:from-orange-100 hover:to-amber-100 dark:hover:from-orange-900/50 dark:hover:to-amber-900/50 transition-colors">
-                  <div className="flex items-center flex-1 min-w-0">
-                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-orange-500 mr-2 sm:mr-3 animate-pulse flex-shrink-0"></div>
-                    <div className="min-w-0">
-                      <p className="text-xs sm:text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{item.name}</p>
-                      <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{item.code}</p>
-                    </div>
-                  </div>
-                  <div className="text-right ml-3 sm:ml-4">
-                    <p className="text-xs sm:text-sm font-bold text-orange-600 dark:text-orange-400">{item.quantity} {item.unit}</p>
-                    <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Mín: {item.minStock}</p>
-                    <p className="text-[10px] sm:text-xs text-gray-400">{formatCurrency(item.totalValue || 0)}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Expiring Products */}
-        {expiringEquipment.length > 0 && (
-          <div 
-            className="bg-white dark:bg-egen-dark-surface rounded-card shadow-card p-4 sm:p-6 border border-gray-100 dark:border-white/5 cursor-pointer hover:shadow-card-hover hover:border-egen-red/30 dark:hover:border-egen-red/20 transition-all duration-300 hover-lift"
-            onClick={() => setSelectedDetail('expiring')}
-          >
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <h3 className="text-sm sm:text-lg font-semibold text-egen-gray-dark dark:text-egen-dark-text flex items-center">
-                <div className="p-1.5 sm:p-2 rounded-card bg-egen-red shadow-lg mr-2 sm:mr-3">
-                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                </div>
-                <span className="hidden xs:inline">Equipamentos </span>Próximos ao Vencimento
-              </h3>
-              <span className="text-xs font-medium px-2 sm:px-3 py-1 rounded-full bg-red-50 dark:bg-red-900/50 text-red-600 dark:text-red-300">
-                {expiringEquipment.length} <span className="hidden xs:inline">{expiringEquipment.length === 1 ? 'item' : 'itens'}</span>
-              </span>
-            </div>
-            <div className="space-y-2 max-h-52 sm:max-h-64 overflow-y-auto pr-1">
-              {expiringEquipment.map((item) => {
-                const daysUntilExpiration = Math.ceil(
-                  (new Date(item.expirationDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-                );
-                const isExpired = daysUntilExpiration < 0;
-                const isCritical = daysUntilExpiration <= 7;
-                
-                return (
-                  <div key={item.id} className={`flex items-center justify-between p-2 sm:p-3 rounded-lg sm:rounded-xl transition-colors ${
-                    isExpired ? 'bg-gradient-to-r from-red-100 to-red-50 dark:from-red-900/40 dark:to-red-900/20' : 
-                    isCritical ? 'bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/30 dark:to-orange-900/20' : 
-                    'bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/30 dark:to-yellow-900/20'
-                  } hover:shadow-sm`}>
-                    <div className="flex items-center flex-1 min-w-0">
-                      <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full mr-2 sm:mr-3 flex-shrink-0 ${isExpired || isCritical ? 'bg-red-500 animate-pulse' : 'bg-orange-500'}`}></div>
-                      <div className="min-w-0">
-                        <p className="text-xs sm:text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{item.name}</p>
-                        <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{item.code}</p>
-                      </div>
-                    </div>
-                    <div className="text-right ml-3 sm:ml-4">
-                      <p className={`text-xs sm:text-sm font-bold ${isExpired ? 'text-red-700 dark:text-red-400' : isCritical ? 'text-red-600 dark:text-red-400' : 'text-orange-600 dark:text-orange-400'}`}>
-                        {isExpired ? `Vencido ${Math.abs(daysUntilExpiration)}d` : `${daysUntilExpiration}d`}
-                      </p>
-                      <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">{item.quantity} {item.unit}</p>
-                      <p className="text-[10px] sm:text-xs text-gray-400">{formatCurrency(item.totalValue || 0)}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+        ) : (
+          <div className="py-8 text-center text-sm text-gray-400">Nenhuma atividade recente</div>
         )}
       </div>
-
-      {/* Resumo Financeiro */}
-      <div 
-        className="bg-gradient-to-br from-egen-navy/5 via-egen-blue/5 to-egen-yellow/5 dark:from-egen-navy/30 dark:via-egen-blue/20 dark:to-egen-yellow/10 rounded-card p-4 sm:p-6 border border-egen-navy/10 dark:border-white/5 cursor-pointer hover:shadow-card-hover transition-all duration-300 hover-lift"
-        onClick={() => setSelectedDetail('financialStats')}
-      >
-        <div className="flex items-center justify-between mb-4 sm:mb-6">
-          <h3 className="text-sm sm:text-lg font-semibold text-egen-gray-dark dark:text-egen-dark-text flex items-center">
-            <div className="p-1.5 sm:p-2 rounded-card bg-egen-navy shadow-lg mr-2 sm:mr-3">
-              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-egen-yellow" />
-            </div>
-            Resumo Financeiro<span className="hidden sm:inline"> do Mês</span>
-          </h3>
-        </div>
-        <div className="grid grid-cols-1 xs:grid-cols-3 gap-3 sm:gap-4">
-          <div className="bg-white/60 dark:bg-egen-dark-surface/60 backdrop-blur-sm rounded-card p-3 sm:p-4 border border-egen-blue/20 dark:border-white/5 text-center hover:bg-white/80 dark:hover:bg-egen-dark-surface/80 transition-colors">
-            <div className="inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-card bg-egen-blue shadow-lg mb-2 sm:mb-3">
-              <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-            </div>
-            <p className="text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Valor em Estoque</p>
-            <p className="text-base sm:text-xl font-bold text-blue-600 dark:text-blue-400 mt-0.5 sm:mt-1">{formatCurrency(financialMetrics.currentMonth.inventoryValue)}</p>
-            <div className="flex items-center justify-center mt-1.5 sm:mt-2 px-2 py-0.5 sm:py-1 rounded-full bg-gray-50 dark:bg-gray-700/50 w-fit mx-auto">
-              {getTrendIcon(financialMetrics.trends.inventoryValueChangePercent)}
-              <span className={`text-[10px] sm:text-xs font-medium ml-1 ${getTrendColor(financialMetrics.trends.inventoryValueChangePercent)}`}>
-                {formatPercentage(financialMetrics.trends.inventoryValueChangePercent)}
-              </span>
-            </div>
-          </div>
-          <div className="bg-white/60 dark:bg-egen-dark-surface/60 backdrop-blur-sm rounded-card p-3 sm:p-4 border border-egen-navy/20 dark:border-white/5 text-center hover:bg-white/80 dark:hover:bg-egen-dark-surface/80 transition-colors">
-            <div className="inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-card bg-egen-navy shadow-lg mb-2 sm:mb-3">
-              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-egen-yellow" />
-            </div>
-            <p className="text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Movimentações</p>
-            <p className="text-base sm:text-xl font-bold text-egen-navy dark:text-egen-yellow mt-0.5 sm:mt-1">{formatCurrency(financialMetrics.currentMonth.movementsValue)}</p>
-            <div className="flex items-center justify-center mt-1.5 sm:mt-2 px-2 py-0.5 sm:py-1 rounded-full bg-gray-50 dark:bg-gray-700/50 w-fit mx-auto">
-              {getTrendIcon(financialMetrics.trends.movementsValueChangePercent)}
-              <span className={`text-[10px] sm:text-xs font-medium ml-1 ${getTrendColor(financialMetrics.trends.movementsValueChangePercent)}`}>
-                {formatPercentage(financialMetrics.trends.movementsValueChangePercent)}
-              </span>
-            </div>
-          </div>
-          <div className="bg-white/60 dark:bg-egen-dark-surface/60 backdrop-blur-sm rounded-card p-3 sm:p-4 border border-egen-green/20 dark:border-white/5 text-center hover:bg-white/80 dark:hover:bg-egen-dark-surface/80 transition-colors">
-            <div className="inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-card bg-egen-green shadow-lg mb-2 sm:mb-3">
-              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-            </div>
-            <p className="text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Nº Movimentações</p>
-            <p className="text-base sm:text-xl font-bold text-green-600 dark:text-green-400 mt-0.5 sm:mt-1">{financialMetrics.currentMonth.movementsCount}</p>
-            <div className="flex items-center justify-center mt-1.5 sm:mt-2 px-2 py-0.5 sm:py-1 rounded-full bg-gray-50 dark:bg-gray-700/50 w-fit mx-auto">
-              {getTrendIcon(financialMetrics.trends.movementsCountChangePercent)}
-              <span className={`text-[10px] sm:text-xs font-medium ml-1 ${getTrendColor(financialMetrics.trends.movementsCountChangePercent)}`}>
-                {formatPercentage(financialMetrics.trends.movementsCountChangePercent)}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Comparativo de Compras */}
-      <PurchaseComparison />
-      </div>
-
-      {/* Detail Modal */}
-      {selectedDetail && (
-        <DetailModal
-          title={getModalTitle(selectedDetail)}
-          onClose={() => setSelectedDetail(null)}
-          icon={
-            selectedDetail === 'lowStock' ? <AlertTriangle className="w-5 h-5 text-white" /> :
-            selectedDetail === 'expiring' ? <Calendar className="w-5 h-5 text-white" /> :
-            selectedDetail === 'recentMovements' ? <TrendingUp className="w-5 h-5 text-white" /> :
-            selectedDetail === 'topValue' ? <DollarSign className="w-5 h-5 text-white" /> :
-            selectedDetail === 'financialStats' ? <BarChart3 className="w-5 h-5 text-white" /> :
-            selectedDetail === 'categories' ? <Package className="w-5 h-5 text-white" /> :
-            <Package className="w-5 h-5 text-white" />
-          }
-          accentColor={
-            selectedDetail === 'lowStock' ? 'orange' :
-            selectedDetail === 'expiring' ? 'red' :
-            selectedDetail === 'recentMovements' ? 'blue' :
-            selectedDetail === 'topValue' ? 'green' :
-            selectedDetail === 'financialStats' ? 'purple' :
-            selectedDetail === 'categories' ? 'purple' :
-            'blue'
-          }
-        >
-          {renderModalContent(selectedDetail, dashboardData, financialMetrics, equipment, movements, formatCurrency)}
-        </DetailModal>
-      )}
-    </>
+    </div>
   );
 };
+
+// ============================================
+// ACTION CARD (small CTA-style cards)
+// ============================================
+const ActionCard: React.FC<{ icon: React.ElementType; label: string; value: number; color: string; pulse?: boolean }> = ({
+  icon: Icon, label, value, color, pulse,
+}) => (
+  <div className="relative bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-100 dark:border-white/[0.06] p-4 backdrop-blur-sm hover:shadow-md transition-all duration-300 group">
+    {pulse && (
+      <span className="absolute top-2 right-2 flex h-2 w-2">
+        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${color} opacity-75`} />
+        <span className={`relative inline-flex rounded-full h-2 w-2 ${color}`} />
+      </span>
+    )}
+    <div className={`w-9 h-9 rounded-xl ${color} flex items-center justify-center mb-2.5 transition-transform duration-300 group-hover:scale-110`}>
+      <Icon className="w-4.5 h-4.5 text-white" />
+    </div>
+    <p className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{value}</p>
+    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{label}</p>
+  </div>
+);
+
+// ============================================
+// ACTIVITY ICON
+// ============================================
+const ActivityIcon: React.FC<{ type: string }> = ({ type }) => {
+  const base = 'w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0';
+  switch (type) {
+    case 'new_client':
+      return <div className={`${base} bg-egen-navy/10`}><Building2 className="w-4 h-4 text-egen-navy" /></div>;
+    case 'new_lead':
+      return <div className={`${base} bg-blue-50 dark:bg-blue-500/10`}><UserPlus className="w-4 h-4 text-blue-500" /></div>;
+    case 'lead_converted':
+      return <div className={`${base} bg-emerald-50 dark:bg-emerald-500/10`}><TrendingUp className="w-4 h-4 text-emerald-500" /></div>;
+    case 'proposal_created':
+      return <div className={`${base} bg-amber-50 dark:bg-amber-500/10`}><FileText className="w-4 h-4 text-amber-500" /></div>;
+    case 'proposal_approved':
+      return <div className={`${base} bg-emerald-50 dark:bg-emerald-500/10`}><DollarSign className="w-4 h-4 text-emerald-500" /></div>;
+    default:
+      return <div className={`${base} bg-gray-100 dark:bg-white/5`}><Activity className="w-4 h-4 text-gray-400" /></div>;
+  }
+};
+
+// ============================================
+// EMPTY CHART PLACEHOLDER
+// ============================================
+const EmptyChart: React.FC<{ icon: React.ElementType; text: string }> = ({ icon: Icon, text }) => (
+  <div className="h-full flex items-center justify-center">
+    <div className="text-center text-gray-300 dark:text-gray-600">
+      <Icon className="w-10 h-10 mx-auto mb-2 opacity-40" />
+      <p className="text-xs">{text}</p>
+    </div>
+  </div>
+);
+
+// ============================================
+// DASHBOARD SKELETON
+// ============================================
+const DashboardSkeleton: React.FC = () => (
+  <div className="space-y-5 animate-pulse">
+    <div className={`${GRADIENT_BG} rounded-2xl p-7 h-28`} />
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
+    </div>
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
+    </div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <SkeletonChart /><SkeletonChart />
+    </div>
+    <SkeletonChart h="h-48" />
+  </div>
+);
+
+// ============================================
+// CHART DATA BUILDER
+// ============================================
+function buildChartData(metrics: CRMDashboardMetrics) {
+  // Client Status Pie
+  const clientStatusPie = [
+    { name: 'Ativos', value: metrics.activeClients },
+    { name: 'Prospectos', value: metrics.prospectClients },
+    { name: 'Inativos', value: metrics.inactiveClients },
+    { name: 'Bloqueados', value: metrics.blockedClients },
+  ].filter(d => d.value > 0);
+
+  // Lead Pipeline Bar (horizontal)
+  const pipelineOrder: LeadStatus[] = [
+    'to_contact', 'potential_client', 'follow_up', 'in_proposal',
+    'client_with_demand', 'client_no_demand', 'no_demand',
+  ];
+  const leadPipelineBar = pipelineOrder
+    .map(status => ({
+      name: LEAD_STATUS_LABELS[status],
+      value: metrics.leadsByStatus[status] || 0,
+    }))
+    .filter(d => d.value > 0);
+
+  // Proposal Status Pie
+  const proposalStatusPie = Object.entries(metrics.proposalsByStatus)
+    .filter(([_, v]) => v > 0)
+    .map(([status, count]) => ({
+      name: formatStatusLabel(status),
+      value: count,
+    }));
+
+  // Trends
+  const clientTrend = metrics.monthlyClientGrowth;
+  const leadTrend = metrics.monthlyLeadGrowth;
+
+  return { clientStatusPie, leadPipelineBar, proposalStatusPie, clientTrend, leadTrend };
+}
+
+function formatStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    draft: 'Rascunho',
+    sent: 'Enviada',
+    approved: 'Aprovada',
+    rejected: 'Rejeitada',
+    expired: 'Expirada',
+    negotiating: 'Negociação',
+    closed: 'Fechada',
+    cancelled: 'Cancelada',
+    lost: 'Perdida',
+    price_survey: 'Pesquisa',
+    pending: 'Pendente',
+    in_progress: 'Em andamento',
+    completed: 'Concluída',
+    open: 'Aberta',
+    active: 'Ativa',
+    inactive: 'Inativa',
+  };
+  return labels[status] || status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+function formatRelativeDate(dateStr: string): string {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'agora';
+  if (diffMins < 60) return `${diffMins}min`;
+  if (diffHours < 24) return `${diffHours}h`;
+  if (diffDays < 7) return `${diffDays}d`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)}sem`;
+  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+}
 
 export default Dashboard;
