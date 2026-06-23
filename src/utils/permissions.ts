@@ -26,6 +26,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     canCreateLeads: true,
     canEditLeads: true,
     canDeleteLeads: true,
+    canViewMaintenance: true,
+    canManageMaintenance: true,
   },
   operator: {
     canViewDashboard: false,
@@ -52,6 +54,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     canCreateLeads: true,
     canEditLeads: true,
     canDeleteLeads: false,
+    canViewMaintenance: true,
+    canManageMaintenance: true,
   },
   requester: {
     canViewDashboard: false,
@@ -78,6 +82,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     canCreateLeads: false,
     canEditLeads: false,
     canDeleteLeads: false,
+    canViewMaintenance: false,
+    canManageMaintenance: false,
   },
 };
 

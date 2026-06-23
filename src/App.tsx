@@ -8,6 +8,8 @@ import Dashboard from './components/Dashboard';
 import UserManagement from './components/UserManagement';
 import { CrmPage } from './modules/crm';
 import { SalesQuotationPage, ProposalManagementPage } from './modules/quotations/components/proposal';
+import { EquipmentPage } from './modules/equipment';
+import { MaintenancePage } from './modules/maintenance';
 import ResetPassword from './components/ResetPassword';
 import Home from './components/Home';
 
@@ -89,6 +91,22 @@ const AuthenticatedApp: React.FC = () => {
           element={
             <ProtectedRoute permission="canManageQuotations" userRole={userRole}>
               <SalesQuotationPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/equipamentos"
+          element={
+            <ProtectedRoute permission="canViewEquipment" userRole={userRole}>
+              <EquipmentPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manutencoes"
+          element={
+            <ProtectedRoute permission="canViewMaintenance" userRole={userRole}>
+              <MaintenancePage />
             </ProtectedRoute>
           }
         />

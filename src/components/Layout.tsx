@@ -13,6 +13,8 @@ import {
   FileText,
   UserCircle,
   Building2,
+  Wrench,
+  Settings,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { hasPermission, getRoleLabel } from '../utils/permissions';
@@ -76,6 +78,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       href: '/users', 
       icon: Users,
       permission: 'canManageUsers'
+    },
+    { 
+      name: 'Equipamentos', 
+      href: '/equipamentos', 
+      icon: Wrench,
+      permission: 'canViewEquipment'
+    },
+    { 
+      name: 'Manutencoes', 
+      href: '/manutencoes', 
+      icon: Settings,
+      permission: 'canViewMaintenance'
     },
   ];
 

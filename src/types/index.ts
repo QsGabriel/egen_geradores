@@ -205,6 +205,8 @@ export interface RolePermissions {
   canCreateLeads: boolean;
   canEditLeads: boolean;
   canDeleteLeads: boolean;
+  canViewMaintenance: boolean;
+  canManageMaintenance: boolean;
 }
 
 // Quotation types
