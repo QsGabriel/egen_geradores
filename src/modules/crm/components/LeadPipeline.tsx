@@ -98,7 +98,7 @@ const LeadPipeline: React.FC = () => {
       )}
       {lead.phone && (
         <div className="flex items-center gap-1 text-gray-400 text-xs mt-0.5">
-          <Phone className="h-3 w-3" /> {lead.phone}
+          <Phone className="h-3 w-3" /> {[lead.areaCode, lead.phone].filter(Boolean).join(' ')}
         </div>
       )}
       {lead.scheduledAt && (

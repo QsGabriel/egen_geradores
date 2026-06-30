@@ -28,7 +28,6 @@ const FIXED_HEADERS = [
   'Status',
   'Observações',
 ];
-const FIXED_COLS = FIXED_HEADERS.length; // 12
 const TEMPLATE_CONTACT_SLOTS = 3; // padrão do modelo para download
 
 function buildContactHeaders(slots: number): string[] {
@@ -69,7 +68,7 @@ const STATUS_MAP: Record<string, LeadStatus> = {
 };
 
 function normalizeStatus(raw: string): LeadStatus {
-  return STATUS_MAP[raw?.trim().toLowerCase()] ?? 'new';
+  return STATUS_MAP[raw?.trim().toLowerCase()] ?? 'to_contact';
 }
 
 function normalizeSource(raw: string): string {
@@ -80,19 +79,90 @@ function normalizeSource(raw: string): string {
   return match ?? raw.trim();
 }
 
+function normalizeHeader(h: string): string {
+  return h
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9\u00C0-\u00FF]/g, '')
+    .toLowerCase()
+    .replace(/\*$/, '');
+}
+
+const HEADER_TO_FIELD: Record<string, keyof LeadFormData> = {
+  nome: 'name',
+  razaosocial: 'company',
+  razao: 'company',
+  cnpjcpf: 'documentNumber',
+  cnpj: 'documentNumber',
+  cpf: 'documentNumber',
+  documento: 'documentNumber',
+  ddd: 'areaCode',
+  telefone: 'phone',
+  phone: 'phone',
+  email: 'email',
+  cidade: 'city',
+  city: 'city',
+  estado: 'state',
+  state: 'state',
+  uf: 'state',
+  classificacao: 'classification',
+  classification: 'classification',
+  origem: 'source',
+  source: 'source',
+  status: 'status',
+  observacoes: 'notes',
+  observacao: 'notes',
+  notes: 'notes',
+};
+
 function parseRows(sheet: XLSX.WorkSheet): LeadFormData[] {
-  const json: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+  const json: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
   if (json.length < 2) return [];
 
-  // Detect how many ContatoN_* groups exist in the header row
   const headerRow: string[] = (json[0] as any[]).map(c =>
     c !== null && c !== undefined ? String(c).trim() : ''
   );
-  const contactSlots = headerRow.reduce((count, h) => {
-    const m = h.match(/^[Cc]ontato(\d+)_[Nn]ome$/i);
-    if (m) return Math.max(count, parseInt(m[1], 10));
-    return count;
-  }, 0);
+
+  // Build column index map: normalized header name → column index
+  const colMap = new Map<string, number>();
+  for (let ci = 0; ci < headerRow.length; ci++) {
+    const norm = normalizeHeader(headerRow[ci]);
+    if (norm) colMap.set(norm, ci);
+  }
+
+  // Detect contact slots from header by pattern ContatoN_Nome
+  const contactSlots: number[] = [];
+  for (const [norm, ci] of colMap) {
+    const m = norm.match(/^contato(\d+)_?nome$/i);
+    if (m) contactSlots.push(parseInt(m[1], 10));
+  }
+  const maxContactSlot = contactSlots.length > 0 ? Math.max(...contactSlots) : 0;
+
+  // Resolve column index for a known field (checks multiple aliases)
+  const fieldIdx = (field: keyof LeadFormData): number => {
+    for (const [norm, ci] of colMap) {
+      if (HEADER_TO_FIELD[norm] === field) return ci;
+    }
+    return -1;
+  };
+
+  const get = (r: any[], key: keyof LeadFormData): string => {
+    const idx = fieldIdx(key);
+    if (idx < 0 || idx >= r.length) return '';
+    const v = r[idx];
+    return v !== null && v !== undefined ? String(v).trim() : '';
+  };
+
+  const contactIdxForSlot = (slot: number, suffix: string): number => {
+    const patterns = [
+      `contato${slot}_${suffix}`,
+      `contato${slot}${suffix}`,
+      `contato${slot}_${suffix}1`,
+    ];
+    for (const p of patterns) {
+      if (colMap.has(p)) return colMap.get(p)!;
+    }
+    return -1;
+  };
 
   const rows: LeadFormData[] = [];
 
@@ -100,37 +170,32 @@ function parseRows(sheet: XLSX.WorkSheet): LeadFormData[] {
     const r = json[i];
     if (!r || r.every((c: any) => c === null || c === undefined || c === '')) continue;
 
-    const str = (v: any) => (v !== undefined && v !== null ? String(v).trim() : '');
-
-    // Fixed columns (0–11):
-    // 0: Nome*, 1: Razão Social, 2: CNPJ/CPF, 3: DDD, 4: Telefone,
-    // 5: E-mail, 6: Cidade, 7: Estado, 8: Classificação, 9: Origem,
-    // 10: Status, 11: Observações
-
     const contacts: { name: string; phone: string; email: string }[] = [];
-    for (let ci = 0; ci < contactSlots; ci++) {
-      const base = FIXED_COLS + ci * 3;
-      const name = str(r[base]);
-      const phone = str(r[base + 1]);
-      const email = str(r[base + 2]);
+    for (let slot = 1; slot <= maxContactSlot; slot++) {
+      const nameIdx = contactIdxForSlot(slot, 'nome');
+      const phoneIdx = contactIdxForSlot(slot, 'telefone');
+      const emailIdx = contactIdxForSlot(slot, 'email');
+      const name = nameIdx >= 0 ? String(r[nameIdx] ?? '').trim() : '';
+      const phone = phoneIdx >= 0 ? String(r[phoneIdx] ?? '').trim() : '';
+      const email = emailIdx >= 0 ? String(r[emailIdx] ?? '').trim() : '';
       if (name || phone || email) {
         contacts.push({ name, phone, email });
       }
     }
 
     rows.push({
-      name: str(r[0]),
-      company: str(r[1]),
-      documentNumber: str(r[2]),
-      areaCode: str(r[3]),
-      phone: str(r[4]),
-      email: str(r[5]),
-      city: str(r[6]),
-      state: str(r[7]),
-      classification: str(r[8]),
-      source: normalizeSource(str(r[9])),
-      status: normalizeStatus(str(r[10])),
-      notes: str(r[11]),
+      name: get(r, 'name'),
+      company: get(r, 'company'),
+      documentNumber: get(r, 'documentNumber'),
+      areaCode: get(r, 'areaCode'),
+      phone: get(r, 'phone'),
+      email: get(r, 'email'),
+      city: get(r, 'city'),
+      state: get(r, 'state'),
+      classification: get(r, 'classification'),
+      source: normalizeSource(get(r, 'source')),
+      status: normalizeStatus(get(r, 'status')),
+      notes: get(r, 'notes'),
       contacts,
     });
   }
@@ -390,6 +455,7 @@ const LeadImportModal: React.FC<LeadImportModalProps> = ({ onClose, onImport }) 
                       <th className="text-left px-3 py-2 font-semibold text-gray-600 dark:text-gray-400">#</th>
                       <th className="text-left px-3 py-2 font-semibold text-gray-600 dark:text-gray-400">Nome</th>
                       <th className="text-left px-3 py-2 font-semibold text-gray-600 dark:text-gray-400">Empresa</th>
+                      <th className="text-left px-3 py-2 font-semibold text-gray-600 dark:text-gray-400">Telefone</th>
                       <th className="text-left px-3 py-2 font-semibold text-gray-600 dark:text-gray-400">Origem</th>
                       <th className="text-left px-3 py-2 font-semibold text-gray-600 dark:text-gray-400">Status</th>
                       <th className="text-left px-3 py-2 font-semibold text-gray-600 dark:text-gray-400">Contatos</th>
@@ -403,6 +469,9 @@ const LeadImportModal: React.FC<LeadImportModalProps> = ({ onClose, onImport }) 
                           {row.name || <span className="text-red-500">— (obrigatório)</span>}
                         </td>
                         <td className="px-3 py-2 text-gray-600 dark:text-gray-300">{row.company || '—'}</td>
+                        <td className="px-3 py-2 text-gray-600 dark:text-gray-300">
+                          {[row.areaCode, row.phone].filter(Boolean).join(' ') || '—'}
+                        </td>
                         <td className="px-3 py-2 text-gray-600 dark:text-gray-300">{row.source || '—'}</td>
                         <td className="px-3 py-2 text-gray-600 dark:text-gray-300">{row.status}</td>
                         <td className="px-3 py-2 text-gray-600 dark:text-gray-300">

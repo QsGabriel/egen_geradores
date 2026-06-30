@@ -498,7 +498,7 @@ export function useCRM() {
   // LEAD IMPORT (importação em massa)
   // ============================================
 
-  const IMPORT_BATCH_SIZE = 200;
+  const IMPORT_CONCURRENCY = 5;
 
   const importLeads = async (
     rows: LeadFormData[],
@@ -506,60 +506,48 @@ export function useCRM() {
   ): Promise<{ imported: number; errors: string[] }> => {
     const errors: string[] = [];
     let imported = 0;
+    let done = 0;
 
-    // Validate and prepare payloads
-    type IndexedRecord = { index: number; payload: Record<string, unknown> };
-    const valid: IndexedRecord[] = [];
+    const insertOne = async (index: number, row: LeadFormData): Promise<void> => {
+      const payload = {
+        name: row.name?.trim() || 'Sem nome',
+        company: row.company?.trim() || '',
+        document_number: row.documentNumber?.trim() || '',
+        area_code: row.areaCode?.trim() || '',
+        phone: row.phone?.trim() || '',
+        email: row.email?.trim() || '',
+        city: row.city?.trim() || '',
+        state: row.state?.trim() || '',
+        classification: row.classification?.trim() || '',
+        source: row.source?.trim() || '',
+        status: row.status || 'to_contact',
+        notes: row.notes?.trim() || '',
+        contacts: row.contacts ?? [],
+      };
 
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      if (!row.name?.trim()) {
-        errors.push(`Linha ${i + 2}: campo "Nome" é obrigatório.`);
-        continue;
-      }
-      valid.push({
-        index: i,
-        payload: {
-          name: row.name.trim(),
-          company: row.company?.trim() || '',
-          document_number: row.documentNumber?.trim() || null,
-          area_code: row.areaCode?.trim() || null,
-          phone: row.phone?.trim() || '',
-          email: row.email?.trim() || '',
-          city: row.city?.trim() || null,
-          state: row.state?.trim() || null,
-          classification: row.classification?.trim() || null,
-          source: row.source?.trim() || '',
-          status: row.status || 'to_contact',
-          notes: row.notes?.trim() || '',
-          contacts: row.contacts ?? [],
-        },
-      });
-    }
-
-    // Insert in batches to handle high volumes efficiently
-    for (let b = 0; b < valid.length; b += IMPORT_BATCH_SIZE) {
-      const batch = valid.slice(b, b + IMPORT_BATCH_SIZE);
       try {
         const { error: err } = await supabase
           .from('leads')
-          .insert(batch.map(r => r.payload));
+          .insert(payload);
         if (err) {
-          batch.forEach(r =>
-            errors.push(`Linha ${r.index + 2} (${rows[r.index].name}): ${err.message}`),
-          );
+          errors.push(`Linha ${index + 2} (${row.name || 'Sem nome'}): ${err.message}`);
         } else {
-          imported += batch.length;
+          imported++;
         }
       } catch {
-        batch.forEach(r =>
-          errors.push(`Linha ${r.index + 2}: erro inesperado.`),
-        );
+        errors.push(`Linha ${index + 2}: erro inesperado.`);
       }
-      onProgress?.(Math.min(b + IMPORT_BATCH_SIZE, valid.length), valid.length);
+      done++;
+      onProgress?.(done, rows.length);
+    };
+
+    // Process rows with concurrency limit to avoid overwhelming the server
+    // while keeping each insert isolated (prevents row-level data mixing)
+    for (let i = 0; i < rows.length; i += IMPORT_CONCURRENCY) {
+      const chunk = rows.slice(i, i + IMPORT_CONCURRENCY);
+      await Promise.all(chunk.map((row, ci) => insertOne(i + ci, row)));
     }
 
-    if (imported > 0) await fetchLeads();
     return { imported, errors };
   };
 

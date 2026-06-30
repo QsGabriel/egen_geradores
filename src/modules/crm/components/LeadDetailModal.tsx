@@ -12,6 +12,7 @@ import {
   Phone,
   Mail,
   Building,
+  MapPin,
   Calendar,
   FileText,
   UserCheck,
@@ -27,6 +28,7 @@ import {
   LEAD_STATUS_DESCRIPTIONS,
   LEAD_PIPELINE_ORDER,
   LEAD_SOURCES,
+  LEAD_CLASSIFICATIONS,
   STATUSES_REQUIRING_SCHEDULE,
   EMPTY_CONTACT,
 } from '../types';
@@ -218,31 +220,67 @@ export default function LeadDetailModal({
             {!editing ? (
               /* ── VIEW mode ── */
               <div className="space-y-4">
-                {/* Contacts */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {(lead.phone || lead.email) && (
-                    <div className="space-y-1.5">
-                      {lead.phone && (
-                        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                          <Phone className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                          {lead.phone}
-                        </div>
-                      )}
-                      {lead.email && (
-                        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                          <Mail className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                          {lead.email}
-                        </div>
-                      )}
+                {/* Summary card with all fields */}
+                <div className="space-y-3">
+                  {/* Company */}
+                  {lead.company && (
+                    <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                      <Building className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      {lead.company}
                     </div>
                   )}
 
+                  {/* Document */}
+                  {lead.documentNumber && (
+                    <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                      <FileText className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      {lead.documentNumber}
+                    </div>
+                  )}
+
+                  {/* Phone + Email */}
                   <div className="space-y-1.5">
-                    {lead.source && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        <span className="font-medium">Origem:</span> {lead.source}
-                      </p>
+                    {(lead.areaCode || lead.phone) && (
+                      <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                        <Phone className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                        {[lead.areaCode, lead.phone].filter(Boolean).join(' ') || '—'}
+                      </div>
                     )}
+                    {lead.email && (
+                      <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                        <Mail className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                        {lead.email}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Location */}
+                  {(lead.city || lead.state) && (
+                    <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                      <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      {[lead.city, lead.state].filter(Boolean).join(' / ')}
+                    </div>
+                  )}
+
+                  {/* Classification */}
+                  {lead.classification && (
+                    <div className="text-sm text-gray-700 dark:text-gray-300">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Classificação: </span>
+                      <span className="inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400 mt-0.5">
+                        {lead.classification}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Source */}
+                  {lead.source && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <span className="font-medium">Origem:</span> {lead.source}
+                    </p>
+                  )}
+
+                  {/* Scheduled / Converted */}
+                  <div className="space-y-1.5">
                     {lead.scheduledAt && (
                       <div className="flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2.5 py-1.5 rounded-lg">
                         <Calendar className="h-3.5 w-3.5" />
@@ -320,10 +358,44 @@ export default function LeadDetailModal({
                       className={inputClass} />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Telefone</label>
-                    <input type="text" value={formData.phone}
-                      onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
-                      className={inputClass} placeholder="(00) 00000-0000" />
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">CNPJ / CPF</label>
+                    <input type="text" value={formData.documentNumber}
+                      onChange={e => setFormData(p => ({ ...p, documentNumber: e.target.value }))}
+                      className={inputClass} placeholder="00.000.000/0000-00" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Cidade</label>
+                    <input type="text" value={formData.city}
+                      onChange={e => setFormData(p => ({ ...p, city: e.target.value }))}
+                      className={inputClass} placeholder="São Paulo" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Estado (UF)</label>
+                    <input type="text" value={formData.state}
+                      onChange={e => setFormData(p => ({ ...p, state: e.target.value }))}
+                      className={inputClass} placeholder="SP" maxLength={2} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Classificação</label>
+                    <select value={formData.classification}
+                      onChange={e => setFormData(p => ({ ...p, classification: e.target.value }))}
+                      className={inputClass}>
+                      <option value="">Selecione...</option>
+                      {LEAD_CLASSIFICATIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">DDD / Telefone</label>
+                    <div className="flex gap-2">
+                      <input type="text" value={formData.areaCode}
+                        onChange={e => setFormData(p => ({ ...p, areaCode: e.target.value }))}
+                        className="w-20 px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-yellow-500"
+                        placeholder="(11)" maxLength={5} />
+                      <input type="text" value={formData.phone}
+                        onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
+                        className="flex-1 px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-yellow-500"
+                        placeholder="00000-0000" />
+                    </div>
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">E-mail</label>

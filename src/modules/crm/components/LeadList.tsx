@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -11,6 +11,7 @@ import {
   Phone,
   Mail,
   Search,
+  Filter,
   ArrowRightCircle,
   Building,
   Upload,
@@ -25,6 +26,8 @@ import { useNotification } from '../../../hooks/useNotification';
 import { useDialog } from '../../../hooks/useDialog';
 import Notification from '../../../components/Notification';
 import ConfirmDialog from '../../../components/ConfirmDialog';
+import { Select } from '../../../modules/quotations/components/proposal/Select';
+import FilterSelect from '../../../components/FilterSelect';
 import LeadImportModal from './LeadImportModal';
 import LeadConvertModal from './LeadConvertModal';
 import LeadDetailModal from './LeadDetailModal';
@@ -72,15 +75,58 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'all'>('all');
-  const [cityFilter, setCityFilter] = useState('');
-  const [stateFilter, setStateFilter] = useState('');
-  const [classificationFilter, setClassificationFilter] = useState('');
-  const [sourceFilter, setSourceFilter] = useState('');
+  const [cityFilter, setCityFilter] = useState<string[]>([]);
+  const [stateFilter, setStateFilter] = useState<string[]>([]);
+  const [classificationFilter, setClassificationFilter] = useState<string[]>([]);
+  const [sourceFilter, setSourceFilter] = useState<string[]>([]);
   const [page, setPage] = useState(1);
+  const [showFilters, setShowFilters] = useState(false);
   const [convertTarget, setConvertTarget] = useState<Lead | null>(null);
   const [detailLead, setDetailLead] = useState<Lead | null>(null);
 
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+  const [tableWidth, setTableWidth] = useState(0);
+  const [sortField, setSortField] = useState<string>('');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
   const PAGE_SIZE = 25;
+
+  const uniqueCities = [...new Set(leads.map(l => l.city).filter(Boolean))].sort();
+  const uniqueStates = [...new Set(leads.map(l => l.state).filter(Boolean))].sort();
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDir('asc');
+    }
+    setPage(1);
+  };
+
+  const sortIndicator = (field: string) => {
+    if (sortField !== field) return <span className="ml-1 text-gray-300 dark:text-gray-600">⇅</span>;
+    return <span className="ml-1 text-yellow-500">{sortDir === 'asc' ? '↑' : '↓'}</span>;
+  };
+
+  const hasActiveFilters = statusFilter !== 'all' || cityFilter.length > 0 || stateFilter.length > 0 || classificationFilter.length > 0 || sourceFilter.length > 0;
+  let activeFilterCount = 0;
+  if (statusFilter !== 'all') activeFilterCount++;
+  if (cityFilter.length > 0) activeFilterCount++;
+  if (stateFilter.length > 0) activeFilterCount++;
+  if (classificationFilter.length > 0) activeFilterCount++;
+  if (sourceFilter.length > 0) activeFilterCount++;
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setCityFilter([]);
+    setStateFilter([]);
+    setClassificationFilter([]);
+    setSourceFilter([]);
+    setPage(1);
+  };
 
   const resetForm = () => {
     setFormData(EMPTY_FORM);
@@ -205,17 +251,50 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
       lead.state.toLowerCase().includes(term);
 
     const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
-    const matchesCity = !cityFilter || lead.city.toLowerCase().includes(cityFilter.toLowerCase());
-    const matchesState = !stateFilter || lead.state.toLowerCase() === stateFilter.toLowerCase();
-    const matchesClassification = !classificationFilter || lead.classification === classificationFilter;
-    const matchesSource = !sourceFilter || lead.source === sourceFilter;
+    const matchesCity = cityFilter.length === 0 || cityFilter.includes(lead.city);
+    const matchesState = stateFilter.length === 0 || stateFilter.includes(lead.state);
+    const matchesClassification = classificationFilter.length === 0 || classificationFilter.includes(lead.classification);
+    const matchesSource = sourceFilter.length === 0 || sourceFilter.includes(lead.source);
 
     return matchesSearch && matchesStatus && matchesCity && matchesState && matchesClassification && matchesSource;
   });
 
-  const totalPages = Math.max(1, Math.ceil(filteredLeads.length / PAGE_SIZE));
+  const sortedLeads = sortField
+    ? [...filteredLeads].sort((a, b) => {
+        const aVal = (a[sortField as keyof Lead] || '').toString().toLowerCase();
+        const bVal = (b[sortField as keyof Lead] || '').toString().toLowerCase();
+        return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      })
+    : filteredLeads;
+
+  const totalPages = Math.max(1, Math.ceil(sortedLeads.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
-  const pagedLeads = filteredLeads.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const pagedLeads = sortedLeads.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  useEffect(() => {
+    const topEl = topScrollRef.current;
+    const tableEl = tableScrollRef.current;
+    if (!topEl || !tableEl) return;
+
+    const syncTopToTable = () => { tableEl.scrollLeft = topEl.scrollLeft; };
+    const syncTableToTop = () => { topEl.scrollLeft = tableEl.scrollLeft; };
+
+    topEl.addEventListener('scroll', syncTopToTable, { passive: true });
+    tableEl.addEventListener('scroll', syncTableToTop, { passive: true });
+
+    const observer = new ResizeObserver(() => {
+      setTableWidth(tableEl.scrollWidth);
+    });
+    observer.observe(tableEl);
+
+    setTableWidth(tableEl.scrollWidth);
+
+    return () => {
+      topEl.removeEventListener('scroll', syncTopToTable);
+      tableEl.removeEventListener('scroll', syncTableToTop);
+      observer.disconnect();
+    };
+  }, [filteredLeads.length]);
 
   return (
     <div className="space-y-6">
@@ -547,6 +626,7 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
 
       {/* Filters */}
       <div className="space-y-3">
+        {/* Search bar + quick actions */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -558,74 +638,139 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
               className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 dark:text-white"
             />
           </div>
-          <select
+          <Select
             value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value as LeadStatus | 'all'); setPage(1); }}
-            className="px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 dark:text-white"
+            onChange={(v) => { setStatusFilter(v as LeadStatus | 'all'); setPage(1); }}
+            className="min-w-[180px] bg-white dark:bg-gray-800"
           >
             <option value="all">Todos os Status</option>
             {Object.entries(LEAD_STATUS_LABELS).map(([key, label]) => (
               <option key={key} value={key}>{label}</option>
             ))}
-          </select>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="text"
-            placeholder="Filtrar por cidade..."
-            value={cityFilter}
-            onChange={(e) => { setCityFilter(e.target.value); setPage(1); }}
-            className="flex-1 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 dark:text-white"
-          />
-          <input
-            type="text"
-            placeholder="Estado (UF)"
-            value={stateFilter}
-            onChange={(e) => { setStateFilter(e.target.value); setPage(1); }}
-            className="w-full sm:w-32 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 dark:text-white"
-            maxLength={2}
-          />
-          <select
-            value={classificationFilter}
-            onChange={(e) => { setClassificationFilter(e.target.value); setPage(1); }}
-            className="flex-1 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 dark:text-white"
+          </Select>
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`inline-flex items-center gap-2 px-4 py-2.5 border rounded-xl text-sm font-medium transition-all ${
+              showFilters || hasActiveFilters
+                ? 'bg-yellow-50 border-yellow-300 text-yellow-700 dark:bg-yellow-900/20 dark:border-yellow-700 dark:text-yellow-400'
+                : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+            }`}
           >
-            <option value="">Todas as Classificações</option>
-            {LEAD_CLASSIFICATIONS.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-          <select
-            value={sourceFilter}
-            onChange={(e) => { setSourceFilter(e.target.value); setPage(1); }}
-            className="flex-1 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 dark:text-white"
-          >
-            <option value="">Todas as Origens</option>
-            {LEAD_SOURCES.map((src) => (
-              <option key={src} value={src}>{src}</option>
-            ))}
-          </select>
+            <Filter className="h-4 w-4" />
+            Filtros
+            {activeFilterCount > 0 && (
+              <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold rounded-full bg-yellow-500 text-gray-900">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="inline-flex items-center gap-1 px-3 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
+            >
+              <X className="h-4 w-4" /> Limpar
+            </button>
+          )}
         </div>
+
+        {/* Expandable advanced filters */}
+        {showFilters && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Cidade</label>
+              <FilterSelect
+                value={cityFilter}
+                onChange={(v) => { setCityFilter(v); setPage(1); }}
+                options={uniqueCities}
+                placeholder="Todas"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Estado (UF)</label>
+              <FilterSelect
+                value={stateFilter}
+                onChange={(v) => { setStateFilter(v); setPage(1); }}
+                options={uniqueStates}
+                placeholder="Todos"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Classificação</label>
+              <FilterSelect
+                value={classificationFilter}
+                onChange={(v) => { setClassificationFilter(v); setPage(1); }}
+                options={[...LEAD_CLASSIFICATIONS]}
+                placeholder="Todas"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Origem</label>
+              <FilterSelect
+                value={sourceFilter}
+                onChange={(v) => { setSourceFilter(v); setPage(1); }}
+                options={[...LEAD_SOURCES]}
+                placeholder="Todas"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Lead Table */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Top scrollbar — mirrors bottom scroll */}
+        <div
+          ref={topScrollRef}
+          className="overflow-x-auto border-b border-gray-100 dark:border-gray-700"
+          style={{ height: 10 }}
+        >
+          <div style={{ width: tableWidth || '100%', height: 1 }} />
+        </div>
+        <div ref={tableScrollRef} className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
-                <th className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Nome</th>
+                <th
+                  onClick={() => handleSort('name')}
+                  className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none transition-colors"
+                >
+                  Nome{sortIndicator('name')}
+                </th>
                 <th className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Empresa</th>
+                <th
+                  onClick={() => handleSort('state')}
+                  className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none transition-colors"
+                >
+                  Localização{sortIndicator('state')}
+                </th>
+                <th className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Documento</th>
+                <th
+                  onClick={() => handleSort('classification')}
+                  className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none transition-colors whitespace-nowrap"
+                >
+                  Classificação{sortIndicator('classification')}
+                </th>
                 <th className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Contatos</th>
-                <th className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Origem</th>
-                <th className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Status</th>
+                <th
+                  onClick={() => handleSort('source')}
+                  className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none transition-colors"
+                >
+                  Origem{sortIndicator('source')}
+                </th>
+                <th
+                  onClick={() => handleSort('status')}
+                  className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none transition-colors"
+                >
+                  Status{sortIndicator('status')}
+                </th>
                 <th className="text-right px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-              {filteredLeads.length === 0 ? (
+              {sortedLeads.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-400 dark:text-gray-500">
+                  <td colSpan={9} className="px-6 py-12 text-center text-gray-400 dark:text-gray-500">
                     {searchTerm || statusFilter !== 'all'
                       ? 'Nenhum lead encontrado com os filtros aplicados.'
                       : 'Nenhum lead registrado ainda.'}
@@ -636,7 +781,11 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
                   const allContacts = (lead.contacts?.length ?? 0) > 0
                     ? lead.contacts
                     : (lead.phone || lead.email)
-                      ? [{ name: lead.name, phone: lead.phone, email: lead.email }]
+                      ? [{
+                          name: lead.name,
+                          phone: [lead.areaCode, lead.phone].filter(Boolean).join(' '),
+                          email: lead.email,
+                        }]
                       : [];
 
                   return (
@@ -653,6 +802,19 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
                           <div className="flex items-center gap-1">
                             <Building className="h-3 w-3" /> {lead.company}
                           </div>
+                        ) : '—'}
+                      </td>
+                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300 text-xs whitespace-nowrap">
+                        {[lead.city, lead.state].filter(Boolean).join(' / ') || '—'}
+                      </td>
+                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300 text-xs font-mono">
+                        {lead.documentNumber || '—'}
+                      </td>
+                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300 text-xs">
+                        {lead.classification ? (
+                          <span className="inline-block px-2 py-0.5 rounded-md text-[11px] font-medium bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400">
+                            {lead.classification}
+                          </span>
                         ) : '—'}
                       </td>
                       <td className="px-6 py-4">
@@ -745,7 +907,7 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
       {totalPages > 1 && (
         <div className="flex items-center justify-between px-2">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {filteredLeads.length} lead{filteredLeads.length !== 1 ? 's' : ''} •{' '}
+            {sortedLeads.length} lead{sortedLeads.length !== 1 ? 's' : ''} •{' '}
             página {safePage} de {totalPages}
           </p>
           <div className="flex items-center gap-1">

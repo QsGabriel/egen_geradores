@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Users,
@@ -12,6 +12,7 @@ import {
   MapPin,
   User,
   Search,
+  Filter,
   FileText,
   History,
   UserCircle2,
@@ -22,6 +23,8 @@ import { useNotification } from '../../../hooks/useNotification';
 import { useDialog } from '../../../hooks/useDialog';
 import Notification from '../../../components/Notification';
 import ConfirmDialog from '../../../components/ConfirmDialog';
+import { Select } from '../../quotations/components/proposal/Select';
+import FilterSelect from '../../../components/FilterSelect';
 import ClientContactLogModal from './ClientContactLogModal';
 import ClientDetailModal from './ClientDetailModal';
 import type { Client, ClientFormData, ClientStatus, ContactPerson } from '../types';
@@ -63,11 +66,51 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<ClientStatus | 'all'>('all');
-  const [cityFilter, setCityFilter] = useState('');
-  const [stateFilter, setStateFilter] = useState('');
-  const [classificationFilter, setClassificationFilter] = useState('');
+  const [cityFilter, setCityFilter] = useState<string[]>([]);
+  const [stateFilter, setStateFilter] = useState<string[]>([]);
+  const [classificationFilter, setClassificationFilter] = useState<string[]>([]);
   const [contactLogTarget, setContactLogTarget] = useState<Client | null>(null);
   const [detailClient, setDetailClient] = useState<Client | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+  const [tableWidth, setTableWidth] = useState(0);
+
+  const [sortField, setSortField] = useState<string>('');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+  const uniqueCities = [...new Set(clients.map(c => c.city).filter(Boolean))].sort();
+  const uniqueStates = [...new Set(clients.map(c => c.state).filter(Boolean))].sort();
+
+  const hasActiveFilters = statusFilter !== 'all' || cityFilter.length > 0 || stateFilter.length > 0 || classificationFilter.length > 0;
+  let activeFilterCount = 0;
+  if (statusFilter !== 'all') activeFilterCount++;
+  if (cityFilter.length > 0) activeFilterCount++;
+  if (stateFilter.length > 0) activeFilterCount++;
+  if (classificationFilter.length > 0) activeFilterCount++;
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setCityFilter([]);
+    setStateFilter([]);
+    setClassificationFilter([]);
+  };
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDir('asc');
+    }
+  };
+
+  const sortIndicator = (field: string) => {
+    if (sortField !== field) return <span className="ml-1 text-gray-300 dark:text-gray-600">⇅</span>;
+    return <span className="ml-1 text-yellow-500">{sortDir === 'asc' ? '↑' : '↓'}</span>;
+  };
 
   const resetForm = () => {
     setFormData(EMPTY_FORM);
@@ -164,12 +207,51 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
       client.state.toLowerCase().includes(term);
 
     const matchesStatus = statusFilter === 'all' || client.clientStatus === statusFilter;
-    const matchesCity = !cityFilter || client.city.toLowerCase().includes(cityFilter.toLowerCase());
-    const matchesState = !stateFilter || client.state.toLowerCase() === stateFilter.toLowerCase();
-    const matchesClassification = !classificationFilter || client.classification === classificationFilter;
+    const matchesCity = cityFilter.length === 0 || cityFilter.includes(client.city);
+    const matchesState = stateFilter.length === 0 || stateFilter.includes(client.state);
+    const matchesClassification = classificationFilter.length === 0 || classificationFilter.includes(client.classification);
 
     return matchesSearch && matchesStatus && matchesCity && matchesState && matchesClassification;
   });
+
+  const sortedClients = sortField
+    ? [...filteredClients].sort((a, b) => {
+        const getVal = (c: Client, f: string) => {
+          if (f === 'clientStatus') return c.clientStatus;
+          if (f === 'contactName') return c.contactName || '';
+          if (f === 'contactPhone') return c.contactPhone || '';
+          return (c[f as keyof Client] || '').toString().toLowerCase();
+        };
+        const aVal = getVal(a, sortField);
+        const bVal = getVal(b, sortField);
+        return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      })
+    : filteredClients;
+
+  useEffect(() => {
+    const topEl = topScrollRef.current;
+    const tableEl = tableScrollRef.current;
+    if (!topEl || !tableEl) return;
+
+    const syncTopToTable = () => { tableEl.scrollLeft = topEl.scrollLeft; };
+    const syncTableToTop = () => { topEl.scrollLeft = tableEl.scrollLeft; };
+
+    topEl.addEventListener('scroll', syncTopToTable, { passive: true });
+    tableEl.addEventListener('scroll', syncTableToTop, { passive: true });
+
+    const observer = new ResizeObserver(() => {
+      setTableWidth(tableEl.scrollWidth);
+    });
+    observer.observe(tableEl);
+
+    setTableWidth(tableEl.scrollWidth);
+
+    return () => {
+      topEl.removeEventListener('scroll', syncTopToTable);
+      tableEl.removeEventListener('scroll', syncTableToTop);
+      observer.disconnect();
+    };
+  }, [sortedClients.length]);
 
   const formatDocument = (doc: string) => {
     const clean = doc.replace(/\D/g, '');
@@ -237,44 +319,73 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
               className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 dark:text-white"
             />
           </div>
-          <select
+          <Select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as ClientStatus | 'all')}
-            className="px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 dark:text-white"
+            onChange={(v) => setStatusFilter(v as ClientStatus | 'all')}
+            className="min-w-[180px] bg-white dark:bg-gray-800"
           >
             <option value="all">Todos os Status</option>
             {Object.entries(CLIENT_STATUS_LABELS).map(([key, label]) => (
               <option key={key} value={key}>{label}</option>
             ))}
-          </select>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="text"
-            placeholder="Filtrar por cidade..."
-            value={cityFilter}
-            onChange={(e) => setCityFilter(e.target.value)}
-            className="flex-1 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 dark:text-white"
-          />
-          <input
-            type="text"
-            placeholder="Estado (UF)"
-            value={stateFilter}
-            onChange={(e) => setStateFilter(e.target.value)}
-            className="w-full sm:w-32 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 dark:text-white"
-            maxLength={2}
-          />
-          <select
-            value={classificationFilter}
-            onChange={(e) => setClassificationFilter(e.target.value)}
-            className="flex-1 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 dark:text-white"
+          </Select>
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`inline-flex items-center gap-2 px-4 py-2.5 border rounded-xl text-sm font-medium transition-all ${
+              showFilters || hasActiveFilters
+                ? 'bg-yellow-50 border-yellow-300 text-yellow-700 dark:bg-yellow-900/20 dark:border-yellow-700 dark:text-yellow-400'
+                : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+            }`}
           >
-            <option value="">Todas as Classificações</option>
-            {CLIENT_CLASSIFICATIONS.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
+            <Filter className="h-4 w-4" />
+            Filtros
+            {activeFilterCount > 0 && (
+              <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold rounded-full bg-yellow-500 text-gray-900">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="inline-flex items-center gap-1 px-3 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
+            >
+              <X className="h-4 w-4" /> Limpar
+            </button>
+          )}
         </div>
+
+        {showFilters && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Cidade</label>
+              <FilterSelect
+                value={cityFilter}
+                onChange={(v) => setCityFilter(v)}
+                options={uniqueCities}
+                placeholder="Todas"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Estado (UF)</label>
+              <FilterSelect
+                value={stateFilter}
+                onChange={(v) => setStateFilter(v)}
+                options={uniqueStates}
+                placeholder="Todos"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Classificação</label>
+              <FilterSelect
+                value={classificationFilter}
+                onChange={(v) => setClassificationFilter(v)}
+                options={[...CLIENT_CLASSIFICATIONS]}
+                placeholder="Todas"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal Form — React portal para posicionamento correto */}
@@ -525,21 +636,49 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
 
       {/* Client Table */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Top scrollbar */}
+        <div
+          ref={topScrollRef}
+          className="overflow-x-auto border-b border-gray-100 dark:border-gray-700"
+          style={{ height: 10 }}
+        >
+          <div style={{ width: tableWidth || '100%', height: 1 }} />
+        </div>
+        <div ref={tableScrollRef} className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
-                <th className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Cliente</th>
+                <th
+                  onClick={() => handleSort('name')}
+                  className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none transition-colors"
+                >
+                  Cliente{sortIndicator('name')}
+                </th>
                 <th className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Documento</th>
                 <th className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Contato</th>
-                <th className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Classificação</th>
-                <th className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Cidade/UF</th>
-                <th className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Status</th>
+                <th
+                  onClick={() => handleSort('classification')}
+                  className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none transition-colors whitespace-nowrap"
+                >
+                  Classificação{sortIndicator('classification')}
+                </th>
+                <th
+                  onClick={() => handleSort('state')}
+                  className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none transition-colors"
+                >
+                  Cidade/UF{sortIndicator('state')}
+                </th>
+                <th
+                  onClick={() => handleSort('clientStatus')}
+                  className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none transition-colors"
+                >
+                  Status{sortIndicator('clientStatus')}
+                </th>
                 <th className="text-right px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-              {filteredClients.length === 0 ? (
+              {sortedClients.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center text-gray-400 dark:text-gray-500">
                     {searchTerm || statusFilter !== 'all'
@@ -548,7 +687,7 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
                   </td>
                 </tr>
               ) : (
-                filteredClients.map((client) => (
+                sortedClients.map((client) => (
                   <tr
                     key={client.id}
                     className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
