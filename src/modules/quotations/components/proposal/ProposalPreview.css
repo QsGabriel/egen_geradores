@@ -169,11 +169,17 @@
 }
 
 .proposal-main-title {
-  margin: 0 0 7mm;
-  text-align: center;
-  font-size: 15pt;
+  display: flex;
+  align-items: center;
+  margin: 0 0 5mm;
+  padding: 0 3mm;
+  height: 7mm;
+  box-sizing: border-box;
+  background: #173172;
+  color: #ffffff;
+  font-size: 13pt;
   font-weight: 700;
-  color: #111111;
+  letter-spacing: 0.3pt;
 }
 
 .proposal-client-panel {
@@ -191,20 +197,31 @@
   margin-top: 6mm;
 }
 
-.proposal-client-contact-row {
+/* Cliente block with Cidade/UF aligned to the right, mirroring the reference */
+.proposal-client-headrow {
   display: flex;
-  justify-content: space-between;
-  margin-top: 7mm;
+  gap: 6mm;
+  align-items: flex-start;
 }
 
-.proposal-client-contact-column {
-  width: 88mm;
-  font-size: 10pt;
-  line-height: 1.4;
+.proposal-client-headrow-main {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
-.proposal-client-contact-column p {
-  margin: 0 0 2mm;
+.proposal-client-headrow-aside {
+  flex: 0 0 52mm;
+}
+
+/* Aos cuidados on its own line, Tel. + E-mail inline below it */
+.proposal-client-contact-block {
+  margin-top: 6mm;
+}
+
+.proposal-client-contact-inline {
+  display: flex;
+  gap: 18mm;
+  flex-wrap: wrap;
 }
 
 .proposal-intro-panel {
@@ -250,7 +267,7 @@
   gap: 4mm;
   box-sizing: border-box;
   min-height: 44mm;
-  padding: 4mm 12mm 4mm 98mm;
+  padding: 4mm 12mm 4mm 88mm;
 }
 
 .proposal-brand-generator {
@@ -259,7 +276,7 @@
 
 .proposal-brand-generator-overlap {
   position: absolute;
-  left: -32mm;
+  left: -45mm;
   bottom: 2mm;
   width: 130mm;
   height: 125mm;
@@ -281,8 +298,8 @@
 }
 
 .proposal-brand-qr-image {
-  width: 33mm;
-  height: 33mm;
+  width: 30mm;
+  height: 30mm;
   border: 0.5mm solid #111111;
   background: #ffffff;
   object-fit: cover;
@@ -290,20 +307,56 @@
 }
 
 .proposal-brand-contact {
-  font-size: 10pt;
-  line-height: 1.5;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 9.5pt;
+  line-height: 1.4;
   color: #111111;
   overflow-wrap: break-word;
-  word-break: break-word;
-  min-width: 0;
 }
 
 .proposal-brand-contact p {
-  margin: 0 0 1mm;
+  margin: 0 0 0.8mm;
+}
+
+.proposal-brand-contact-name {
+  font-weight: 700;
+}
+
+.proposal-brand-contact-role {
+  font-weight: 700;
+}
+
+/* Email can be long: allow it to break gracefully instead of overflowing */
+.proposal-brand-contact-email {
+  overflow-wrap: anywhere;
 }
 
 .proposal-scope-body {
-  padding-top: 8mm;
+  padding-top: 7mm;
+}
+
+/* ESCOPO DE FORNECIMENTO: navy section bar above the tables */
+.proposal-scope-title {
+  display: flex;
+  align-items: center;
+  height: 7mm;
+  margin: 0 0 3mm;
+  padding: 0 3mm;
+  box-sizing: border-box;
+  background: #173172;
+  color: #ffffff;
+  font-size: 13pt;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* 1.0 Preços e condições comerciais... intro line above the tables */
+.proposal-scope-subtitle {
+  margin: 0 0 3mm;
+  font-size: 10pt;
+  font-weight: 700;
+  color: #111111;
 }
 
 .proposal-table-block {
@@ -347,21 +400,45 @@
 
 .proposal-table-main .col-qty {
   width: 12mm;
-  text-align: right;
+  text-align: center;
 }
 
 .proposal-table-main .col-unit {
   width: 25mm;
-  text-align: right;
 }
 
 .proposal-table-main .col-total {
   width: 25mm;
-  text-align: right;
 }
 
-.proposal-table-main .col-franquia {
+.proposal-table-main .col-franquia,
+.proposal-table-main .col-obs {
   width: 38mm;
+}
+
+/* Fixed 6-column body: center Item, Qtd. and Franquia/Observações;
+   the currency columns (4 and 5) are handled by the flex currency cell. */
+.proposal-table-main tbody td:nth-child(1),
+.proposal-table-main tbody td:nth-child(3),
+.proposal-table-main tbody td:nth-child(6) {
+  text-align: center;
+}
+
+/* Accounting-style currency cell: R$ left edge, value right edge. */
+.proposal-currency-cell {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5mm;
+}
+
+.proposal-currency-symbol {
+  flex: 0 0 auto;
+}
+
+.proposal-currency-amount {
+  flex: 1 1 auto;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .proposal-table-hours .col-item {
@@ -375,11 +452,15 @@
 
 .proposal-table-hours .col-hours-unit {
   width: 30mm;
-  text-align: right;
 }
 
 .proposal-table-hours .col-hours-note {
   width: 48mm;
+}
+
+.proposal-table-hours tbody td:nth-child(1),
+.proposal-table-hours tbody td:nth-child(4) {
+  text-align: center;
 }
 
 .proposal-empty-row {
@@ -403,12 +484,17 @@
 }
 
 .proposal-table-subtotal-label {
-  text-align: left;
+  text-align: center;
+  letter-spacing: 0.3pt;
 }
 
 .proposal-table-subtotal-value {
-  text-align: right;
   white-space: nowrap;
+}
+
+.proposal-table-subtotal-empty {
+  background: #173172;
+  border-color: #173172;
 }
 
 /* ── Contract body — styled ── */

@@ -75,6 +75,39 @@ function textValue(value: string | null | undefined): string {
   return value;
 }
 
+const CURRENCY_AMOUNT_FORMATTER = new Intl.NumberFormat('pt-BR', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+/**
+ * Accounting-style currency cell: "R$" pinned to the left edge and the
+ * numeric value pinned to the right edge, mirroring the reference proposal.
+ */
+function CurrencyCell({ value }: { value: number | null | undefined }) {
+  return (
+    <span className="proposal-currency-cell">
+      <span className="proposal-currency-symbol">R$</span>
+      <span className="proposal-currency-amount">
+        {CURRENCY_AMOUNT_FORMATTER.format(value ?? 0)}
+      </span>
+    </span>
+  );
+}
+
+/**
+ * Conservative height estimate (mm) of a DISPOSIÇÕES paragraph as rendered on
+ * a scope page — used to decide how many paragraphs fit inline under the
+ * conditions grid without overflowing the A4 page.
+ */
+function estimateDispositionMm(text: string): number {
+  const CHARS_PER_LINE = 95;
+  const LINE_MM = 4.7;
+  const PARAGRAPH_MARGIN_MM = 2.5;
+  const lines = Math.max(1, Math.ceil(text.length / CHARS_PER_LINE));
+  return lines * LINE_MM + PARAGRAPH_MARGIN_MM;
+}
+
 function buildScopePages(
   equipmentItems: ProposalItemPeriodico[],
   serviceItems: ProposalItemSpot[],
@@ -677,7 +710,7 @@ function ExceedingHoursTable({ rows }: { rows: ProposalHoraExcedente[] }) {
             <tr key={row.id}>
               <td>{index + 1}</td>
               <td>{textValue(row.descricao)}</td>
-              <td>{formatCurrency(row.valorUnitario)}</td>
+              <td><CurrencyCell value={row.valorUnitario} /></td>
               <td>{textValue(row.observacoes)}</td>
             </tr>
           ))
@@ -750,32 +783,6 @@ export default function ProposalPrintDocument({
   }
   const shouldInlineCommercialSections = false;
 
-  const lastScopeSlice = scopePages[scopePages.length - 1];
-  const lastScopeTotalItems = lastScopeSlice
-    ? lastScopeSlice.equipmentItems.length + lastScopeSlice.serviceItems.length
-    : 0;
-  const COMMERCIAL_INLINE_THRESHOLD = 4;
-  const showCommercialInline = lastScopeTotalItems < COMMERCIAL_INLINE_THRESHOLD;
-  const includeCommercialPage = !showCommercialInline;
-
-  // Dynamic: fewer items → more paragraphs inline → less whitespace
-  // Conservative formula leaves room for conditions + footer gap
-  const inlineParagraphCount = showCommercialInline
-    ? lastScopeTotalItems < 4
-      ? 3
-      : lastScopeTotalItems < 6
-        ? 2
-        : 1
-    : 0;
-
-  const annexLabel = quotation.isAnnex ? 'ANEXO0001' : undefined;
-  const showAsAnnex = quotation.tipo === 'contrato';
-
-  const proposalPageCount = 1 + scopePages.length + (includeCommercialPage ? 1 : 0) + 1;
-  const totalPages = showAsAnnex
-    ? 1 + contractPageChunks.length + proposalPageCount
-    : 1 + proposalPageCount;
-
   const lastEquipmentPageIndex = scopePages.reduce((last, page, index) => {
     if (page.equipmentItems.length > 0) {
       return index;
@@ -789,6 +796,72 @@ export default function ProposalPrintDocument({
     }
     return last;
   }, -1);
+
+  // ── Height-aware commercial placement ──
+  // Estimate how much vertical space the tables consume on the last scope
+  // page, then fit the conditions grid (and as many DISPOSIÇÕES paragraphs as
+  // possible) directly beneath them instead of pushing everything to a nearly
+  // empty extra page. Falls back to a dedicated commercial page only when the
+  // tables leave no room for the conditions grid. Estimates are intentionally
+  // conservative so the page never overflows (content is clipped otherwise).
+  const SCOPE_BODY_USABLE_MM = 248;
+  const SCOPE_SAFETY_MM = 6;
+  const TABLE_HEADER_MM = 8.5;
+  const TABLE_ROW_MM = 8;
+  const TABLE_SUBTOTAL_MM = 7.5;
+  const TABLE_BLOCK_GAP_MM = 3;
+  const TOTALS_BAND_MM = 10.5;
+  const SCOPE_TITLE_BLOCK_MM = 18;
+  const DISPOSITION_TITLE_MM = 9;
+
+  const lastScopeSlice = scopePages[scopePages.length - 1];
+  const lastScopePageIndex = scopePages.length - 1;
+  const lastEqRows = lastScopeSlice?.equipmentItems.length ?? 0;
+  const lastSvcRows = lastScopeSlice?.serviceItems.length ?? 0;
+  const lastShowsEquipment = lastScopePageIndex === 0 || lastEqRows > 0;
+  const lastShowsService = lastScopePageIndex === 0 || lastSvcRows > 0;
+  const lastHasEqSubtotal = lastScopePageIndex === lastEquipmentPageIndex && lastEquipmentPageIndex >= 0;
+  const lastHasSvcSubtotal = lastScopePageIndex === lastServicePageIndex && lastServicePageIndex >= 0;
+
+  let scopeTablesHeightMm = lastScopePageIndex === 0 ? SCOPE_TITLE_BLOCK_MM : 0;
+  if (lastShowsEquipment) {
+    scopeTablesHeightMm += TABLE_HEADER_MM + Math.max(lastEqRows, 1) * TABLE_ROW_MM
+      + (lastHasEqSubtotal ? TABLE_SUBTOTAL_MM : 0) + TABLE_BLOCK_GAP_MM;
+  }
+  if (lastShowsService) {
+    scopeTablesHeightMm += TABLE_HEADER_MM + Math.max(lastSvcRows, 1) * TABLE_ROW_MM
+      + (lastHasSvcSubtotal ? TABLE_SUBTOTAL_MM : 0) + TABLE_BLOCK_GAP_MM;
+  }
+  scopeTablesHeightMm += TOTALS_BAND_MM;
+  scopeTablesHeightMm += TABLE_HEADER_MM
+    + Math.max(quotation.horasExcedentes.length, 1) * TABLE_ROW_MM
+    + TABLE_BLOCK_GAP_MM;
+
+  const commercialAvailableMm = SCOPE_BODY_USABLE_MM - scopeTablesHeightMm - SCOPE_SAFETY_MM;
+  const conditionsHeightMm = Math.ceil(conditionRows.length / 2) * 6.7 + 5 + 3.5;
+  const showCommercialInline = commercialAvailableMm >= conditionsHeightMm;
+  const includeCommercialPage = !showCommercialInline;
+
+  let inlineParagraphCount = 0;
+  if (showCommercialInline) {
+    let dispositionsRemainingMm = commercialAvailableMm - conditionsHeightMm - DISPOSITION_TITLE_MM;
+    for (const paragraph of DISPOSITION_PARAGRAPHS) {
+      const paragraphMm = estimateDispositionMm(paragraph);
+      if (dispositionsRemainingMm - paragraphMm < 0) {
+        break;
+      }
+      dispositionsRemainingMm -= paragraphMm;
+      inlineParagraphCount += 1;
+    }
+  }
+
+  const annexLabel = quotation.isAnnex ? 'ANEXO0001' : undefined;
+  const showAsAnnex = quotation.tipo === 'contrato';
+
+  const proposalPageCount = 1 + scopePages.length + (includeCommercialPage ? 1 : 0) + 1;
+  const totalPages = showAsAnnex
+    ? 1 + contractPageChunks.length + proposalPageCount
+    : 1 + proposalPageCount;
 
   const pages: Array<{ key: string; content: React.ReactNode }> = [];
 
@@ -838,18 +911,22 @@ export default function ProposalPrintDocument({
             <p className="proposal-client-line"><strong>CNPJ:</strong> 53.457.416/0001-08</p>
             <p className="proposal-client-line"><strong>Endereco:</strong> GOIANIA | GO - BR 153, KM 3</p>
 
-            <p className="proposal-client-line proposal-client-separator"><strong>Cliente:</strong> {textValue(quotation.cliente.nome)}</p>
-            <p className="proposal-client-line"><strong>CPF/CNPJ:</strong> {textValue(quotation.cliente.documento)}</p>
-            <p className="proposal-client-line"><strong>Endereço:</strong> {textValue(quotation.cliente.endereco)}</p>
-            <p className="proposal-client-line"><strong>Cidade/UF:</strong> {textValue(quotation.cliente.cidadeUf)}</p>
-
-            <div className="proposal-client-contact-row">
-              <div className="proposal-client-contact-column">
-                <p><strong>Aos cuidados:</strong> {textValue(quotation.cliente.responsavel)}</p>
-                <p><strong>Tel.:</strong> {textValue(quotation.cliente.telefone)}</p>
+            <div className="proposal-client-headrow proposal-client-separator">
+              <div className="proposal-client-headrow-main">
+                <p className="proposal-client-line"><strong>Cliente:</strong> {textValue(quotation.cliente.nome)}</p>
+                <p className="proposal-client-line"><strong>CPF/CNPJ:</strong> {textValue(quotation.cliente.documento)}</p>
+                <p className="proposal-client-line"><strong>Endereço:</strong> {textValue(quotation.cliente.endereco)}</p>
               </div>
-              <div className="proposal-client-contact-column">
-                <p><strong>E-mail:</strong> {textValue(quotation.cliente.email)}</p>
+              <div className="proposal-client-headrow-aside">
+                <p className="proposal-client-line"><strong>Cidade/UF:</strong> {textValue(quotation.cliente.cidadeUf)}</p>
+              </div>
+            </div>
+
+            <div className="proposal-client-contact-block">
+              <p className="proposal-client-line"><strong>Aos cuidados:</strong> {textValue(quotation.cliente.responsavel)}</p>
+              <div className="proposal-client-contact-inline">
+                <p className="proposal-client-line"><strong>Tel.:</strong> {textValue(quotation.cliente.telefone)}</p>
+                <p className="proposal-client-line"><strong>E-mail:</strong> {textValue(quotation.cliente.email)}</p>
               </div>
             </div>
           </section>
@@ -888,14 +965,10 @@ export default function ProposalPrintDocument({
                 <div className="proposal-brand-qr" aria-label="QR CODE" />
               )}
               <div className="proposal-brand-contact">
-                <p>
-                  <strong>{sellerInfo.name}</strong>
-                  {' '}
-                  {sellerInfo.roleLabel}
-                  {' '}
-                  Tel.: {sellerInfo.phone}
-                </p>
-                <p>Email: {sellerInfo.email}</p>
+                <p className="proposal-brand-contact-name">{sellerInfo.name}</p>
+                <p className="proposal-brand-contact-role">{sellerInfo.roleLabel}</p>
+                <p>Tel.: {sellerInfo.phone}</p>
+                <p className="proposal-brand-contact-email">Email: {sellerInfo.email}</p>
               </div>
             </section>
           </div>
@@ -928,6 +1001,13 @@ export default function ProposalPrintDocument({
           <ProposalHeader issueLine={issueLine} documentId={quotation.documentId} tipo={quotation.tipo} annexLabel={proposalAnnexLabel} />
 
           <div className="proposal-standard-body proposal-scope-body">
+            {index === 0 ? (
+              <>
+                <h2 className="proposal-scope-title">ESCOPO DE FORNECIMENTO:</h2>
+                <p className="proposal-scope-subtitle">1.0 Preços e condições comerciais de equipamentos e serviços:</p>
+              </>
+            ) : null}
+
             {showEquipmentTable ? (
             <section className="proposal-table-block">
               <table className="proposal-table proposal-table-main">
@@ -952,8 +1032,8 @@ export default function ProposalPrintDocument({
                         <td>{slice.equipmentStartIndex + rowIndex + 1}</td>
                         <td>{textValue(item.descricao)}</td>
                         <td>{item.quantidade}</td>
-                        <td>{formatCurrency(item.valorUnitario)}</td>
-                        <td>{formatCurrency(item.valorTotal)}</td>
+                        <td><CurrencyCell value={item.valorUnitario} /></td>
+                        <td><CurrencyCell value={item.valorTotal} /></td>
                         <td>{FranquiaHorasLabels[item.franquiaHoras]}</td>
                       </tr>
                     ))
@@ -962,9 +1042,11 @@ export default function ProposalPrintDocument({
                 {isLastEquipmentPage ? (
                   <tfoot>
                     <tr className="proposal-table-subtotal">
-                      <td colSpan={6} className="proposal-table-subtotal-value">
-                        TOTAL PERIÓDICOS&nbsp;&nbsp;{formatCurrency(quotation.totalPeriodicos)}
+                      <td colSpan={4} className="proposal-table-subtotal-label">VALOR MENSAL</td>
+                      <td className="proposal-table-subtotal-value">
+                        <CurrencyCell value={quotation.totalPeriodicos} />
                       </td>
+                      <td className="proposal-table-subtotal-empty" />
                     </tr>
                   </tfoot>
                 ) : null}
@@ -982,7 +1064,7 @@ export default function ProposalPrintDocument({
                     <th className="col-qty">Qtd.</th>
                     <th className="col-unit">Valor Unitário</th>
                     <th className="col-total">Valor Total</th>
-                    <th className="col-franquia"></th>
+                    <th className="col-obs">Observações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -996,9 +1078,9 @@ export default function ProposalPrintDocument({
                         <td>{slice.serviceStartIndex + rowIndex + 1}</td>
                         <td>{textValue(item.descricao)}</td>
                         <td>{item.quantidade}</td>
-                        <td>{formatCurrency(item.valorUnitario)}</td>
-                        <td>{formatCurrency(item.valorTotal)}</td>
-                        <td></td>
+                        <td><CurrencyCell value={item.valorUnitario} /></td>
+                        <td><CurrencyCell value={item.valorTotal} /></td>
+                        <td>{textValue(item.observacoes)}</td>
                       </tr>
                     ))
                   )}
@@ -1006,9 +1088,11 @@ export default function ProposalPrintDocument({
                 {isLastServicePage ? (
                   <tfoot>
                     <tr className="proposal-table-subtotal">
-                      <td colSpan={6} className="proposal-table-subtotal-value">
-                        TOTAL SPOT&nbsp;&nbsp;{formatCurrency(quotation.totalSpot)}
+                      <td colSpan={4} className="proposal-table-subtotal-label">VALOR SOB DEMANDA</td>
+                      <td className="proposal-table-subtotal-value">
+                        <CurrencyCell value={quotation.totalSpot} />
                       </td>
+                      <td className="proposal-table-subtotal-empty" />
                     </tr>
                   </tfoot>
                 ) : null}
@@ -1046,12 +1130,14 @@ export default function ProposalPrintDocument({
             {isLastScopePage && showCommercialInline ? (
               <>
                 <ConditionColumns rows={conditionRows} />
-                <div className="proposal-dispositions-inline">
-                  <h3 className="proposal-blue-section-title">DISPOSIÇÕES GERAIS:</h3>
-                  {DISPOSITION_PARAGRAPHS.slice(0, inlineParagraphCount).map((paragraph, i) => (
-                    <p key={`inline-disp-${i}`}>{paragraph}</p>
-                  ))}
-                </div>
+                {inlineParagraphCount > 0 ? (
+                  <div className="proposal-dispositions-inline">
+                    <h3 className="proposal-blue-section-title">DISPOSIÇÕES GERAIS:</h3>
+                    {DISPOSITION_PARAGRAPHS.slice(0, inlineParagraphCount).map((paragraph, i) => (
+                      <p key={`inline-disp-${i}`}>{paragraph}</p>
+                    ))}
+                  </div>
+                ) : null}
               </>
             ) : null}
           </div>
@@ -1092,6 +1178,11 @@ export default function ProposalPrintDocument({
       ? DISPOSITION_PARAGRAPHS.slice(inlineParagraphCount)
       : DISPOSITION_PARAGRAPHS.slice(7);
 
+  // If the conditions grid was inlined on the scope page but no disposition
+  // paragraph fit beneath it, the "DISPOSIÇÕES GERAIS:" heading has not been
+  // shown yet — render it on the acceptance page above the paragraphs.
+  const acceptanceShowsDispositionsHeading = showCommercialInline && inlineParagraphCount === 0;
+
   pages.push({
     key: 'acceptance',
     content: (
@@ -1099,6 +1190,11 @@ export default function ProposalPrintDocument({
         <ProposalHeader issueLine={issueLine} documentId={quotation.documentId} tipo={quotation.tipo} annexLabel={proposalAnnexLabel} />
 
         <div className="proposal-standard-body proposal-acceptance-body">
+          {acceptanceShowsDispositionsHeading ? (
+            <div className="proposal-dispositions-inline">
+              <h3 className="proposal-blue-section-title">DISPOSIÇÕES GERAIS:</h3>
+            </div>
+          ) : null}
           <section className="proposal-dispositions-final">
             {acceptanceParagraphs.map((paragraph, index) => (
               <p key={`disp-${index}`}>{paragraph}</p>

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:#525659; }
+  [contenteditable]{ cursor:text; transition:background .12s; border-radius:2px; }
+  [contenteditable]:hover{ background:rgba(16,42,101,.07); }
+  [contenteditable]:focus{ background:rgba(16,42,101,.12); outline:1px solid #102A65; }
+  [data-on-dark]:hover{ background:rgba(255,255,255,.16); }
+  [data-on-dark]:focus{ background:rgba(255,255,255,.20); outline:1px solid rgba(255,255,255,.8); }
+  @media print{
+    html,body{ background:#fff; }
+    .toolbar{ display:none !important; }
+    .sheet{ margin:0 !important; box-shadow:none !important; page-break-after:always; break-after:page; }
+    .sheet:last-of-type{ page-break-after:auto; }
+    [contenteditable]{ background:none !important; outline:none !important; }
+  }
+  @page{ size:A4; margin:0; }
+</style>
+<script src="./image-slot.js"></script>
+</helmet>
+<div class="toolbar" style="position:fixed; top:14px; right:14px; z-index:50; display:flex; gap:8px; font-family:Arial,Helvetica,sans-serif;">
+  <button onClick="{{ doPrint }}" style="border:none; background:#102A65; color:#fff; font:600 13px Arial; padding:9px 14px; border-radius:6px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,.3);">Salvar PDF / Imprimir</button>
+  <button onClick="{{ doClear }}" style="border:1px solid #c4c4c4; background:#fff; color:#444; font:600 13px Arial; padding:9px 14px; border-radius:6px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,.2);">Limpar campos</button>
+</div>
+
+<div style="padding:22px 0 40px;">
+
+<!-- ===================== PÁGINA 1 — CAPA ===================== -->
+<section data-screen-label="01 Capa" class="sheet" style="position:relative; width:210mm; height:297mm; background:#fff; margin:0 auto 18px; box-shadow:0 2px 14px rgba(0,0,0,.45); overflow:hidden; display:flex; flex-direction:column; font-family:Arial,Helvetica,sans-serif;">
+  <div style="background:#000; height:150px; display:flex; align-items:center; justify-content:center; flex:0 0 auto;">
+    <h1 style="margin:0; color:#fff; font-weight:800; font-size:42px; letter-spacing:3px; text-align:center;">PROPOSTA DE LOCAÇÃO</h1>
+  </div>
+  <image-slot id="capa_foto" shape="rect" fit="cover" placeholder="Solte aqui a foto da capa (skyline noturna)" style="display:block; width:100%; flex:1 1 auto;"></image-slot>
+</section>
+
+<!-- ===================== PÁGINA 2 ===================== -->
+<section data-screen-label="02 Proposta comercial" class="sheet" style="position:relative; width:210mm; height:297mm; background:#fff; margin:0 auto 18px; box-shadow:0 2px 14px rgba(0,0,0,.45); overflow:hidden; font-family:Arial,Helvetica,sans-serif; color:#1c1c1c;">
+  <!-- HEADER -->
+  <div style="background:#102A65; height:104px; display:flex; align-items:center; justify-content:space-between; padding:0 30px;">
+    <div style="display:flex; flex-direction:column; align-items:flex-start; line-height:1;">
+      <svg width="46" height="40" viewBox="0 0 50 44" style="margin:0 0 3px 6px;">
+        <path d="M25 22 C25 9 33 3 41 7 C45 16 36 23 25 22 Z" fill="#F2B705"/>
+        <path d="M25 22 C13 26 9 17 12 9 C21 6 28 13 25 22 Z" fill="#2D6CC0"/>
+        <path d="M25 22 C30 34 22 40 13 38 C10 29 17 22 25 22 Z" fill="#4FAE4F"/>
+      </svg>
+      <div style="color:#fff; font-weight:800; font-size:34px; letter-spacing:1px;">EGEN</div>
+      <div style="color:#fff; font-weight:600; font-size:11px; letter-spacing:6px; margin-top:1px;">GERADORES</div>
+    </div>
+    <div style="text-align:right; color:#fff; font-size:13px; line-height:1.55;">
+      <div>Goiânia, <span contenteditable="true" data-f="data">21 de outubro de 2025</span></div>
+      <div>Proposta de locação nº <strong><span contenteditable="true" data-f="num">9638</span></strong></div>
+      <div>Revisão <span contenteditable="true" data-f="rev">01</span></div>
+    </div>
+  </div>
+
+  <div style="padding:18px 30px 50px;">
+    <div style="background:#102A65; color:#fff; font-weight:bold; font-size:15px; padding:6px 12px;">PROPOSTA COMERCIAL</div>
+
+    <div style="font-size:13.5px; line-height:1.95; margin-top:14px;">
+      <div>Locadora: <strong><span contenteditable="true" data-f="loc_nome">EGEN GERADORES LTDA</span></strong></div>
+      <div>CNPJ: <strong><span contenteditable="true" data-f="loc_cnpj">53.457.416/0001-08</span></strong></div>
+      <div>Endereço: <strong><span contenteditable="true" data-f="loc_end">Goiânia | GO</span></strong> <span contenteditable="true" data-f="loc_end2">- BR 153, KM 3, 7, 20, Chácaras Retiro - CEP: 74620-425</span></div>
+    </div>
+
+    <div style="display:flex; gap:24px; margin-top:18px; font-size:13.5px; line-height:1.9;">
+      <div style="flex:1 1 auto;">
+        <div><strong>Cliente:</strong> <span contenteditable="true" data-f="cli_nome">COOPERATIVA MISTA AGROPECUARIA DO VALE DO ARAGUAIA</span></div>
+        <div><strong>CPF / CNPJ:</strong> <span contenteditable="true" data-f="cli_cnpj">01.167.501/0007-15</span></div>
+        <div style="margin-top:4px;"><strong>Endereço:</strong> <span contenteditable="true" data-f="cli_end">R 78, SN, QUADRA61 LOTE 01 A 03, BAIRRO SETOR NOSSA SENHORA APARECIDA, CEP: 75.836-692</span></div>
+      </div>
+      <div style="flex:0 0 200px; padding-top:2px;">
+        <div><strong>Cidade / UF:</strong> <span contenteditable="true" data-f="cli_cidade">MINERIOS/GO</span></div>
+      </div>
+    </div>
+
+    <div style="font-size:13.5px; line-height:1.9; margin-top:16px;">
+      <div><strong>Aos cuidados:</strong> <span contenteditable="true" data-f="cli_ac">Ademilton José Oliveira</span></div>
+      <div style="display:flex; gap:60px;">
+        <div><strong>Tel.:</strong> <span contenteditable="true" data-f="cli_tel">(64) 9 9655-7744</span></div>
+        <div><strong>E-mail:</strong> <span contenteditable="true" data-f="cli_email">&nbsp;</span></div>
+      </div>
+    </div>
+
+    <!-- INTRODUÇÃO (bloco navy) -->
+    <div style="background:#102A65; margin-top:22px; padding:14px 18px 18px;">
+      <div style="color:#fff; font-weight:bold; font-size:15px; margin-bottom:8px;">INTRODUÇÃO:</div>
+      <div style="color:#eef1f8; font-size:12.5px; line-height:1.7;">
+        <p style="margin:0 0 9px;" contenteditable="true" data-on-dark="1" data-f="intro1">A EGEN Geradores é especializada venda e locação de Grupos Geradores de Energia, entregando soluções completas e personalizadas para os mais diversos setores, como mineração, agronegócio, indústria, construção civil e comércio.</p>
+        <p style="margin:0 0 9px;" contenteditable="true" data-on-dark="1" data-f="intro2">Contamos com uma equipe de engenharia altamente capacitada, pronta para dimensionar e implementar sistemas de geração de energia com máxima eficiência e segurança.</p>
+        <p style="margin:0 0 9px;" contenteditable="true" data-on-dark="1" data-f="intro3">Fazemos parte de um dos maiores grupos do setor, o que nos permite acesso a uma ampla frota própria de geradores modernos e de alta performance.</p>
+        <p style="margin:0;" contenteditable="true" data-on-dark="1" data-f="intro4">Nosso suporte técnico é ágil e atuante, garantindo atendimento rápido e eficaz em demandas programadas ou emergenciais. Com foco em qualidade, continuidade operacional e transparência, oferecemos energia sob medida para manter sua operação sempre em movimento.</p>
+      </div>
+    </div>
+
+    <!-- contato responsável -->
+    <div style="display:flex; align-items:center; gap:20px; margin-top:26px;">
+      <image-slot id="gerador_foto" shape="rect" fit="contain" placeholder="Foto do gerador" style="display:block; width:210px; height:130px; flex:0 0 auto;"></image-slot>
+      <image-slot id="qr_contato" shape="rect" fit="contain" placeholder="QR" style="display:block; width:118px; height:118px; flex:0 0 auto;"></image-slot>
+      <div style="font-size:13px; line-height:1.8;">
+        <div style="font-weight:bold;"><span contenteditable="true" data-f="resp_nome">EMMERSON DE JESUS CALDEIRA</span></div>
+        <div style="font-weight:bold;"><span contenteditable="true" data-f="resp_cargo">Engenharia e Negócios</span></div>
+        <div>Tel.: <span contenteditable="true" data-f="resp_tel">(62) 9 8470-3985</span></div>
+        <div>E-mail: <span contenteditable="true" data-f="resp_email">emmerson@egengeradores.com.br</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="position:absolute; left:0; right:0; bottom:0; height:34px; background:linear-gradient(90deg,#E0B100 0%,#4F91E5 52%,#5CAE6C 100%); display:flex; align-items:center; justify-content:space-between; padding:0 24px; color:#fff; font-size:12px;">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span style="display:inline-flex; align-items:center; justify-content:center; width:17px; height:17px; border:1.4px solid #fff; border-radius:3px; font-size:9px; font-weight:bold;">in</span>
+      <span style="display:inline-flex; width:17px; height:17px; border:1.4px solid #fff; border-radius:5px; position:relative;"><span style="position:absolute; inset:3.5px; border:1.4px solid #fff; border-radius:50%;"></span></span>
+      <span>@egengeradores</span>
+    </div>
+    <div>egengeradores.com.br</div>
+    <div>Página 2 de 4</div>
+  </div>
+</section>
+
+<!-- ===================== PÁGINA 3 ===================== -->
+<section data-screen-label="03 Escopo de fornecimento" class="sheet" style="position:relative; width:210mm; height:297mm; background:#fff; margin:0 auto 18px; box-shadow:0 2px 14px rgba(0,0,0,.45); overflow:hidden; font-family:Arial,Helvetica,sans-serif; color:#1c1c1c;">
+  <div style="background:#102A65; height:104px; display:flex; align-items:center; justify-content:space-between; padding:0 30px;">
+    <div style="display:flex; flex-direction:column; align-items:flex-start; line-height:1;">
+      <svg width="46" height="40" viewBox="0 0 50 44" style="margin:0 0 3px 6px;">
+        <path d="M25 22 C25 9 33 3 41 7 C45 16 36 23 25 22 Z" fill="#F2B705"/>
+        <path d="M25 22 C13 26 9 17 12 9 C21 6 28 13 25 22 Z" fill="#2D6CC0"/>
+        <path d="M25 22 C30 34 22 40 13 38 C10 29 17 22 25 22 Z" fill="#4FAE4F"/>
+      </svg>
+      <div style="color:#fff; font-weight:800; font-size:34px; letter-spacing:1px;">EGEN</div>
+      <div style="color:#fff; font-weight:600; font-size:11px; letter-spacing:6px; margin-top:1px;">GERADORES</div>
+    </div>
+    <div style="text-align:right; color:#fff; font-size:13px; line-height:1.55;">
+      <div>Goiânia, <span contenteditable="true" data-f="data_b">21 de outubro de 2025</span></div>
+      <div>Proposta de locação nº <strong><span contenteditable="true" data-f="num_b">9638</span></strong></div>
+      <div>Revisão <span contenteditable="true" data-f="rev_b">01</span></div>
+    </div>
+  </div>
+
+  <div style="padding:16px 30px 50px;">
+    <div style="background:#102A65; color:#fff; font-weight:bold; font-size:15px; padding:6px 12px;">ESCOPO DE FORNECIMENTO:</div>
+    <div style="font-weight:bold; font-size:13px; margin:12px 0 8px;">1.0 Preços e condições comerciais de equipamentos e serviços:</div>
+
+    <!-- TABELA 1 -->
+    <table style="width:100%; border-collapse:collapse; font-size:11.5px;">
+      <tr>
+        <th style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; width:6%;">Item</th>
+        <th style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; width:38%;">Descrição</th>
+        <th style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; width:8%;">Qtd.</th>
+        <th style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; width:16%;">Valor Unitário</th>
+        <th style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; width:16%;">Valor Total</th>
+        <th style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; width:16%;">Franquia</th>
+      </tr>
+      <tr>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px; text-align:center;">1</td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px;"><span contenteditable="true" data-f="t1_desc">Gerador 700KVA ou 750KVA</span></td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px; text-align:center;"><span contenteditable="true" data-f="t1_qtd">1</span></td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px;"><div style="display:flex; justify-content:space-between;"><span>R$</span><span contenteditable="true" data-f="t1_vu">14.807,00</span></div></td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px;"><div style="display:flex; justify-content:space-between;"><span>R$</span><span contenteditable="true" data-f="t1_vt">14.807,00</span></div></td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px; text-align:center;"><span contenteditable="true" data-f="t1_fr">120h/mês</span></td>
+      </tr>
+      <tr>
+        <td style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; text-align:center; font-weight:bold;">2</td>
+        <td colspan="3" style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; text-align:center; font-weight:bold;">VALOR MENSAL</td>
+        <td style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 8px; font-weight:bold;"><div style="display:flex; justify-content:space-between;"><span>R$</span><span contenteditable="true" data-f="t1_mensal">14.807,00</span></div></td>
+        <td style="background:#102A65; border:1px solid #102A65;"></td>
+      </tr>
+    </table>
+
+    <!-- TABELA 2 -->
+    <table style="width:100%; border-collapse:collapse; font-size:11.5px; margin-top:14px;">
+      <tr>
+        <th style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; width:6%;">Item</th>
+        <th style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; width:38%;">Descrição</th>
+        <th style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; width:8%;">Qtd.</th>
+        <th style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; width:16%;">Valor Unitário</th>
+        <th style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; width:16%;">Valor Total</th>
+        <th style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; width:16%;">Observações</th>
+      </tr>
+      <tr>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px; text-align:center;">3</td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px;"><span contenteditable="true" data-f="t2_d1">Preventiva (troca de óleo e filtro)</span></td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px; text-align:center;"><span contenteditable="true" data-f="t2_q1">1</span></td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px;"><div style="display:flex; justify-content:space-between;"><span>R$</span><span contenteditable="true" data-f="t2_vu1">5.297,56</span></div></td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px;"><div style="display:flex; justify-content:space-between;"><span>R$</span><span contenteditable="true" data-f="t2_vt1">5.297,56</span></div></td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px; text-align:center;"><span contenteditable="true" data-f="t2_o1">à cada 250h ou 6 meses</span></td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px; text-align:center;">4</td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px;"><span contenteditable="true" data-f="t2_d2">Instalação</span></td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px; text-align:center;"><span contenteditable="true" data-f="t2_q2">1</span></td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px;"><div style="display:flex; justify-content:space-between;"><span>R$</span><span contenteditable="true" data-f="t2_vu2">1.776,00</span></div></td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px;"><div style="display:flex; justify-content:space-between;"><span>R$</span><span contenteditable="true" data-f="t2_vt2">1.776,00</span></div></td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px;"></td>
+      </tr>
+      <tr>
+        <td style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; text-align:center; font-weight:bold;">5</td>
+        <td colspan="3" style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; text-align:center; font-weight:bold;">VALOR SOB DEMANDA</td>
+        <td style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 8px; font-weight:bold;"><div style="display:flex; justify-content:space-between;"><span>R$</span><span contenteditable="true" data-f="t2_sob">5.297,56</span></div></td>
+        <td style="background:#102A65; border:1px solid #102A65;"></td>
+      </tr>
+    </table>
+
+    <!-- TABELA 3 -->
+    <table style="width:100%; border-collapse:collapse; font-size:11.5px; margin-top:14px;">
+      <tr>
+        <th style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; width:6%;">Item</th>
+        <th style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; width:38%;">Descrição</th>
+        <th style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; width:8%;">Qtd.</th>
+        <th style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; width:16%;">Valor Unitário</th>
+        <th style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; width:16%;">Valor Total</th>
+        <th style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; width:16%;">Observações</th>
+      </tr>
+      <tr>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px; text-align:center;">6</td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px;"><span contenteditable="true" data-f="t3_d1">Transporte de envio e retirada</span></td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px; text-align:center;"><span contenteditable="true" data-f="t3_q1">2</span></td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px;"><div style="display:flex; justify-content:space-between;"><span>R$</span><span contenteditable="true" data-f="t3_vu1">7.540,00</span></div></td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px;"><div style="display:flex; justify-content:space-between;"><span>R$</span><span contenteditable="true" data-f="t3_vt1">15.080,00</span></div></td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px; text-align:center;"><span contenteditable="true" data-f="t3_o1">exclusivo</span></td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px; text-align:center;">7</td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px;"><span contenteditable="true" data-f="t3_d2">Transporte de envio e retirada</span></td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px; text-align:center;"><span contenteditable="true" data-f="t3_q2">2</span></td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px;"><div style="display:flex; justify-content:space-between;"><span>R$</span><span contenteditable="true" data-f="t3_vu2">3.770,00</span></div></td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px;"><div style="display:flex; justify-content:space-between;"><span>R$</span><span contenteditable="true" data-f="t3_vt2">7.540,00</span></div></td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px; text-align:center;"><span contenteditable="true" data-f="t3_o2">rateio entre os armazéns</span></td>
+      </tr>
+    </table>
+
+    <!-- TABELA 4 -->
+    <table style="width:100%; border-collapse:collapse; font-size:11.5px; margin-top:14px;">
+      <tr>
+        <th style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; width:6%;">Item</th>
+        <th style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; width:52%;">Valor por hora excedente ao limite de franquia</th>
+        <th style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; width:18%;">Valor Unitário</th>
+        <th style="background:#102A65; color:#fff; border:1px solid #102A65; padding:6px 6px; width:24%;">Observações</th>
+      </tr>
+      <tr>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px; text-align:center;">8</td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px;"><span contenteditable="true" data-f="t4_desc">Gerador 700KVA ou 750KVA</span></td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px;"><div style="display:flex; justify-content:space-between;"><span>R$</span><span contenteditable="true" data-f="t4_vu">36,00</span></div></td>
+        <td style="border:1px solid #c2c8d6; padding:5px 8px; text-align:center;"><span contenteditable="true" data-f="t4_o">por equipamento</span></td>
+      </tr>
+    </table>
+
+    <!-- CONDIÇÕES 1.1 - 1.23 -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:3px 28px; margin-top:14px; font-size:11.5px; line-height:1.5;">
+      <div style="grid-column:1 / -1;"><strong>1.1 Local de utilização:</strong> <span contenteditable="true" data-f="c1">COMIVA – Minérios - GO</span></div>
+      <div><strong>1.2 Forma de pagamento:</strong> <span contenteditable="true" data-f="c2">Boleto - 15 dias</span></div>
+      <div><strong>1.3 Faturamento:</strong> <span contenteditable="true" data-f="c3">Data da saída do pátio</span></div>
+      <div><strong>1.4 Prazo de entrega:</strong> <span contenteditable="true" data-f="c4">À combinar</span></div>
+      <div><strong>1.5 Validade da proposta:</strong> <span contenteditable="true" data-f="c5">15 dias</span></div>
+      <div><strong>1.6 Início da cobrança:</strong> <span contenteditable="true" data-f="c6">Data da saída dos equipamentos</span></div>
+      <div><strong>1.7 Final da cobrança:</strong> <span contenteditable="true" data-f="c7">Data do retorno</span></div>
+      <div><strong>1.8 Período mínimo:</strong> <span contenteditable="true" data-f="c8">30 dias</span></div>
+      <div><strong>1.9 Período orçado:</strong> <span contenteditable="true" data-f="c9">Mensal</span></div>
+      <div><strong>1.10 Tensão:</strong> <span contenteditable="true" data-f="c10">380/220V</span></div>
+      <div><strong>1.11 Emissão de ART:</strong> <span contenteditable="true" data-f="c11">Não incluso</span></div>
+      <div><strong>1.12 Transporte de mobilização:</strong> <span contenteditable="true" data-f="c12">Não orçado</span></div>
+      <div><strong>1.13 Transporte de desmobilização:</strong> <span contenteditable="true" data-f="c13">Não orçado</span></div>
+      <div><strong>1.14 Carga e descarga mobilização:</strong> <span contenteditable="true" data-f="c14">Não orçado</span></div>
+      <div><strong>1.15 Carga e descarga desmobilização:</strong> <span contenteditable="true" data-f="c15">Não orçado</span></div>
+      <div><strong>1.16 Instalação e desinstalação:</strong> <span contenteditable="true" data-f="c16">Orçado</span></div>
+      <div><strong>1.17 Manutenção preventiva:</strong> <span contenteditable="true" data-f="c17">Orçado sob demanda</span></div>
+      <div><strong>1.18 Combustível:</strong> <span contenteditable="true" data-f="c18">Não Incluso</span></div>
+      <div><strong>1.19 Seguro:</strong> <span contenteditable="true" data-f="c19">Não incluso</span></div>
+      <div><strong>1.20 Impostos:</strong> <span contenteditable="true" data-f="c20">Incluso</span></div>
+      <div><strong>1.21 Telemetria:</strong> <span contenteditable="true" data-f="c21">Não incluso</span></div>
+      <div><strong>1.22 Dimensionamento:</strong> <span contenteditable="true" data-f="c22">Locatária</span></div>
+      <div><strong>1.23 Definição de escopo:</strong> <span contenteditable="true" data-f="c23">Locatária</span></div>
+    </div>
+
+    <div style="background:#102A65; color:#fff; font-weight:bold; font-size:15px; padding:6px 12px; margin-top:16px;">DISPOSIÇÕES GERAIS:</div>
+    <div style="font-size:11.5px; line-height:1.55; margin-top:9px;">
+      <p style="margin:0 0 7px;" contenteditable="true" data-f="dg1">Este orçamento não garante a reserva dos equipamentos, que somente será confirmada com a assinatura do contrato e pedido de compra.</p>
+      <p style="margin:0 0 7px;" contenteditable="true" data-f="dg2">Horas de utilização excedente serão apuradas da seguinte forma: Horas Excedentes = Horímetro Atual – Horímetro da Mobilização ou da Última Aferição.</p>
+      <p style="margin:0 0 7px;" contenteditable="true" data-f="dg3">O valor apresentado como 'sob demanda' será faturado apenas quando a manutenção preventiva for realizada. Caso o equipamento seja devolvido com manutenção pendente ou parcial, o serviço será feito no pátio da locadora e será cobrado apenas o item de preventiva, sem incluir o deslocamento técnico.</p>
+      <p style="margin:0;" contenteditable="true" data-f="dg4">Nos casos em que a retirada dos equipamentos for realizada pela Locatária, seja por meio de frota própria ou por intermédio de terceiros, será obrigatória a inspeção conjunta no momento da retirada, entre a Locatária e um representante da Locadora, com base no check-list de entrega ao cliente.</p>
+    </div>
+  </div>
+
+  <div style="position:absolute; left:0; right:0; bottom:0; height:34px; background:linear-gradient(90deg,#E0B100 0%,#4F91E5 52%,#5CAE6C 100%); display:flex; align-items:center; justify-content:space-between; padding:0 24px; color:#fff; font-size:12px;">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span style="display:inline-flex; align-items:center; justify-content:center; width:17px; height:17px; border:1.4px solid #fff; border-radius:3px; font-size:9px; font-weight:bold;">in</span>
+      <span style="display:inline-flex; width:17px; height:17px; border:1.4px solid #fff; border-radius:5px; position:relative;"><span style="position:absolute; inset:3.5px; border:1.4px solid #fff; border-radius:50%;"></span></span>
+      <span>@egengeradores</span>
+    </div>
+    <div>egengeradores.com.br</div>
+    <div>Página 3 de 4</div>
+  </div>
+</section>
+
+<!-- ===================== PÁGINA 4 ===================== -->
+<section data-screen-label="04 Aceite" class="sheet" style="position:relative; width:210mm; height:297mm; background:#fff; margin:0 auto 18px; box-shadow:0 2px 14px rgba(0,0,0,.45); overflow:hidden; font-family:Arial,Helvetica,sans-serif; color:#1c1c1c;">
+  <div style="background:#102A65; height:104px; display:flex; align-items:center; justify-content:space-between; padding:0 30px;">
+    <div style="display:flex; flex-direction:column; align-items:flex-start; line-height:1;">
+      <svg width="46" height="40" viewBox="0 0 50 44" style="margin:0 0 3px 6px;">
+        <path d="M25 22 C25 9 33 3 41 7 C45 16 36 23 25 22 Z" fill="#F2B705"/>
+        <path d="M25 22 C13 26 9 17 12 9 C21 6 28 13 25 22 Z" fill="#2D6CC0"/>
+        <path d="M25 22 C30 34 22 40 13 38 C10 29 17 22 25 22 Z" fill="#4FAE4F"/>
+      </svg>
+      <div style="color:#fff; font-weight:800; font-size:34px; letter-spacing:1px;">EGEN</div>
+      <div style="color:#fff; font-weight:600; font-size:11px; letter-spacing:6px; margin-top:1px;">GERADORES</div>
+    </div>
+    <div style="text-align:right; color:#fff; font-size:13px; line-height:1.55;">
+      <div>Goiânia, <span contenteditable="true" data-f="data_c">21 de outubro de 2025</span></div>
+      <div>Proposta de locação nº <strong><span contenteditable="true" data-f="num_c">9638</span></strong></div>
+      <div>Revisão <span contenteditable="true" data-f="rev_c">01</span></div>
+    </div>
+  </div>
+
+  <div style="padding:22px 30px 50px;">
+    <div style="font-size:12.5px; line-height:1.6;">
+      <p style="margin:0 0 11px;" contenteditable="true" data-f="d4_1">Anotação de Responsabilidade Técnica (ART) e Laudos, emitidos mediante solicitação da locatária ou exigência de fiscalização, com cobrança no primeiro faturamento, sendo contratos até R$ 15.000,00, valor por ART de R$ 165,00 e acima R$ 380,00. Demais laudos ou relatórios deverão ser previamente consultados.</p>
+      <p style="margin:0 0 11px;" contenteditable="true" data-f="d4_2">A manutenção preventiva, incluindo inspeção geral e substituição de óleo e filtros, será realizada pela LOCADORA de acordo com as recomendações do fabricante, conforme a execução dos serviços e as condições estabelecidas neste orçamento.</p>
+      <p style="margin:0 0 11px;" contenteditable="true" data-f="d4_3">A LOCATÁRIA é responsável pelos custos de manutenção corretiva quando as falhas forem causadas por mau uso, como operação inadequada, falta de combustível, acidentes, vandalismo, sobrecarga e/ou uso de combustível impróprio ou contaminado. Para esses atendimentos será cobrado R$3,90 Km rodado + R$ 380,00 HH + custo repasse das peças trocadas e serviços terceiros se necessário.</p>
+      <p style="margin:0 0 11px;" contenteditable="true" data-f="d4_4">A LOCATÁRIA é responsável pelos custos de manutenção corretiva quando as falhas forem causadas por mau uso, como operação inadequada, falta de combustível, acidentes, vandalismo, sobrecarga e/ou uso de combustível impróprio.</p>
+      <p style="margin:0 0 11px;" contenteditable="true" data-f="d4_5">A locação será considerada encerrada somente com o retorno dos equipamentos à base da Locadora, acompanhado da respectiva Nota Fiscal de devolução. Enquanto ambos não forem concluídos, a locação continuará vigente.</p>
+      <p style="margin:0;" contenteditable="true" data-f="d4_6">A não devolução dos equipamentos na data prevista implica na continuidade da locação, sendo aplicada nova cobrança no mesmo valor e condições do período anterior.</p>
+    </div>
+
+    <div style="background:#102A65; color:#fff; font-weight:bold; font-size:15px; padding:6px 12px; margin-top:26px;">ACEITE:</div>
+    <p style="font-size:12.5px; line-height:1.6; margin:14px 0 0;" contenteditable="true" data-f="aceite_txt">Declaro estar ciente e concordo com as condições comerciais propostas para a contratação dos serviços mencionados.</p>
+
+    <div style="margin-top:54px; font-size:14px; color:#222;">
+      <div style="text-align:center; margin-bottom:42px;">ASSINATURA: <span style="display:inline-block; border-bottom:1px solid #222; min-width:340px;">&nbsp;</span></div>
+      <div style="text-align:center; margin-bottom:42px;">NOME COMPLETO: <span style="display:inline-block; border-bottom:1px solid #222; min-width:320px;">&nbsp;</span></div>
+      <div style="text-align:center;">DATA: <span style="display:inline-block; border-bottom:1px solid #222; min-width:60px;">&nbsp;</span>/<span style="display:inline-block; border-bottom:1px solid #222; min-width:60px;">&nbsp;</span>/<span style="display:inline-block; border-bottom:1px solid #222; min-width:80px;">&nbsp;</span></div>
+    </div>
+  </div>
+
+  <div style="position:absolute; left:0; right:0; bottom:0; height:34px; background:linear-gradient(90deg,#E0B100 0%,#4F91E5 52%,#5CAE6C 100%); display:flex; align-items:center; justify-content:space-between; padding:0 24px; color:#fff; font-size:12px;">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span style="display:inline-flex; align-items:center; justify-content:center; width:17px; height:17px; border:1.4px solid #fff; border-radius:3px; font-size:9px; font-weight:bold;">in</span>
+      <span style="display:inline-flex; width:17px; height:17px; border:1.4px solid #fff; border-radius:5px; position:relative;"><span style="position:absolute; inset:3.5px; border:1.4px solid #fff; border-radius:50%;"></span></span>
+      <span>@egengeradores</span>
+    </div>
+    <div>egengeradores.com.br</div>
+    <div>Página 4 de 4</div>
+  </div>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  componentDidMount(){
+    this._prefix = 'egen9638:';
+    this._defaults = {};
+    // wait a tick so all editable spans exist
+    setTimeout(() => this._init(), 0);
+  }
+  _init(){
+    const els = document.querySelectorAll('[data-f]');
+    els.forEach((el) => {
+      const k = el.getAttribute('data-f');
+      if(!(k in this._defaults)) this._defaults[k] = el.innerHTML;
+      const saved = localStorage.getItem(this._prefix + k);
+      if(saved !== null) el.innerHTML = saved;
+      el.addEventListener('input', () => {
+        localStorage.setItem(this._prefix + k, el.innerHTML);
+      });
+    });
+  }
+  renderVals(){
+    return {
+      doPrint: () => window.print(),
+      doClear: () => {
+        if(!confirm('Limpar todos os campos preenchidos e restaurar o conteúdo original?')) return;
+        document.querySelectorAll('[data-f]').forEach((el) => {
+          const k = el.getAttribute('data-f');
+          localStorage.removeItem(this._prefix + k);
+          if(k in this._defaults) el.innerHTML = this._defaults[k];
+        });
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

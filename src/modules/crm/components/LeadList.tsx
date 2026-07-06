@@ -737,7 +737,12 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
                 >
                   Nome{sortIndicator('name')}
                 </th>
-                <th className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Empresa</th>
+                <th
+                  onClick={() => handleSort('company')}
+                  className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none transition-colors"
+                >
+                  Empresa{sortIndicator('company')}
+                </th>
                 <th
                   onClick={() => handleSort('state')}
                   className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none transition-colors"
