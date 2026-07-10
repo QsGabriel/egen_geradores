@@ -16,6 +16,7 @@ export const PLACEHOLDERS = {
   DOCUMENT_TIPO_TITULO: '{{documento.tipoTitulo}}',
   DATA_EMISSAO: '{{documento.dataEmissao}}',
   VALIDADE: '{{documento.validade}}',
+  CAPA_URL: '{{documento.capaUrl}}',
   
   // Cliente
   CLIENTE_NOME: '{{cliente.nome}}',
@@ -95,7 +96,7 @@ export const DOCUMENT_TITLES: Record<DocumentTipo, string> = {
  */
 export const TEMPLATE_COVER = `
 <section class="page cover-page">
-  <img src="/CAPA.png" alt="Capa EGEN" class="cover-background" />
+  <img src="${PLACEHOLDERS.CAPA_URL}" alt="Capa EGEN" class="cover-background" />
   <div class="cover-content">
     <h1 class="cover-title">${PLACEHOLDERS.DOCUMENT_TIPO_TITULO}</h1>
     <div class="cover-subtitle">

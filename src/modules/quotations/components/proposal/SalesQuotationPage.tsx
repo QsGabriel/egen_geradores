@@ -5,12 +5,12 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  FileText, 
-  Save, 
-  Send, 
-  Eye, 
-  EyeOff, 
+import {
+  FileText,
+  Save,
+  Send,
+  Eye,
+  EyeOff,
   Plus,
   ArrowLeft,
   History,
@@ -32,6 +32,7 @@ import QuotationForm from './QuotationForm';
 import QuotationPreview from './QuotationPreview';
 import type { DocumentTipo, DocumentStatus } from '../../types/proposal';
 import { useNotification } from '../../../../hooks/useNotification';
+import { useProposalCoverConfig } from '../../../../hooks/useAppSettings';
 import Notification from '../../../../components/Notification';
 
 // ============================================
@@ -57,6 +58,8 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const { notification, showSuccess, showError, showInfo, hideNotification } = useNotification();
+
+  const { value: coverConfig } = useProposalCoverConfig();
 
   // Store
   const {
@@ -295,8 +298,23 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
           </div>
 
           {/* Right: Actions */}
-          <div className="flex items-center gap-1 sm:gap-2">
-            {/* View Mode Toggle */}
+          <div className="flex items-center gap-1">
+            {/* Mobile view mode toggle (3-way cycle) */}
+            <button
+              onClick={() => {
+                if (viewMode === 'form') setViewMode('split');
+                else if (viewMode === 'split') setViewMode('preview');
+                else setViewMode('form');
+              }}
+              className="sm:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-90 rounded-lg transition-all duration-150"
+              title={`Modo: ${viewMode === 'form' ? 'Formulário' : viewMode === 'split' ? 'Dividido' : 'Preview'}`}
+            >
+              {viewMode === 'form' && <EyeOff className="w-5 h-5 text-gray-600 dark:text-gray-400" />}
+              {viewMode === 'split' && <Split className="w-5 h-5 text-gray-600 dark:text-gray-400" />}
+              {viewMode === 'preview' && <Eye className="w-5 h-5 text-gray-600 dark:text-gray-400" />}
+            </button>
+
+            {/* Desktop View Mode Toggle */}
             <div className="hidden sm:flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
               <button
                 onClick={() => setViewMode('form')}
@@ -333,12 +351,12 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
               </button>
             </div>
 
-            <div className="hidden sm:block w-px h-8 bg-gray-200 dark:bg-gray-700" />
+            <div className="hidden lg:block w-px h-8 bg-gray-200 dark:bg-gray-700" />
 
             {/* Quick Actions */}
             <button
               onClick={handlePrint}
-              className="hidden sm:flex p-2 hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-90 rounded-lg transition-all duration-150"
+              className="hidden lg:flex p-2 hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-90 rounded-lg transition-all duration-150"
               title="Imprimir"
             >
               <Printer className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -347,13 +365,13 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
             <button
               onClick={handleDuplicate}
               disabled={!current.id}
-              className="hidden sm:flex p-2 hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-90 rounded-lg transition-all duration-150 disabled:opacity-50"
+              className="hidden lg:flex p-2 hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-90 rounded-lg transition-all duration-150 disabled:opacity-50"
               title="Duplicar"
             >
               <Copy className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
 
-            <div className="hidden sm:block w-px h-8 bg-gray-200 dark:bg-gray-700" />
+            <div className="hidden lg:block w-px h-8 bg-gray-200 dark:bg-gray-700" />
 
             {/* Save Button */}
             <button
@@ -385,10 +403,7 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
       {/* ========== MAIN CONTENT ========== */}
       <main className="print:p-0">
         <div className={`
-          flex gap-0 
-          ${viewMode === 'split' ? 'flex-row' : ''} 
-          ${viewMode === 'form' ? 'flex-row' : ''} 
-          ${viewMode === 'preview' ? 'flex-row' : ''}
+          flex flex-col lg:flex-row gap-0 
         `}>
           {/* Form Panel */}
           <AnimatePresence mode="wait">
@@ -400,9 +415,10 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
                 exit={{ opacity: 0, x: -20 }}
                 className={`
                   bg-white dark:bg-gray-800 overflow-y-auto print:hidden
-                  ${viewMode === 'split' ? 'w-1/2 border-r border-gray-200 dark:border-gray-700' : 'w-full'}
+                  ${viewMode === 'split' ? 'lg:w-1/2 lg:border-r border-gray-200 dark:border-gray-700' : 'w-full'}
+                  ${viewMode !== 'split' ? 'flex-1' : ''}
                 `}
-                style={{ height: 'calc(100vh - 72px)' }}
+                style={{ height: viewMode === 'split' ? 'calc(100vh - 72px)' : 'calc(100vh - 72px)' }}
               >
                 <QuotationForm />
               </motion.div>
@@ -419,12 +435,12 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
                 exit={{ opacity: 0, x: 20 }}
                 className={`
                   bg-gray-100 dark:bg-gray-900 overflow-y-auto
-                  ${viewMode === 'split' ? 'w-1/2' : 'w-full'}
+                  ${viewMode === 'split' ? 'lg:w-1/2' : 'w-full lg:flex-1'}
                   print:w-full print:bg-white print:overflow-visible
                 `}
-                style={{ height: viewMode !== 'split' ? 'calc(100vh - 64px)' : 'calc(100vh - 64px)' }}
+                style={{ height: viewMode === 'split' ? 'calc(100vh - 72px)' : 'calc(100vh - 64px)' }}
               >
-                <QuotationPreview />
+                <QuotationPreview coverConfig={coverConfig} />
               </motion.div>
             )}
           </AnimatePresence>

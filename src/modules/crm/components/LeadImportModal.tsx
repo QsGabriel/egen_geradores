@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { Z_INDEX } from '../../../constants/zIndex';
 import * as XLSX from 'xlsx';
 import {
   X,
@@ -329,7 +330,7 @@ const LeadImportModal: React.FC<LeadImportModalProps> = ({ onClose, onImport }) 
 
   const modal = (
     <div
-      style={{ position: 'fixed', inset: 0, zIndex: 9999 }}
+      style={{ position: 'fixed', inset: 0, zIndex: Z_INDEX.modal }}
       className="flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
     >
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">

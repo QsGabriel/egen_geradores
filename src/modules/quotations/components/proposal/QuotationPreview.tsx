@@ -10,6 +10,7 @@ import { useQuotationStore, selectCurrent } from '../../stores/quotationStore';
 import { convertToContract } from '../../services/quotationService';
 import ProposalPrintDocument from './ProposalPrintDocument';
 import { useAuth } from '../../../../hooks/useAuth';
+import type { ProposalCoverConfig } from '../../../../hooks/useAppSettings';
 import { DepartmentLabels } from '../../../../types';
 import './ProposalPreview.css';
 
@@ -21,6 +22,7 @@ interface QuotationPreviewProps {
   scale?: number;
   showControls?: boolean;
   className?: string;
+  coverConfig?: ProposalCoverConfig | null;
 }
 
 const MIN_ZOOM = 0.4;
@@ -35,6 +37,7 @@ export function QuotationPreview({
   scale: initialScale = 0.6,
   showControls = true,
   className = '',
+  coverConfig,
 }: QuotationPreviewProps) {
   const current = useQuotationStore(selectCurrent);
   const { user, userProfile } = useAuth();
@@ -64,8 +67,8 @@ export function QuotationPreview({
       return <div className="empty-preview">Nenhum documento selecionado</div>;
     }
 
-    return <ProposalPrintDocument quotation={current} seller={seller} />;
-  }, [current, seller]);
+    return <ProposalPrintDocument quotation={current} seller={seller} coverConfig={coverConfig} />;
+  }, [current, seller, coverConfig]);
 
   // Convert proposal to contract
   const handleConvert = useCallback(async () => {

@@ -51,12 +51,13 @@ export const FranquiaHorasLabels: Record<FranquiaHoras, string> = {
   continuo: 'Contínuo/Livre (24h/dia)',
 };
 
-export type PeriodoLocacao = 'semanal' | 'quinzenal' | 'mensal';
+export type PeriodoLocacao = 'semanal' | 'quinzenal' | 'mensal' | 'anual';
 
 export const PeriodoLocacaoLabels: Record<PeriodoLocacao, string> = {
   semanal: 'Semanal (7 dias)',
   quinzenal: 'Quinzenal (15 dias)',
   mensal: 'Mensal (30 dias)',
+  anual: 'Anual (360 dias)',
 };
 
 // ============================================

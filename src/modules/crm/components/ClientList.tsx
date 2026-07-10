@@ -23,6 +23,8 @@ import { useNotification } from '../../../hooks/useNotification';
 import { useDialog } from '../../../hooks/useDialog';
 import Notification from '../../../components/Notification';
 import ConfirmDialog from '../../../components/ConfirmDialog';
+import ErrorBanner from '../../../components/ErrorBanner';
+import { Z_INDEX } from '../../../constants/zIndex';
 import { Select } from '../../quotations/components/proposal/Select';
 import FilterSelect from '../../../components/FilterSelect';
 import ClientContactLogModal from './ClientContactLogModal';
@@ -64,6 +66,7 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
   const [editing, setEditing] = useState<Client | null>(null);
   const [formData, setFormData] = useState<ClientFormData>(EMPTY_FORM);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<ClientStatus | 'all'>('all');
   const [cityFilter, setCityFilter] = useState<string[]>([]);
@@ -116,6 +119,7 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
     setFormData(EMPTY_FORM);
     setEditing(null);
     setShowForm(false);
+    setSubmitError(null);
   };
 
   // ── Contacts helpers ─────────────────────────────────────────────────────
@@ -141,7 +145,9 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) return;
+    if (!formData.documentNumber.trim()) return;
 
+    setSubmitError(null);
     setIsSubmitting(true);
     try {
       if (editing) {
@@ -152,8 +158,9 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
         showSuccess('Cliente cadastrado com sucesso!');
       }
       resetForm();
-    } catch (err) {
-      showError('Erro ao salvar cliente. Tente novamente.');
+    } catch (err: any) {
+      const message = err?.message || err?.error_description || 'Erro ao salvar cliente. Tente novamente.';
+      setSubmitError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -391,7 +398,7 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
       {/* Modal Form — React portal para posicionamento correto */}
       {showForm && createPortal(
         <div
-          style={{ position: 'fixed', inset: 0, zIndex: 9999 }}
+          style={{ position: 'fixed', inset: 0, zIndex: Z_INDEX.modal }}
           className="flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
         >
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
@@ -403,27 +410,39 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
                 <X className="h-5 w-5 text-gray-500" />
               </button>
             </div>
+
+            {submitError && (
+              <div className="px-6 pt-4 shrink-0">
+                <ErrorBanner message={submitError} onDismiss={() => setSubmitError(null)} />
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
               {/* Dados principais */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome / Razão Social *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Nome / Razão Social <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500"
+                    className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500 border-l-[3px] border-l-red-400 dark:border-l-red-500"
                     placeholder="Nome do cliente"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">CPF / CNPJ</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    CPF / CNPJ <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
+                    required
                     value={formData.documentNumber}
                     onChange={(e) => setFormData({ ...formData, documentNumber: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500"
+                    className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500 border-l-[3px] border-l-red-400 dark:border-l-red-500"
                     placeholder="00.000.000/0000-00"
                   />
                 </div>

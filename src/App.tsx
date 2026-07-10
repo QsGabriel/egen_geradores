@@ -12,6 +12,7 @@ import { EquipmentPage } from './modules/equipment';
 import { MaintenancePage } from './modules/maintenance';
 import ResetPassword from './components/ResetPassword';
 import Home from './components/Home';
+import ProposalConfigPage from './components/ProposalConfigPage';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ 
@@ -115,6 +116,14 @@ const AuthenticatedApp: React.FC = () => {
           element={
             <ProtectedRoute permission="canManageUsers" userRole={userRole}>
               <UserManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/configuracoes"
+          element={
+            <ProtectedRoute permission="canManageQuotations" userRole={userRole}>
+              <ProposalConfigPage />
             </ProtectedRoute>
           }
         />

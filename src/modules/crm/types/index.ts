@@ -70,6 +70,8 @@ export const CLIENT_CLASSIFICATIONS = [
   'Indústria de Alimentos',
   'Comércio',
   'Paradas de Manutenção',
+  'Hospital',
+  'Construtora',
 ] as const;
 
 export const CLIENT_STATUS_LABELS: Record<ClientStatus, string> = {

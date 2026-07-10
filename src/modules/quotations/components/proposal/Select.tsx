@@ -120,8 +120,8 @@ export function Select({ value, onChange, children, className = '', disabled }: 
           w-full flex items-center justify-between gap-2
           px-3 py-2 text-sm text-left
           text-gray-900 dark:text-white
-          bg-gray-50 dark:bg-gray-900
-          border border-gray-200 dark:border-gray-700
+          bg-white dark:bg-gray-800
+          border border-gray-200 dark:border-gray-600
           rounded-lg
           focus:outline-none focus:ring-2 focus:ring-egen-navy/30 dark:focus:ring-egen-yellow/30
           disabled:opacity-50 disabled:cursor-not-allowed
@@ -130,7 +130,7 @@ export function Select({ value, onChange, children, className = '', disabled }: 
           ${className}
         `}
       >
-        <span className={selectedLabel ? '' : 'text-gray-400 dark:text-gray-500'}>
+        <span className={`truncate ${selectedLabel ? '' : 'text-gray-400 dark:text-gray-500'}`}>
           {selectedLabel || 'Selecione...'}
         </span>
         <ChevronDown
@@ -165,7 +165,7 @@ export function Select({ value, onChange, children, className = '', disabled }: 
                   onMouseEnter={() => setHighlightIndex(idx)}
                   onClick={() => handleSelect(opt.value)}
                   className={`
-                    px-3 py-2 text-sm cursor-pointer transition-colors duration-75
+                    px-3 py-2 text-sm cursor-pointer transition-colors duration-75 truncate
                     ${isSelected
                       ? 'bg-egen-navy/10 dark:bg-egen-yellow/10 text-egen-navy dark:text-egen-yellow font-medium'
                       : isHighlighted

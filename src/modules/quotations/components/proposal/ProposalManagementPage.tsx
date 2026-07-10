@@ -23,6 +23,7 @@ import {
   CheckCircle2,
   XCircle,
   Filter,
+  Settings,
 } from 'lucide-react';
 import { quotationService } from '../../services';
 import type { SalesQuotation, DocumentStatus } from '../../types/proposal';
@@ -280,6 +281,14 @@ export default function ProposalManagementPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate('/configuracoes')}
+            title="Configurações da capa"
+            className="p-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-[0.93] transition-all duration-150 shadow-sm"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+
           <button
             onClick={load}
             disabled={loading}

@@ -174,6 +174,25 @@ export function usePricing() {
   }, [generators]);
 
   /**
+   * Obtém o preço do kit cabo (380V ou 220V) para um gerador e período
+   */
+  const getCableKitPrice = useCallback((
+    powerKva: string,
+    period: RentalPeriod,
+    voltage: '380v' | '220v',
+    equipmentType: EquipmentType = 'gerador'
+  ): number | null => {
+    const gen = generators.find(
+      g => g.powerKva === powerKva && 
+           g.rentalPeriod === period && 
+           g.equipmentType === equipmentType &&
+           g.isActive
+    );
+    if (!gen) return null;
+    return voltage === '380v' ? gen.priceCableKit380v : gen.priceCableKit220v;
+  }, [generators]);
+
+  /**
    * Obtém o preço de um acessório para um período específico
    */
   const getAccessoryPrice = useCallback((
@@ -292,6 +311,7 @@ export function usePricing() {
     // Utilities
     getGeneratorPrice,
     getExtraHourPrice,
+    getCableKitPrice,
     getAccessoryPrice,
     getAvailablePowers,
     getAccessoryCategories,

@@ -112,7 +112,7 @@ export function ServiceSelector({ className = '' }: ServiceSelectorProps) {
               exit={{ opacity: 0, x: -100 }}
               className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
             >
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
                 {/* Tipo */}
                 <div>
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
@@ -136,7 +136,7 @@ export function ServiceSelector({ className = '' }: ServiceSelectorProps) {
                 </div>
 
                 {/* Descrição */}
-                <div className="md:col-span-2">
+                <div className="sm:col-span-2 lg:col-span-2">
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                     {item.tipo === 'personalizado' ? (
                       <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
@@ -154,10 +154,10 @@ export function ServiceSelector({ className = '' }: ServiceSelectorProps) {
                         ? 'Descreva o serviço acordado com o cliente...'
                         : ItemTipoSpotLabels[item.tipo]
                     }
-                    className={`w-full px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 ${
+                    className={`w-full px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${
                       item.tipo === 'personalizado'
-                        ? 'bg-amber-50 dark:bg-amber-900/10 border border-amber-300 dark:border-amber-700 focus:ring-amber-400/30'
-                        : 'bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 focus:ring-egen-navy/30'
+                        ? 'text-gray-900 dark:text-white bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 focus:ring-amber-400/30'
+                        : 'text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 focus:ring-egen-navy/30'
                     }`}
                   />
                 </div>
@@ -182,7 +182,7 @@ export function ServiceSelector({ className = '' }: ServiceSelectorProps) {
                     Valor Unit.
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">R$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 dark:text-gray-500">R$</span>
                     <input
                       type="number"
                       step="0.01"
@@ -195,8 +195,8 @@ export function ServiceSelector({ className = '' }: ServiceSelectorProps) {
               </div>
 
               {/* Second row: observações + total + delete */}
-              <div className="mt-3 grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-                <div className="md:col-span-3">
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4 items-end">
+                <div className="sm:col-span-2 lg:col-span-3">
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                     Observações
                   </label>

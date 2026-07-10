@@ -26,6 +26,8 @@ import { useNotification } from '../../../hooks/useNotification';
 import { useDialog } from '../../../hooks/useDialog';
 import Notification from '../../../components/Notification';
 import ConfirmDialog from '../../../components/ConfirmDialog';
+import ErrorBanner from '../../../components/ErrorBanner';
+import { Z_INDEX } from '../../../constants/zIndex';
 import { Select } from '../../../modules/quotations/components/proposal/Select';
 import FilterSelect from '../../../components/FilterSelect';
 import LeadImportModal from './LeadImportModal';
@@ -73,6 +75,7 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
   const [editing, setEditing] = useState<Lead | null>(null);
   const [formData, setFormData] = useState<LeadFormData>(EMPTY_FORM);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'all'>('all');
   const [cityFilter, setCityFilter] = useState<string[]>([]);
@@ -132,6 +135,7 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
     setFormData(EMPTY_FORM);
     setEditing(null);
     setShowForm(false);
+    setSubmitError(null);
   };
 
   // ── Contacts helpers ─────────────────────────────────────────────────────
@@ -158,6 +162,7 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
     e.preventDefault();
     if (!formData.name.trim()) return;
 
+    setSubmitError(null);
     setIsSubmitting(true);
     try {
       if (editing) {
@@ -168,8 +173,9 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
         showSuccess('Lead cadastrado com sucesso!');
       }
       resetForm();
-    } catch {
-      showError('Erro ao salvar lead. Tente novamente.');
+    } catch (err: any) {
+      const message = err?.message || err?.error_description || 'Erro ao salvar lead. Tente novamente.';
+      setSubmitError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -322,7 +328,7 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
       {/* Form modal — React portal para evitar gap e sobreposição correta */}
       {showForm && createPortal(
         <div
-          style={{ position: 'fixed', inset: 0, zIndex: 9999 }}
+          style={{ position: 'fixed', inset: 0, zIndex: Z_INDEX.modal }}
           className="flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
         >
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -334,16 +340,25 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
                 <X className="h-5 w-5 text-gray-500" />
               </button>
             </div>
+
+            {submitError && (
+              <div className="px-6 pt-4">
+                <ErrorBanner message={submitError} onDismiss={() => setSubmitError(null)} />
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome / Razão Social *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Nome / Razão Social <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500"
+                    className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500 border-l-[3px] border-l-red-400 dark:border-l-red-500"
                     placeholder="Nome do lead / Razão Social"
                   />
                 </div>

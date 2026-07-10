@@ -100,7 +100,7 @@ function AccordionSection({
             onAnimationStart={() => setBodyOverflow('hidden')}
             onAnimationComplete={() => setBodyOverflow(isOpen ? 'visible' : 'hidden')}
           >
-            <div className="p-4 bg-gray-50 dark:bg-gray-900/50">{children}</div>
+            <div className="p-4 bg-gray-50 dark:bg-[#111a2e]">{children}</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -511,7 +511,7 @@ export function QuotationForm({ onSave, className = '' }: QuotationFormProps) {
                 step={0.5}
                 value={current.descontoPercent}
                 onChange={(e) => setDescontoPercent(parseFloat(e.target.value) || 0)}
-                className="w-16 px-2 py-1 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-egen-navy/30 transition-all duration-150"
+                className="w-20 px-2 py-1 text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-egen-navy/30 dark:focus:ring-egen-yellow/30 transition-all duration-150"
               />
               <span className="text-sm text-gray-500">%</span>
             </div>
@@ -557,13 +557,13 @@ export function QuotationForm({ onSave, className = '' }: QuotationFormProps) {
             <div className="flex items-center gap-4 sm:gap-6 ml-auto sm:ml-0">
               <div className="text-right">
                 <p className="text-xs text-gray-500 dark:text-gray-400">Periódicos</p>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-100">
                   {formatCurrency(totals.periodicos)}
                 </p>
               </div>
               <div className="text-right">
                 <p className="text-xs text-gray-500 dark:text-gray-400">Spot</p>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-100">
                   {formatCurrency(totals.spot)}
                 </p>
               </div>

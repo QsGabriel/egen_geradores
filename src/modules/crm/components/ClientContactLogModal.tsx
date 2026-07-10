@@ -5,6 +5,7 @@
  */
 import React from 'react';
 import { createPortal } from 'react-dom';
+import { Z_INDEX } from '../../../constants/zIndex';
 import { X, MessageSquarePlus } from 'lucide-react';
 import ContactLogSection from './ContactLogSection';
 import type { Client } from '../types';
@@ -17,7 +18,7 @@ interface Props {
 export default function ClientContactLogModal({ client, onClose }: Props) {
   return createPortal(
     <div
-      style={{ position: 'fixed', inset: 0, zIndex: 9999 }}
+      style={{ position: 'fixed', inset: 0, zIndex: Z_INDEX.modal }}
       className="flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
       onClick={e => {
         if (e.target === e.currentTarget) onClose();

@@ -5,6 +5,7 @@
  */
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { Z_INDEX } from '../../../constants/zIndex';
 import {
   X,
   Edit,
@@ -139,7 +140,7 @@ export default function LeadDetailModal({
   return createPortal(
     <>
       <div
-        style={{ position: 'fixed', inset: 0, zIndex: 9998 }}
+        style={{ position: 'fixed', inset: 0, zIndex: Z_INDEX.modalDetail }}
         className="flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
         onClick={e => { if (e.target === e.currentTarget) onClose(); }}
       >

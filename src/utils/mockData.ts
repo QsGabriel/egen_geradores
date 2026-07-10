@@ -14,7 +14,13 @@ export const mockEquipment: Equipment[] = [
     expirationDate: '2025-03-15',
     location: 'Prateleira A1',
     minStock: 20,
-    status: 'active'
+    status: 'active',
+    unitPrice: 45.00,
+    totalValue: 6750.00,
+    invoiceNumber: 'NF-2024-001',
+    isWithholding: false,
+    supplierId: 'sup-1',
+    supplierName: 'MedSupply Ltda',
   },
   {
     id: '2',
@@ -29,7 +35,13 @@ export const mockEquipment: Equipment[] = [
     expirationDate: '2024-12-20',
     location: 'Geladeira B2',
     minStock: 10,
-    status: 'low-stock'
+    status: 'low-stock',
+    unitPrice: 120.00,
+    totalValue: 600.00,
+    invoiceNumber: 'NF-2024-002',
+    isWithholding: true,
+    supplierId: 'sup-2',
+    supplierName: 'ChemLab Indústria',
   },
   {
     id: '3',
@@ -44,7 +56,13 @@ export const mockEquipment: Equipment[] = [
     expirationDate: '2026-04-10',
     location: 'Armário C3',
     minStock: 15,
-    status: 'active'
+    status: 'active',
+    unitPrice: 25.00,
+    totalValue: 2000.00,
+    invoiceNumber: 'NF-2024-003',
+    isWithholding: false,
+    supplierId: 'sup-3',
+    supplierName: 'LabSupply Comércio',
   },
   {
     id: '4',
@@ -59,7 +77,13 @@ export const mockEquipment: Equipment[] = [
     expirationDate: '2024-12-30',
     location: 'Prateleira D1',
     minStock: 8,
-    status: 'expired'
+    status: 'expired',
+    unitPrice: 85.00,
+    totalValue: 255.00,
+    invoiceNumber: 'NF-2024-004',
+    isWithholding: false,
+    supplierId: 'sup-4',
+    supplierName: 'BioTech SA',
   }
 ];
 
@@ -73,7 +97,9 @@ export const mockMovements: StockMovement[] = [
     quantity: 5,
     date: '2024-12-20',
     authorizedBy: 'Dr. Silva',
-    notes: 'Uso rotina laboratório'
+    notes: 'Uso rotina laboratório',
+    unitPrice: 45.00,
+    totalValue: 225.00,
   },
   {
     id: '2',
@@ -85,31 +111,49 @@ export const mockMovements: StockMovement[] = [
     date: '2024-12-19',
     requestId: 'REQ001',
     authorizedBy: 'Dr. Santos',
-    notes: 'Venda cliente externo'
+    notes: 'Venda cliente externo',
+    unitPrice: 120.00,
+    totalValue: 240.00,
   }
 ];
 
 export const mockRequests: Request[] = [
   {
     id: 'REQ001',
-    equipmentId: '2',
-    equipmentName: 'Reagente pH Buffer',
-    quantity: 2,
+    type: 'SC',
+    items: [
+      {
+        id: 'item-1',
+        equipmentId: '2',
+        equipmentName: 'Reagente pH Buffer',
+        quantity: 2,
+        category: 'technical',
+      }
+    ],
     reason: 'Venda para cliente externo',
     requestedBy: 'João Silva',
     requestDate: '2024-12-18',
     status: 'completed',
+    priority: 'standard',
     approvedBy: 'Dr. Santos',
-    approvalDate: '2024-12-19'
+    approvalDate: '2024-12-19',
   },
   {
     id: 'REQ002',
-    equipmentId: '3',
-    equipmentName: 'Papel de Filtro',
-    quantity: 10,
+    type: 'SC',
+    items: [
+      {
+        id: 'item-2',
+        equipmentId: '3',
+        equipmentName: 'Papel de Filtro',
+        quantity: 10,
+        category: 'general',
+      }
+    ],
     reason: 'Transferência para filial',
     requestedBy: 'Maria Costa',
     requestDate: '2024-12-20',
-    status: 'pending'
+    status: 'pending',
+    priority: 'standard',
   }
 ];

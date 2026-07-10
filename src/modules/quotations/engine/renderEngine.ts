@@ -253,6 +253,7 @@ function extractPlaceholderValues(quotation: SalesQuotation): PlaceholderValues 
     [PLACEHOLDERS.DOCUMENT_TIPO_TITULO]: DOCUMENT_TITLES[quotation.tipo],
     [PLACEHOLDERS.DATA_EMISSAO]: formatDate(quotation.dataEmissao),
     [PLACEHOLDERS.VALIDADE]: formatDate(quotation.validade),
+    [PLACEHOLDERS.CAPA_URL]: '/CAPA.png',
     
     // Cliente
     [PLACEHOLDERS.CLIENTE_NOME]: cliente.nome || '-',

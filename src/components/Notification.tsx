@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
+import { Z_INDEX } from '../constants/zIndex';
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';
 
@@ -61,7 +62,7 @@ const Notification: React.FC<NotificationProps> = ({
   };
 
   return (
-    <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
+    <div className="fixed top-4 right-4 animate-slide-in-right" style={{ zIndex: Z_INDEX.notification }}>
       <div className={`max-w-md w-full border rounded-xl shadow-lg p-4 backdrop-blur-sm ${getStyles()}`}>
         <div className="flex items-start">
           <div className="flex-shrink-0 animate-bounce-in">

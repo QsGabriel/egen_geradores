@@ -5,6 +5,7 @@
  */
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { Z_INDEX } from '../../../constants/zIndex';
 import { X, UserCheck, AlertCircle, Save } from 'lucide-react';
 import type { Lead, ClientFormData } from '../types';
 import { CLIENT_CLASSIFICATIONS } from '../types';
@@ -78,7 +79,7 @@ export default function LeadConvertModal({ lead, onConfirm, onClose }: LeadConve
 
   return createPortal(
     <div
-      style={{ position: 'fixed', inset: 0, zIndex: 9999 }}
+      style={{ position: 'fixed', inset: 0, zIndex: Z_INDEX.modal }}
       className="flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
     >
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto flex flex-col">
@@ -120,7 +121,7 @@ export default function LeadConvertModal({ lead, onConfirm, onClose }: LeadConve
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Nome / Razão Social *
+                Nome / Razão Social <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -136,7 +137,7 @@ export default function LeadConvertModal({ lead, onConfirm, onClose }: LeadConve
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                CNPJ / CPF *
+                CNPJ / CPF <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -152,7 +153,7 @@ export default function LeadConvertModal({ lead, onConfirm, onClose }: LeadConve
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Classificação *
+                Classificação <span className="text-red-500">*</span>
               </label>
               <select
                 value={formData.classification}
@@ -174,7 +175,7 @@ export default function LeadConvertModal({ lead, onConfirm, onClose }: LeadConve
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Nome do Contato *
+                Nome do Contato <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -216,7 +217,7 @@ export default function LeadConvertModal({ lead, onConfirm, onClose }: LeadConve
           {/* Endereço */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Endereço *
+              Endereço <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -233,7 +234,7 @@ export default function LeadConvertModal({ lead, onConfirm, onClose }: LeadConve
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="col-span-2 md:col-span-1">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Cidade *
+                Cidade <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -248,7 +249,7 @@ export default function LeadConvertModal({ lead, onConfirm, onClose }: LeadConve
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Estado *
+                Estado <span className="text-red-500">*</span>
               </label>
               <select
                 value={formData.state}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertTriangle, X } from 'lucide-react';
+import { Z_INDEX } from '../constants/zIndex';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -47,7 +48,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" style={{ zIndex: Z_INDEX.confirmDialog }}>
       <div className="bg-white dark:bg-egen-dark-surface rounded-2xl shadow-2xl max-w-md w-full animate-scale-in">
         <div className="px-6 py-5 border-b border-gray-100 dark:border-white/5 flex items-center justify-between">
           <div className="flex items-center">

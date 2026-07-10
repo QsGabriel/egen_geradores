@@ -168,6 +168,8 @@ function createEmptyQuotation(tipo: DocumentTipo = 'proposta'): SalesQuotation {
     version: 1,
     parentId: null,
     notasInternas: '',
+    contractText: '',
+    isAnnex: false,
   };
 }
 
@@ -372,10 +374,12 @@ export const useQuotationStore = create<QuotationStore>()(
         addItemPeriodico: (item) => {
           set((state) => {
             if (!state.current) return state;
+            const baseItem = createEmptyItemPeriodico('gerador');
             const newItem = {
-              ...createEmptyItemPeriodico('gerador'),
+              ...baseItem,
               ...item,
             };
+            newItem.valorTotal = calculateItemPeriodicoTotal(newItem);
             return {
               current: {
                 ...state.current,
@@ -653,7 +657,7 @@ export const useQuotationStore = create<QuotationStore>()(
         },
 
         // ========== UI ==========
-        
+
         setPreviewMode: (previewMode) => {
           set({ previewMode });
         },

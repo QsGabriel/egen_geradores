@@ -232,7 +232,7 @@ export function ConditionsEditor({ className = '' }: ConditionsEditorProps) {
             value={condicoes.periodoOrcado}
             onChange={handleChange}
             type="select"
-            options={['Diária', 'Semanal', 'Quinzenal', 'Mensal', 'Indicado nas observações']}
+            options={['Diária', 'Semanal', 'Quinzenal', 'Mensal', 'Anual', 'Indicado nas observações']}
           />
         </div>
       </div>
@@ -382,7 +382,7 @@ export function ConditionsEditor({ className = '' }: ConditionsEditorProps) {
           onChange={(e) => handleChange('observacoes', e.target.value)}
           placeholder="Observações específicas sobre as condições comerciais desta proposta..."
           rows={4}
-          className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30 dark:focus:ring-egen-yellow/30 transition-colors"
+          className="w-full px-3 py-2 text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30 dark:focus:ring-egen-yellow/30 placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-colors"
         />
       </div>
     </div>

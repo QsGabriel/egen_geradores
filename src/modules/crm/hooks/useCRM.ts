@@ -404,6 +404,8 @@ export function useCRM() {
       updatedBy: null,
       createdAt: today.toISOString(),
       updatedAt: today.toISOString(),
+      contractText: '',
+      isAnnex: false,
     };
 
     const created = await quotationService.create(draft);

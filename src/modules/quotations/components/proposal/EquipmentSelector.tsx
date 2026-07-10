@@ -50,6 +50,7 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
   const {
     generators,
     getGeneratorPrice,
+    getCableKitPrice,
     getAvailablePowers,
     formatCurrency,
     loading: pricingLoading,
@@ -57,9 +58,53 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
 
   const availablePowers = useMemo(() => getAvailablePowers('gerador'), [getAvailablePowers]);
 
+  const findGeneratorReference = (): { potencia: string | undefined; periodo: PeriodoLocacao } | null => {
+    const gen = itensPeriodicos.find(e => e.tipo === 'gerador' && e.potenciaKva);
+    if (!gen) return null;
+    return { potencia: gen.potenciaKva, periodo: gen.periodoLocacao };
+  };
+
+  const updateCableKitPrices = (potencia: string | undefined, periodo: PeriodoLocacao) => {
+    if (!potencia) return;
+    itensPeriodicos.forEach((item) => {
+      if (item.tipo === 'cabo_380v' || item.tipo === 'cabo_220v') {
+        const voltage = item.tipo === 'cabo_380v' ? '380v' : '220v';
+        const periodMap: Record<PeriodoLocacao, 'mensal' | 'quinzenal' | 'semanal'> = {
+          mensal: 'mensal',
+          quinzenal: 'quinzenal',
+          semanal: 'semanal',
+          anual: 'mensal',
+        };
+        const cablePrice = getCableKitPrice(potencia, periodMap[periodo], voltage);
+        const finalPrice = cablePrice != null && periodo === 'anual' ? cablePrice * 12 : cablePrice;
+        updateItemPeriodico(item.id, { valorUnitario: finalPrice ?? 0 });
+      }
+    });
+  };
+
+  const getCableKitPriceForItem = (tipo: 'cabo_380v' | 'cabo_220v', potencia: string, periodo: PeriodoLocacao): number | null => {
+    const voltage = tipo === 'cabo_380v' ? '380v' : '220v';
+    const periodMap: Record<PeriodoLocacao, 'mensal' | 'quinzenal' | 'semanal'> = {
+      mensal: 'mensal',
+      quinzenal: 'quinzenal',
+      semanal: 'semanal',
+      anual: 'mensal',
+    };
+    const cablePrice = getCableKitPrice(potencia, periodMap[periodo], voltage);
+    return cablePrice != null && periodo === 'anual' ? cablePrice * 12 : cablePrice;
+  };
+
   // Add a new periodic item
   const handleAddItem = (tipo: ItemTipoPeriodico = 'gerador') => {
-    addItemPeriodico({ tipo, descricao: tipo === 'gerador' ? '' : ItemTipoPeriodicoLabels[tipo] });
+    const genRef = findGeneratorReference();
+    
+    if ((tipo === 'cabo_380v' || tipo === 'cabo_220v') && genRef?.potencia) {
+      const cablePrice = getCableKitPriceForItem(tipo, genRef.potencia, genRef.periodo);
+      const price = cablePrice ?? 0;
+      addItemPeriodico({ tipo, descricao: ItemTipoPeriodicoLabels[tipo], valorUnitario: price, valorTotal: price });
+    } else {
+      addItemPeriodico({ tipo, descricao: tipo === 'gerador' ? '' : ItemTipoPeriodicoLabels[tipo] });
+    }
   };
 
   // Generic field update with price auto-fill for generators
@@ -83,6 +128,7 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
         mensal: 'mensal',
         quinzenal: 'quinzenal',
         semanal: 'semanal',
+        anual: 'mensal',
       };
 
       const franquiaMap: Record<FranquiaHoras, 'standby' | '120h' | '240h' | '360h' | 'continuous'> = {
@@ -94,16 +140,36 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
       };
 
       if (newPotencia && newPeriodo && newFranquia) {
-        const price = getGeneratorPrice(
+        const basePrice = getGeneratorPrice(
           newPotencia,
           periodMap[newPeriodo],
           franquiaMap[newFranquia],
         );
+        const price = basePrice != null && newPeriodo === 'anual'
+          ? basePrice * 12
+          : basePrice;
         updateItemPeriodico(id, {
           [field]: value,
           valorUnitario: price ?? 0,
           descricao: `Gerador ${newPotencia}`,
         });
+        if (field === 'potenciaKva' || field === 'periodoLocacao') {
+          updateCableKitPrices(
+            field === 'potenciaKva' ? value : current.potenciaKva,
+            field === 'periodoLocacao' ? value : current.periodoLocacao,
+          );
+        }
+      } else {
+        updateItemPeriodico(id, { [field]: value });
+      }
+    } else if (
+      (current.tipo === 'cabo_380v' || current.tipo === 'cabo_220v') &&
+      field === 'periodoLocacao'
+    ) {
+      const genRef = findGeneratorReference();
+      if (genRef?.potencia) {
+        const cablePrice = getCableKitPriceForItem(current.tipo, genRef.potencia, value);
+        updateItemPeriodico(id, { [field]: value, valorUnitario: cablePrice ?? 0 });
       } else {
         updateItemPeriodico(id, { [field]: value });
       }
@@ -203,7 +269,7 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
               </div>
 
               {/* Main Fields */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Potência — only for generators */}
                 {item.tipo === 'gerador' && (
                   <div>
@@ -268,14 +334,14 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
               </div>
 
               {/* Pricing Row */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* Valor Unitário */}
                 <div>
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                     Valor Unit.
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">R$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 dark:text-gray-500">R$</span>
                     <input
                       type="number"
                       step="0.01"

@@ -15,6 +15,7 @@ import {
   Building2,
   Wrench,
   Settings,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { hasPermission, getRoleLabel } from '../utils/permissions';

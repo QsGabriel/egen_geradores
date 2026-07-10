@@ -11,10 +11,12 @@ import {
   type ProposalItemSpot,
   type SalesQuotation,
 } from '../../types/proposal';
+import type { ProposalCoverConfig } from '../../../../hooks/useAppSettings';
 
 interface ProposalPrintDocumentProps {
   quotation: SalesQuotation;
   seller?: ProposalSellerInfo;
+  coverConfig?: ProposalCoverConfig | null;
 }
 
 interface ProposalSellerInfo {
@@ -47,6 +49,17 @@ const DOCUMENT_TITLES: Record<DocumentTipo, string> = {
 const MAX_SCOPE_ROWS_PER_PAGE = 24;
 const EQUIPMENT_ROWS_WHEN_BOTH_TABLES = 12;
 const SERVICE_ROWS_WHEN_BOTH_TABLES = 10;
+
+function getPeriodTotalLabel(periodoOrcado: string): string {
+  const map: Record<string, string> = {
+    'Diária': 'VALOR DIÁRIO',
+    'Semanal': 'VALOR SEMANAL',
+    'Quinzenal': 'VALOR QUINZENAL',
+    'Mensal': 'VALOR MENSAL',
+    'Anual': 'VALOR ANUAL',
+  };
+  return map[periodoOrcado] || 'VALOR MENSAL';
+}
 
 const DISPOSITION_PARAGRAPHS = [
   'Este orçamento não garante a reserva dos equipamentos, que somente será confirmada com a assinatura do contrato e pedido de compra.',
@@ -723,6 +736,7 @@ function ExceedingHoursTable({ rows }: { rows: ProposalHoraExcedente[] }) {
 export default function ProposalPrintDocument({
   quotation,
   seller,
+  coverConfig,
 }: ProposalPrintDocumentProps) {
   const sellerInfo = useMemo<Required<ProposalSellerInfo>>(
     () => ({
@@ -863,15 +877,27 @@ export default function ProposalPrintDocument({
     ? 1 + contractPageChunks.length + proposalPageCount
     : 1 + proposalPageCount;
 
+  const coverTitleColor = coverConfig?.textColor || '#ffffff';
+  const coverTitleBg = coverConfig?.textBgColor || null;
+  const coverUrl = coverConfig?.capaUrl || '/CAPA.png';
+
   const pages: Array<{ key: string; content: React.ReactNode }> = [];
 
   pages.push({
     key: 'cover',
     content: (
       <A4Page className="proposal-cover-page">
-        <img src="/CAPA.png" alt="Capa" className="proposal-cover-background" />
+        <img src={coverUrl} alt="Capa" className="proposal-cover-background" />
         <div className="proposal-cover-title-strip">
-          <h1 className="proposal-cover-title">{DOCUMENT_TITLES[quotation.tipo]}</h1>
+          <h1
+            className={`proposal-cover-title${coverTitleBg ? ' proposal-cover-title-bg' : ''}`}
+            style={{
+              color: coverTitleColor,
+              ...(coverTitleBg ? { backgroundColor: coverTitleBg } : {}),
+            }}
+          >
+            {DOCUMENT_TITLES[quotation.tipo]}
+          </h1>
         </div>
       </A4Page>
     ),
@@ -1042,7 +1068,7 @@ export default function ProposalPrintDocument({
                 {isLastEquipmentPage ? (
                   <tfoot>
                     <tr className="proposal-table-subtotal">
-                      <td colSpan={4} className="proposal-table-subtotal-label">VALOR MENSAL</td>
+                      <td colSpan={4} className="proposal-table-subtotal-label">{getPeriodTotalLabel(quotation.condicoes.periodoOrcado)}</td>
                       <td className="proposal-table-subtotal-value">
                         <CurrencyCell value={quotation.totalPeriodicos} />
                       </td>
@@ -1113,6 +1139,13 @@ export default function ProposalPrintDocument({
             <section className="proposal-table-block">
               <ExceedingHoursTable rows={quotation.horasExcedentes} />
             </section>
+            ) : null}
+
+            {isLastScopePage && quotation.observacoesGerais?.trim() ? (
+              <section className="proposal-observations-block">
+                <h3 className="proposal-blue-section-title">Observações:</h3>
+                <p className="proposal-observations-text">{quotation.observacoesGerais}</p>
+              </section>
             ) : null}
 
             {includeInlineSections ? (

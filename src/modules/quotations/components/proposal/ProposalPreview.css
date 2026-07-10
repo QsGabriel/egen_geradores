@@ -83,8 +83,13 @@
   margin: 0;
   font-size: 16pt;
   font-weight: 700;
-  color: #ffffff;
   letter-spacing: 0.5pt;
+}
+
+.proposal-cover-title-bg {
+  display: inline-block;
+  padding: 2mm 8mm;
+  border-radius: 3mm;
 }
 
 .proposal-standard-page {
@@ -395,7 +400,7 @@
 }
 
 .proposal-table-main .col-desc {
-  width: 54mm;
+  width: 45mm;
 }
 
 .proposal-table-main .col-qty {
@@ -413,7 +418,7 @@
 
 .proposal-table-main .col-franquia,
 .proposal-table-main .col-obs {
-  width: 38mm;
+  width: 47mm;
 }
 
 /* Fixed 6-column body: center Item, Qtd. and Franquia/Observações;
@@ -744,6 +749,29 @@
 
 .proposal-dispositions-inline {
   width: 186mm;
+}
+
+.proposal-observations-block {
+  margin-top: 3mm;
+}
+
+.proposal-observations-block .proposal-blue-section-title {
+  padding: 0 2mm;
+  height: 6.5mm;
+  line-height: 6.5mm;
+  background: #173172;
+  margin-bottom: 2.2mm;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.proposal-observations-text {
+  margin: 0 0 2.5mm;
+  font-size: 9.5pt;
+  line-height: 1.5;
+  color: #111111;
+  white-space: pre-wrap;
 }
 
 .proposal-dispositions-inline .proposal-blue-section-title {
