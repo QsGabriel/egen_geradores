@@ -15,12 +15,12 @@ import Home from './components/Home';
 import ProposalConfigPage from './components/ProposalConfigPage';
 
 // Protected Route Component
-const ProtectedRoute: React.FC<{ 
-  children: React.ReactNode; 
+const ProtectedRoute: React.FC<{
+  children: React.ReactNode;
   permission?: string;
-  userRole: string;
-}> = ({ children, permission, userRole }) => {
-  if (permission && !hasPermission(userRole as any, permission as any)) {
+  userPermissions: string[];
+}> = ({ children, permission, userPermissions }) => {
+  if (permission && !hasPermission(userPermissions, permission)) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
         <h3 className="text-lg font-medium text-red-800 mb-2">Acesso Negado</h3>
@@ -47,18 +47,17 @@ const AuthenticatedApp: React.FC = () => {
     return <Auth />;
   }
 
-  const userRole = userProfile?.role || 'requester';
+  const userPermissions = userProfile?.permissions || [];
 
   return (
     <Layout>
       <Routes>
-        {/* Página inicial */}
         <Route path="/" element={<Home />} />
 
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute permission="canViewDashboard" userRole={userRole}>
+            <ProtectedRoute permission="canViewDashboard" userPermissions={userPermissions}>
               <Dashboard />
             </ProtectedRoute>
           }
@@ -66,7 +65,7 @@ const AuthenticatedApp: React.FC = () => {
         <Route
           path="/crm/*"
           element={
-            <ProtectedRoute permission="canViewClients" userRole={userRole}>
+            <ProtectedRoute permission="canViewClients" userPermissions={userPermissions}>
               <CrmPage />
             </ProtectedRoute>
           }
@@ -74,7 +73,7 @@ const AuthenticatedApp: React.FC = () => {
         <Route
           path="/propostas"
           element={
-            <ProtectedRoute permission="canManageQuotations" userRole={userRole}>
+            <ProtectedRoute permission="canManageQuotations" userPermissions={userPermissions}>
               <ProposalManagementPage />
             </ProtectedRoute>
           }
@@ -82,7 +81,7 @@ const AuthenticatedApp: React.FC = () => {
         <Route
           path="/propostas/nova"
           element={
-            <ProtectedRoute permission="canManageQuotations" userRole={userRole}>
+            <ProtectedRoute permission="canManageQuotations" userPermissions={userPermissions}>
               <SalesQuotationPage />
             </ProtectedRoute>
           }
@@ -90,7 +89,7 @@ const AuthenticatedApp: React.FC = () => {
         <Route
           path="/propostas/:id"
           element={
-            <ProtectedRoute permission="canManageQuotations" userRole={userRole}>
+            <ProtectedRoute permission="canManageQuotations" userPermissions={userPermissions}>
               <SalesQuotationPage />
             </ProtectedRoute>
           }
@@ -98,7 +97,7 @@ const AuthenticatedApp: React.FC = () => {
         <Route
           path="/equipamentos"
           element={
-            <ProtectedRoute permission="canViewEquipment" userRole={userRole}>
+            <ProtectedRoute permission="canViewEquipment" userPermissions={userPermissions}>
               <EquipmentPage />
             </ProtectedRoute>
           }
@@ -106,7 +105,7 @@ const AuthenticatedApp: React.FC = () => {
         <Route
           path="/manutencoes"
           element={
-            <ProtectedRoute permission="canViewMaintenance" userRole={userRole}>
+            <ProtectedRoute permission="canViewMaintenance" userPermissions={userPermissions}>
               <MaintenancePage />
             </ProtectedRoute>
           }
@@ -114,7 +113,7 @@ const AuthenticatedApp: React.FC = () => {
         <Route
           path="/users"
           element={
-            <ProtectedRoute permission="canManageUsers" userRole={userRole}>
+            <ProtectedRoute permission="canManageUsers" userPermissions={userPermissions}>
               <UserManagement />
             </ProtectedRoute>
           }
@@ -122,7 +121,7 @@ const AuthenticatedApp: React.FC = () => {
         <Route
           path="/configuracoes"
           element={
-            <ProtectedRoute permission="canManageQuotations" userRole={userRole}>
+            <ProtectedRoute permission="canManageQuotations" userPermissions={userPermissions}>
               <ProposalConfigPage />
             </ProtectedRoute>
           }

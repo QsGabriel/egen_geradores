@@ -107,14 +107,13 @@ const moduleGroups: ModuleGroup[] = [
 
 const Home: React.FC = () => {
   const { userProfile } = useAuth();
-  const role = userProfile?.role || 'requester';
+  const userPermissions = userProfile?.permissions || [];
   
-  // Filter modules based on user permissions
   const accessibleGroups = moduleGroups
     .map(group => ({
       ...group,
       items: group.items.filter(item => 
-        hasPermission(role as any, item.permission as any)
+        hasPermission(userPermissions, item.permission)
       )
     }))
     .filter(group => group.items.length > 0);

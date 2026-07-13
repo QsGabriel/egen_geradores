@@ -27,7 +27,7 @@ interface ModuleCard {
 const RequestHub: React.FC = () => {
   const navigate = useNavigate();
   const { userProfile } = useAuth();
-  const userRole = userProfile?.role || 'requester';
+  const userPermissions = userProfile?.permissions || [];
 
   const modules: ModuleCard[] = [
     {
@@ -39,7 +39,6 @@ const RequestHub: React.FC = () => {
       color: 'text-blue-600',
       gradient: 'from-blue-500 to-indigo-500',
       iconBg: 'bg-blue-100',
-      permission: 'canViewRequests'
     },
     {
       id: 'payments',
@@ -50,7 +49,6 @@ const RequestHub: React.FC = () => {
       color: 'text-emerald-600',
       gradient: 'from-emerald-500 to-teal-500',
       iconBg: 'bg-emerald-100',
-      permission: 'canViewRequests'
     },
     {
       id: 'maintenance',
@@ -61,13 +59,12 @@ const RequestHub: React.FC = () => {
       color: 'text-orange-600',
       gradient: 'from-orange-500 to-amber-500',
       iconBg: 'bg-orange-100',
-      permission: 'canViewRequests'
     }
   ];
 
   // Filter modules based on permissions
   const accessibleModules = modules.filter(
-    module => !module.permission || hasPermission(userRole as any, module.permission as any)
+    module => !module.permission || hasPermission(userPermissions, module.permission)
   );
 
   return (

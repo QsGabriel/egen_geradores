@@ -40,6 +40,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const userRole = userProfile?.role || 'requester';
+  const userPermissions = userProfile?.permissions || [];
+
+  const canAccessItem = (item: NavigationItem) => {
+    if (!item.permission) return true;
+    return hasPermission(userPermissions, item.permission);
+  };
 
   const navigation: NavigationItem[] = [
     { 
@@ -116,11 +122,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const isSubItemActive = (href: string) => {
     return location.pathname === href;
-  };
-
-  const canAccessItem = (item: NavigationItem) => {
-    if (!item.permission) return true;
-    return hasPermission(userRole, item.permission as any);
   };
 
   const renderNavigationItem = (item: NavigationItem, isMobile = false) => {
@@ -313,14 +314,22 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
       {/* User info and logout */}
       <div className="border-t border-white/10 p-4">
         <div className="flex items-center mb-4 p-2 rounded-lg bg-white/5">
-          <div className="w-10 h-10 bg-egen-yellow rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
-            <Shield className="w-5 h-5 text-egen-navy" />
-          </div>
+          {userProfile?.avatar_url ? (
+            <img
+              src={userProfile.avatar_url}
+              alt={userProfile.name}
+              className="w-10 h-10 rounded-lg object-cover mr-3 flex-shrink-0"
+            />
+          ) : (
+            <div className="w-10 h-10 bg-egen-yellow rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+              <Shield className="w-5 h-5 text-egen-navy" />
+            </div>
+          )}
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-white truncate" title={userProfile?.name || user?.email}>
               {userProfile?.name || user?.email}
             </p>
-            <p className="text-xs text-white/50">{getRoleLabel(userRole as any)}</p>
+            <p className="text-xs text-white/50">{userProfile?.roleName || getRoleLabel(userRole as any)}</p>
             <p className="text-xs text-egen-yellow font-medium">{userProfile?.department}</p>
           </div>
         </div>

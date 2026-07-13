@@ -11,7 +11,6 @@ import { convertToContract } from '../../services/quotationService';
 import ProposalPrintDocument from './ProposalPrintDocument';
 import { useAuth } from '../../../../hooks/useAuth';
 import type { ProposalCoverConfig } from '../../../../hooks/useAppSettings';
-import { DepartmentLabels } from '../../../../types';
 import './ProposalPreview.css';
 
 // ============================================
@@ -56,9 +55,7 @@ export function QuotationPreview({
       name: userProfile?.name || '',
       email: userProfile?.email || user?.email || '',
       phone: userProfile?.phone || metadataPhone || '',
-      roleLabel: userProfile?.department
-        ? DepartmentLabels[userProfile.department]
-        : 'Comercial',
+      roleLabel: userProfile?.department || 'Comercial',
     };
   }, [user, userProfile]);
 

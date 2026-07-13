@@ -131,54 +131,49 @@ export interface FinancialMetrics {
   };
 }
 
-// New types for role-based access control
+// User role types (legacy — mantido para compatibilidade)
 export type UserRole = 'admin' | 'operator' | 'requester';
 
-export type Department =
-  | 'TRANSPORTE'
-  | 'ESTOQUE'
-  | 'FINANCEIRO'
-  | 'FATURAMENTO'
-  | 'AREA_TECNICA'
-  | 'RH'
-  | 'COMERCIAL'
-  | 'TI'
-  | 'MARKETING'
-  | 'QUALIDADE'
-  | 'COPA_LIMPEZA'
-  | 'ATENDIMENTO'
-  | 'DIRETORIA'
-  | 'BIOLOGIA_MOLECULAR';
+// Custom role (RBAC dinâmico)
+export interface CustomRole {
+  id: string;
+  name: string;
+  description: string | null;
+  permissions: string[];
+  isSystem: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
-export const DepartmentLabels: Record<Department, string> = {
-  TRANSPORTE: 'Transporte',
-  ESTOQUE: 'Estoque',
-  FINANCEIRO: 'Financeiro',
-  FATURAMENTO: 'Faturamento',
-  AREA_TECNICA: 'Área técnica',
-  RH: 'RH',
-  COMERCIAL: 'Comercial',
-  TI: 'TI',
-  MARKETING: 'Marketing',
-  QUALIDADE: 'Qualidade',
-  COPA_LIMPEZA: 'Copa/Limpeza',
-  ATENDIMENTO: 'Atendimento',
-  DIRETORIA: 'Diretoria',
-  BIOLOGIA_MOLECULAR: 'Biologia Molecular',
-};
-
+// Department (tabela gerenciável)
+export interface Department {
+  id: string;
+  name: string;
+  description: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface UserProfile {
   id: string;
   email: string;
   name: string;
   phone?: string;
+  avatar_url?: string;
+  qrcode_url?: string;
+  cpf?: string;
+  data_nascimento?: string;
   role: UserRole;
-  department: Department;
+  department: string;
+  customRoleId?: string;
+  permissions: string[];
+  roleName?: string;
   createdAt: string;
   updatedAt: string;
 }
 
+// Interface legada — mantida para compatibilidade transitória
 export interface RolePermissions {
   canViewDashboard: boolean;
   canManageEquipment: boolean;
@@ -186,17 +181,9 @@ export interface RolePermissions {
   canAddEquipment: boolean;
   canEditEquipment: boolean;
   canDeleteEquipment: boolean;
-  canViewMovements: boolean;
-  canAddMovements: boolean;
-  canViewRequests: boolean;
-  canAddRequests: boolean;
-  canApproveRequests: boolean;
-  canViewExpiration: boolean;
-  canViewChangelog: boolean;
   canManageUsers: boolean;
   canManageQuotations: boolean;
   canConfigureRequestPeriods: boolean;
-  // CRM permissions
   canViewClients: boolean;
   canCreateClients: boolean;
   canEditClients: boolean;

@@ -1,128 +1,51 @@
-import { UserRole, RolePermissions, Department } from '../types';
+import { UserRole } from '../types';
 
-export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
-  admin: {
-    canViewDashboard: true,
-    canManageEquipment: true,
-    canViewEquipment: true,
-    canAddEquipment: true,
-    canEditEquipment: true,
-    canDeleteEquipment: true,
-    canViewMovements: true,
-    canAddMovements: true,
-    canViewRequests: true,
-    canAddRequests: true,
-    canApproveRequests: true,
-    canViewExpiration: true,
-    canViewChangelog: true,
-    canManageUsers: true,
-    canManageQuotations: true,
-    canConfigureRequestPeriods: true,
-    canViewClients: true,
-    canCreateClients: true,
-    canEditClients: true,
-    canDeleteClients: true,
-    canViewLeads: true,
-    canCreateLeads: true,
-    canEditLeads: true,
-    canDeleteLeads: true,
-    canViewMaintenance: true,
-    canManageMaintenance: true,
-  },
-  operator: {
-    canViewDashboard: false,
-    canManageEquipment: true,
-    canViewEquipment: true,
-    canAddEquipment: true,
-    canEditEquipment: true,
-    canDeleteEquipment: true,
-    canViewMovements: true,
-    canAddMovements: true,
-    canViewRequests: true,
-    canAddRequests: true,
-    canApproveRequests: true,
-    canViewExpiration: true,
-    canViewChangelog: true,
-    canManageUsers: false,
-    canManageQuotations: true,
-    canConfigureRequestPeriods: true,
-    canViewClients: true,
-    canCreateClients: true,
-    canEditClients: true,
-    canDeleteClients: false,
-    canViewLeads: true,
-    canCreateLeads: true,
-    canEditLeads: true,
-    canDeleteLeads: false,
-    canViewMaintenance: true,
-    canManageMaintenance: true,
-  },
-  requester: {
-    canViewDashboard: false,
-    canManageEquipment: false,
-    canViewEquipment: false,
-    canAddEquipment: false,
-    canEditEquipment: false,
-    canDeleteEquipment: false,
-    canViewMovements: false,
-    canAddMovements: false,
-    canViewRequests: true,
-    canAddRequests: true,
-    canApproveRequests: false,
-    canViewExpiration: false,
-    canViewChangelog: false,
-    canManageUsers: false,
-    canManageQuotations: false,
-    canConfigureRequestPeriods: false,
-    canViewClients: false,
-    canCreateClients: false,
-    canEditClients: false,
-    canDeleteClients: false,
-    canViewLeads: false,
-    canCreateLeads: false,
-    canEditLeads: false,
-    canDeleteLeads: false,
-    canViewMaintenance: false,
-    canManageMaintenance: false,
-  },
-};
+export const ALL_PERMISSION_KEYS: { key: string; label: string; group: string }[] = [
+  { key: 'canViewDashboard', label: 'Visualizar Dashboard', group: 'Dashboard' },
 
-export const DEPARTMENT_ROLES: Record<Department, UserRole> = {
-  TRANSPORTE: 'requester',
-  ESTOQUE: 'admin',
-  FINANCEIRO: 'admin',
-  FATURAMENTO: 'requester',
-  AREA_TECNICA: 'requester',
-  RH: 'requester',
-  COMERCIAL: 'requester',
-  TI: 'operator',
-  MARKETING: 'requester',
-  ATENDIMENTO: 'requester',
-  DIRETORIA: 'admin',
-  COPA_LIMPEZA: 'requester',
-  QUALIDADE: 'requester',
-  BIOLOGIA_MOLECULAR: 'requester',
-};
+  { key: 'canManageEquipment', label: 'Gerenciar Equipamentos', group: 'Equipamentos' },
+  { key: 'canViewEquipment', label: 'Visualizar Equipamentos', group: 'Equipamentos' },
+  { key: 'canAddEquipment', label: 'Adicionar Equipamentos', group: 'Equipamentos' },
+  { key: 'canEditEquipment', label: 'Editar Equipamentos', group: 'Equipamentos' },
+  { key: 'canDeleteEquipment', label: 'Excluir Equipamentos', group: 'Equipamentos' },
 
-export const DEPARTMENTS: Department[] = [
-  'TRANSPORTE',
-  'ESTOQUE',
-  'FINANCEIRO',
-  'FATURAMENTO',
-  'AREA_TECNICA',
-  'RH',
-  'COMERCIAL',
-  'TI',
-  'MARKETING',
-  'ATENDIMENTO',
-  'DIRETORIA',
-  'COPA_LIMPEZA',
-  'QUALIDADE',
-  'BIOLOGIA_MOLECULAR',
+  { key: 'canViewClients', label: 'Visualizar Clientes', group: 'CRM' },
+  { key: 'canCreateClients', label: 'Criar Clientes', group: 'CRM' },
+  { key: 'canEditClients', label: 'Editar Clientes', group: 'CRM' },
+  { key: 'canDeleteClients', label: 'Excluir Clientes', group: 'CRM' },
+
+  { key: 'canViewLeads', label: 'Visualizar Leads', group: 'CRM' },
+  { key: 'canCreateLeads', label: 'Criar Leads', group: 'CRM' },
+  { key: 'canEditLeads', label: 'Editar Leads', group: 'CRM' },
+  { key: 'canDeleteLeads', label: 'Excluir Leads', group: 'CRM' },
+
+  { key: 'canManageQuotations', label: 'Gerenciar Propostas', group: 'Propostas' },
+  { key: 'canConfigureRequestPeriods', label: 'Configurar Períodos', group: 'Propostas' },
+
+  { key: 'canViewMaintenance', label: 'Visualizar Manutenções', group: 'Manutenção' },
+  { key: 'canManageMaintenance', label: 'Gerenciar Manutenções', group: 'Manutenção' },
+
+  { key: 'canManageUsers', label: 'Gerenciar Usuários', group: 'Administração' },
+  { key: 'canManageRoles', label: 'Gerenciar Cargos', group: 'Administração' },
+  { key: 'canManageDepartments', label: 'Gerenciar Departamentos', group: 'Administração' },
+  { key: 'canManageWhitelist', label: 'Gerenciar Whitelist', group: 'Administração' },
 ];
 
-export const getRolePermissions = (role: UserRole): RolePermissions => {
-  return ROLE_PERMISSIONS[role];
+// Fallback para roles legadas (transição)
+const LEGACY_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
+  admin: ALL_PERMISSION_KEYS.map(p => p.key),
+  operator: ALL_PERMISSION_KEYS.map(p => p.key).filter(
+    k => !['canViewDashboard', 'canManageUsers', 'canManageRoles', 'canManageDepartments', 'canManageWhitelist'].includes(k)
+  ),
+  requester: ['canViewClients', 'canViewLeads', 'canViewMaintenance'],
+};
+
+export const getPermissionsForLegacyRole = (role: UserRole): string[] => {
+  return LEGACY_ROLE_PERMISSIONS[role] || [];
+};
+
+export const hasPermission = (permissions: string[], permission: string): boolean => {
+  return permissions.includes(permission);
 };
 
 export const getRoleLabel = (role: UserRole): string => {
@@ -134,14 +57,6 @@ export const getRoleLabel = (role: UserRole): string => {
   return labels[role];
 };
 
-export const getDepartmentLabel = (department: Department): string => {
-  return department;
-};
+export const getDepartmentLabel = (name: string): string => name;
 
-export const getRoleForDepartment = (department: Department): UserRole => {
-  return DEPARTMENT_ROLES[department];
-};
-
-export const hasPermission = (userRole: UserRole, permission: keyof RolePermissions): boolean => {
-  return ROLE_PERMISSIONS[userRole][permission];
-};
+export const DEPARTMENTS = ['Administrativo', 'Comercial', 'TI'];

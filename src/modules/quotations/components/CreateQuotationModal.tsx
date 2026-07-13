@@ -12,7 +12,7 @@ import {
   Search,
   AlertTriangle,
 } from 'lucide-react';
-import { Department, DepartmentLabels } from '../../../types';
+import { Department } from '../../../types';
 import { CreateQuotationInput, QuotationItem } from '../types';
 import { useInventory } from '../../../hooks/useInventory';
 
@@ -35,10 +35,11 @@ const PRIORITY_OPTIONS = [
   { value: 'urgent', label: 'Urgente', color: 'bg-red-100 text-red-800' },
 ];
 
-const DEPARTMENTS = Object.entries(DepartmentLabels).map(([value, label]) => ({
-  value: value as Department,
-  label,
-}));
+const DEPARTMENTS: { value: string; label: string }[] = [
+  { value: 'Administrativo', label: 'Administrativo' },
+  { value: 'Comercial', label: 'Comercial' },
+  { value: 'TI', label: 'TI' },
+];
 
 interface ItemForm {
   equipmentName: string;
@@ -681,7 +682,7 @@ export const CreateQuotationModal: React.FC<CreateQuotationModalProps> = ({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500">Departamento:</span>
-                    <span className="font-medium text-gray-900">{DepartmentLabels[department]}</span>
+                    <span className="font-medium text-gray-900">{department}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500">Prioridade:</span>
