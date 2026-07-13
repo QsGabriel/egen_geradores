@@ -30,6 +30,7 @@ import type { SalesQuotation, DocumentStatus } from '../../types/proposal';
 import { DocumentStatusLabels, DocumentStatusColors, DocumentTipoLabels } from '../../types/proposal';
 import { useNotification } from '../../../../hooks/useNotification';
 import Notification from '../../../../components/Notification';
+import { supabase } from '../../../../lib/supabase';
 
 // ============================================
 // HELPERS
@@ -173,6 +174,9 @@ export default function ProposalManagementPage() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<DocumentStatus | 'all'>('all');
+  const [vendedorFilter, setVendedorFilter] = useState<string>('all');
+
+  const [vendedores, setVendedores] = useState<{ id: string; name: string }[]>([]);
 
   const [deleteTarget, setDeleteTarget] = useState<SalesQuotation | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -181,6 +185,12 @@ export default function ProposalManagementPage() {
 
   // ---- Data loading ----
 
+  useEffect(() => {
+    supabase.from('user_profiles').select('id, name').order('name').then(({ data }) => {
+      if (data) setVendedores(data);
+    });
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -188,6 +198,8 @@ export default function ProposalManagementPage() {
       const { data } = await quotationService.list({
         search: debouncedSearch || undefined,
         status: statusFilter !== 'all' ? statusFilter : undefined,
+        vendedorId: vendedorFilter !== 'all' ? vendedorFilter : undefined,
+        excludeDraft: statusFilter === 'all',
         limit: 100,
       });
       setProposals(data);
@@ -197,7 +209,7 @@ export default function ProposalManagementPage() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, statusFilter]);
+  }, [debouncedSearch, statusFilter, vendedorFilter]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -383,16 +395,38 @@ export default function ProposalManagementPage() {
             )}
           </div>
 
+          {/* Vendedor filter */}
+          <select
+            value={vendedorFilter}
+            onChange={e => setVendedorFilter(e.target.value)}
+            className="px-3 py-2.5 text-sm font-medium bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 cursor-pointer transition-all min-w-[140px]"
+          >
+            <option value="all">Todos os vendedores</option>
+            {vendedores.map(v => (
+              <option key={v.id} value={v.id}>{v.name}</option>
+            ))}
+          </select>
+
           {/* Active filter pill */}
-          {statusFilter !== 'all' && (
+          {(statusFilter !== 'all' || vendedorFilter !== 'all') && (
             <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Filtro:</span>
-              <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${DocumentStatusColors[statusFilter]}`}>
-                {DocumentStatusLabels[statusFilter]}
-                <button onClick={() => setStatusFilter('all')} className="hover:opacity-70 active:scale-90 transition-transform duration-150">
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">Filtros:</span>
+              {statusFilter !== 'all' && (
+                <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${DocumentStatusColors[statusFilter]}`}>
+                  {DocumentStatusLabels[statusFilter]}
+                  <button onClick={() => setStatusFilter('all')} className="hover:opacity-70 active:scale-90 transition-transform duration-150">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+              {vendedorFilter !== 'all' && (
+                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-[#F3B229]/10 text-[#B8860B] border border-[#F3B229]/30">
+                  {vendedores.find(v => v.id === vendedorFilter)?.name || vendedorFilter}
+                  <button onClick={() => setVendedorFilter('all')} className="hover:opacity-70 active:scale-90 transition-transform duration-150">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
             </div>
           )}
 
@@ -474,10 +508,10 @@ export default function ProposalManagementPage() {
                     Cliente
                   </th>
                   <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-36">
-                    Data de Emissão
+                    Vendedor
                   </th>
-                  <th className="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-40">
-                    Valor Total
+                  <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-36">
+                    Data de Emissão
                   </th>
                   <th className="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-44">
                     Status
@@ -528,24 +562,19 @@ export default function ProposalManagementPage() {
                       </div>
                     </td>
 
+                    {/* Vendedor */}
+                    <td className="px-5 py-4">
+                      <span className="text-sm text-gray-700 dark:text-gray-300">
+                        {vendedores.find(v => v.id === p.vendedorId)?.name || <span className="text-gray-400 italic">—</span>}
+                      </span>
+                    </td>
+
                     {/* Data */}
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
                         <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
                         <span className="text-sm">{formatDate(p.dataEmissao)}</span>
                       </div>
-                    </td>
-
-                    {/* Valor */}
-                    <td className="px-5 py-4 text-right">
-                      <span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">
-                        {formatCurrency(p.totalComDesconto || p.totalGeral || 0)}
-                      </span>
-                      {p.descontoPercent > 0 && (
-                        <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5">
-                          -{p.descontoPercent}% desc.
-                        </p>
-                      )}
                     </td>
 
                     {/* Status */}
@@ -638,16 +667,13 @@ export default function ProposalManagementPage() {
                   </div>
                 </div>
 
-                {/* Value + actions */}
+                {/* Vendedor + actions */}
                 <div className="flex items-center justify-between pt-1 border-t border-gray-100 dark:border-gray-700">
                   <div>
-                    <p className="text-xs text-gray-400 dark:text-gray-400 mb-0.5">Valor Total</p>
-                    <p className="font-bold text-gray-800 dark:text-gray-100">
-                      {formatCurrency(p.totalComDesconto || p.totalGeral || 0)}
+                    <p className="text-xs text-gray-400 dark:text-gray-400 mb-0.5">Vendedor</p>
+                    <p className="font-medium text-gray-700 dark:text-gray-300 text-sm">
+                      {vendedores.find(v => v.id === p.vendedorId)?.name || <span className="text-gray-400 italic">—</span>}
                     </p>
-                    {p.descontoPercent > 0 && (
-                      <p className="text-[10px] text-emerald-600 dark:text-emerald-400">-{p.descontoPercent}% desc.</p>
-                    )}
                   </div>
                   <div className="flex items-center gap-1">
                     <button

@@ -6,6 +6,42 @@ import { supabase } from '../../../lib/supabase';
 import type { SalesQuotation, DocumentStatus } from '../types/proposal';
 import { buildContractVars, renderContractText } from './contractTemplate';
 
+async function convertLeadToClient(leadId: string, leadData: {
+  name: string;
+  documentNumber?: string;
+  contactName: string;
+  contactPhone: string;
+  contactEmail: string;
+}): Promise<string> {
+  const { data: newClient, error: insertErr } = await supabase
+    .from('clients')
+    .insert({
+      name: leadData.name,
+      document_number: leadData.documentNumber || null,
+      contact_name: leadData.contactName,
+      contact_phone: leadData.contactPhone,
+      contact_email: leadData.contactEmail,
+      client_status: 'active',
+    })
+    .select()
+    .single();
+
+  if (insertErr) throw insertErr;
+
+  const { error: updateErr } = await supabase
+    .from('leads')
+    .update({
+      status: 'client_with_demand',
+      converted_client_id: newClient.id,
+      converted_at: new Date().toISOString(),
+    })
+    .eq('id', leadId);
+
+  if (updateErr) throw updateErr;
+
+  return newClient.id;
+}
+
 // ============================================
 // DATABASE ROW TYPE
 // ============================================
@@ -15,11 +51,12 @@ interface QuotationRow {
   document_id: string;
   client_id: string | null;
   lead_id: string | null;
+  vendedor_id: string | null;
   tipo: string;
   status: string;
   data_emissao: string;
   validade: string;
-  conteudo: any; // JSON containing full quotation data
+  conteudo: any;
   total_equipamentos: number;
   total_servicos: number;
   total_geral: number;
@@ -45,6 +82,7 @@ function quotationToRow(quotation: SalesQuotation): Omit<QuotationRow, 'created_
     document_id: quotation.documentId,
     client_id: quotation.clientId,
     lead_id: quotation.leadId,
+    vendedor_id: quotation.vendedorId ?? null,
     tipo: quotation.tipo,
     status: quotation.status,
     data_emissao: quotation.dataEmissao,
@@ -82,6 +120,7 @@ function rowToQuotation(row: QuotationRow): SalesQuotation {
     documentId: row.document_id,
     clientId: row.client_id,
     leadId: row.lead_id,
+    vendedorId: row.vendedor_id,
     tipo: row.tipo as SalesQuotation['tipo'],
     status: row.status as DocumentStatus,
     dataEmissao: row.data_emissao,
@@ -134,6 +173,11 @@ export async function createQuotation(
   row.created_by = userId || null;
   row.updated_by = userId || null;
 
+  // Transição automática: draft → negotiating
+  if (row.status === 'draft') {
+    row.status = 'negotiating';
+  }
+
   const { data, error } = await supabase
     .from('sales_quotations')
     .insert(row)
@@ -158,6 +202,11 @@ export async function updateQuotation(
   const row = quotationToRow(quotation);
   row.updated_by = userId || null;
   row.version = quotation.version + 1;
+
+  // Transição automática: draft → negotiating
+  if (row.status === 'draft') {
+    row.status = 'negotiating';
+  }
 
   const { data, error } = await supabase
     .from('sales_quotations')
@@ -224,11 +273,13 @@ export interface SalesQuotationFilters {
   tipo?: string;
   clientId?: string;
   leadId?: string;
+  vendedorId?: string;
   fromDate?: string;
   toDate?: string;
   search?: string;
   limit?: number;
   offset?: number;
+  excludeDraft?: boolean;
 }
 
 export async function listQuotations(filters: SalesQuotationFilters = {}): Promise<{
@@ -259,6 +310,14 @@ export async function listQuotations(filters: SalesQuotationFilters = {}): Promi
 
   if (filters.leadId) {
     query = query.eq('lead_id', filters.leadId);
+  }
+
+  if (filters.vendedorId) {
+    query = query.eq('vendedor_id', filters.vendedorId);
+  }
+
+  if (filters.excludeDraft) {
+    query = query.neq('status', 'draft');
   }
 
   if (filters.fromDate) {
@@ -444,7 +503,38 @@ export async function convertToContract(
     throw new Error('Contrato criado mas não encontrado na base. Verifique as permissões RLS.');
   }
 
-  // --- 4. Mark original proposal as annex + close it ---
+  // --- 4. Auto-convert lead to client ---
+  let finalContract = created;
+  let targetClientId = quotation.clientId;
+
+  if (quotation.leadId && !quotation.clientId) {
+    try {
+      const { data: lead } = await supabase.from('leads')
+        .select('name, company, phone, email, document_number')
+        .eq('id', quotation.leadId).single();
+
+      if (lead) {
+        const leadName = lead.company || lead.name;
+        const clientId = await convertLeadToClient(quotation.leadId, {
+          name: leadName,
+          documentNumber: lead.document_number || undefined,
+          contactName: lead.name,
+          contactPhone: lead.phone || '',
+          contactEmail: lead.email || '',
+        });
+        targetClientId = clientId;
+
+        // Update contract with new client_id
+        await supabase.from('sales_quotations').update({ client_id: clientId }).eq('id', contract.id);
+        finalContract = { ...created, clientId };
+      }
+    } catch (err) {
+      console.error('[convertToContract] Lead conversion failed:', err);
+      // Non-fatal: contract is still created, just without client link
+    }
+  }
+
+  // --- 5. Mark original proposal as annex + close it ---
   const updatedConteudo = {
     ...((quotation as any)._rawConteudo || {}),
     cliente: quotation.cliente,
@@ -462,12 +552,13 @@ export async function convertToContract(
     .from('sales_quotations')
     .update({
       status: 'closed',
+      client_id: targetClientId || undefined,
       conteudo: updatedConteudo,
       updated_by: userId || null,
     })
     .eq('id', id);
 
-  return created;
+  return finalContract;
 }
 
 // ============================================

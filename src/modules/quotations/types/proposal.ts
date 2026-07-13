@@ -202,6 +202,13 @@ export interface SalesQuotation {
   clientId: string | null;
   leadId: string | null;
   
+  // Vendedor responsável
+  vendedorId?: string | null;
+  vendedorNome?: string;
+  vendedorEmail?: string;
+  vendedorAvatar?: string;
+  vendedorQrcode?: string;
+  
   // Tipo e Status
   tipo: DocumentTipo;
   status: DocumentStatus;
@@ -264,6 +271,7 @@ export interface SalesQuotation {
 
 export interface SalesQuotationFormData {
   tipo: DocumentTipo;
+  vendedorId?: string | null;
   dataEmissao: string;
   validade: string;
   cliente: ClienteSnapshot;

@@ -19,7 +19,9 @@ import {
   Percent,
   AlignLeft,
   LayoutList,
+  UserCheck,
 } from 'lucide-react';
+import { supabase } from '../../../../lib/supabase';
 import { useQuotationStore } from '../../stores/quotationStore';
 import { ClientSelector } from './ClientSelector';
 import { EquipmentSelector } from './EquipmentSelector';
@@ -141,6 +143,7 @@ export function QuotationForm({ onSave, className = '' }: QuotationFormProps) {
     setTipo,
     setDataEmissao,
     setValidade,
+    setVendedorId,
     setDescontoPercent,
     setNotasInternas,
     setObservacoesGerais,
@@ -148,6 +151,14 @@ export function QuotationForm({ onSave, className = '' }: QuotationFormProps) {
     saveDraft,
     updateCliente,
   } = useQuotationStore();
+
+  const [vendedores, setVendedores] = useState<{ id: string; name: string; email: string }[]>([]);
+
+  useEffect(() => {
+    supabase.from('user_profiles').select('id, name, email').order('name').then(({ data }) => {
+      if (data) setVendedores(data);
+    });
+  }, []);
 
   // Accordion state
   const [openSections, setOpenSections] = useState<string[]>([
@@ -290,6 +301,24 @@ export function QuotationForm({ onSave, className = '' }: QuotationFormProps) {
                 {DocumentStatusLabels[current.status]}
               </div>
             </div>
+          </div>
+
+          {/* Vendedor Responsável */}
+          <div className="mt-3">
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5 flex items-center gap-1.5">
+              <UserCheck className="w-3.5 h-3.5" />
+              Vendedor Responsável
+            </label>
+            <select
+              value={current.vendedorId || ''}
+              onChange={(e) => setVendedorId(e.target.value || null)}
+              className="w-full px-3 py-2 text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
+            >
+              <option value="">Selecionar vendedor...</option>
+              {vendedores.map(v => (
+                <option key={v.id} value={v.id}>{v.name} ({v.email})</option>
+              ))}
+            </select>
           </div>
         </AccordionSection>
 
@@ -494,89 +523,6 @@ export function QuotationForm({ onSave, className = '' }: QuotationFormProps) {
             className="w-full px-3 py-2 text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30 placeholder:text-gray-400 dark:placeholder:text-gray-500"
           />
         </AccordionSection>
-      </div>
-
-      {/* Footer with Totals */}
-      <div className="px-3 sm:px-4 py-3 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:justify-between">
-          {/* Discount */}
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-2">
-              <Percent className="w-4 h-4 text-gray-400" />
-              <label className="text-sm text-gray-600 dark:text-gray-400">Desconto:</label>
-              <input
-                type="number"
-                min={0}
-                max={100}
-                step={0.5}
-                value={current.descontoPercent}
-                onChange={(e) => setDescontoPercent(parseFloat(e.target.value) || 0)}
-                className="w-20 px-2 py-1 text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-egen-navy/30 dark:focus:ring-egen-yellow/30 transition-all duration-150"
-              />
-              <span className="text-sm text-gray-500">%</span>
-            </div>
-            {totals.desconto > 0 && (
-              <span className="text-sm text-green-600 dark:text-green-400">
-                - {formatCurrency(totals.desconto)}
-              </span>
-            )}
-          </div>
-
-          {/* Totals */}
-          <div className="flex items-center gap-3 sm:gap-4 flex-wrap w-full sm:w-auto">
-            {/* Totais display mode toggle */}
-            <div className="flex items-center gap-2">
-              <LayoutList className="w-4 h-4 text-gray-400 hidden sm:block" />
-              <span className="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">Exibir totais:</span>
-              <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 text-xs font-medium">
-                <button
-                  onClick={() => setExibirTotaisPorTabela(true)}
-                  title="Opção A — subtotal por tabela"
-                  className={`px-3 py-1.5 transition-all duration-150 active:scale-[0.97] ${
-                    current.exibirTotaisPorTabela
-                      ? 'bg-egen-navy text-white'
-                      : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  A — Por tabela
-                </button>
-                <button
-                  onClick={() => setExibirTotaisPorTabela(false)}
-                  title="Opção B — total geral único"
-                  className={`px-3 py-1.5 border-l border-gray-200 dark:border-gray-700 transition-all duration-150 active:scale-[0.97] ${
-                    !current.exibirTotaisPorTabela
-                      ? 'bg-egen-navy text-white'
-                      : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  B — Total geral
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 sm:gap-6 ml-auto sm:ml-0">
-              <div className="text-right">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Periódicos</p>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-100">
-                  {formatCurrency(totals.periodicos)}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Spot</p>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-100">
-                  {formatCurrency(totals.spot)}
-                </p>
-              </div>
-              <div className="text-right pl-4 border-l border-gray-200 dark:border-gray-700">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Total</p>
-                <p className="text-lg font-bold text-egen-navy dark:text-egen-yellow flex items-center gap-2">
-                  <Calculator className="w-4 h-4" />
-                  {formatCurrency(totals.final)}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

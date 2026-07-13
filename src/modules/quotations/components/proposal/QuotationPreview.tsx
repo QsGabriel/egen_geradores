@@ -2,7 +2,7 @@
  * EGEN System - Quotation Preview Component
  * Componente de preview A4 para propostas comerciais
  */
-import React, { useRef, useMemo, useState, useCallback } from 'react';
+import React, { useRef, useMemo, useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Download, ZoomIn, ZoomOut, Maximize2, Loader2, FileCheck2 } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
@@ -10,6 +10,7 @@ import { useQuotationStore, selectCurrent } from '../../stores/quotationStore';
 import { convertToContract } from '../../services/quotationService';
 import ProposalPrintDocument from './ProposalPrintDocument';
 import { useAuth } from '../../../../hooks/useAuth';
+import { supabase } from '../../../../lib/supabase';
 import type { ProposalCoverConfig } from '../../../../hooks/useAppSettings';
 import './ProposalPreview.css';
 
@@ -46,7 +47,32 @@ export function QuotationPreview({
   const [isConverting, setIsConverting] = useState(false);
   const [convertError, setConvertError] = useState<string | null>(null);
 
+  const [vendedorProfile, setVendedorProfile] = useState<{
+    name: string; email: string; phone: string; avatar_url?: string; qrcode_url?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (current?.vendedorId) {
+      supabase.from('user_profiles').select('name, email, phone, avatar_url, qrcode_url')
+        .eq('id', current.vendedorId).single()
+        .then(({ data }) => { if (data) setVendedorProfile(data); });
+    } else {
+      setVendedorProfile(null);
+    }
+  }, [current?.vendedorId]);
+
   const seller = useMemo(() => {
+    if (vendedorProfile) {
+      return {
+        name: vendedorProfile.name || '',
+        email: vendedorProfile.email || '',
+        phone: vendedorProfile.phone || '',
+        roleLabel: 'Comercial',
+        avatarUrl: vendedorProfile.avatar_url || undefined,
+        qrcodeUrl: vendedorProfile.qrcode_url || undefined,
+      };
+    }
+
     const metadataPhone = typeof user?.user_metadata?.phone === 'string'
       ? user.user_metadata.phone
       : '';
@@ -56,8 +82,10 @@ export function QuotationPreview({
       email: userProfile?.email || user?.email || '',
       phone: userProfile?.phone || metadataPhone || '',
       roleLabel: userProfile?.department || 'Comercial',
+      avatarUrl: userProfile?.avatar_url || undefined,
+      qrcodeUrl: userProfile?.qrcode_url || undefined,
     };
-  }, [user, userProfile]);
+  }, [vendedorProfile, user, userProfile]);
 
   const documentContent = useMemo(() => {
     if (!current) {

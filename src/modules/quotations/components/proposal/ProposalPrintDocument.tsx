@@ -24,6 +24,8 @@ interface ProposalSellerInfo {
   email?: string;
   phone?: string;
   roleLabel?: string;
+  avatarUrl?: string;
+  qrcodeUrl?: string;
 }
 
 interface ScopePageSlice {
@@ -744,8 +746,10 @@ export default function ProposalPrintDocument({
       email: seller?.email?.trim() || DEFAULT_SELLER.email,
       phone: seller?.phone?.trim() || DEFAULT_SELLER.phone,
       roleLabel: seller?.roleLabel?.trim() || DEFAULT_SELLER.roleLabel,
+      avatarUrl: seller?.avatarUrl || '',
+      qrcodeUrl: seller?.qrcodeUrl || '',
     }),
-    [seller?.name, seller?.email, seller?.phone, seller?.roleLabel],
+    [seller?.name, seller?.email, seller?.phone, seller?.roleLabel, seller?.avatarUrl, seller?.qrcodeUrl],
   );
   const [sellerQrCode, setSellerQrCode] = useState<string>('');
 
@@ -981,7 +985,13 @@ export default function ProposalPrintDocument({
             </section>
 
             <section className="proposal-brand-panel">
-              {sellerQrCode ? (
+              {sellerInfo.qrcodeUrl ? (
+                <img
+                  src={sellerInfo.qrcodeUrl}
+                  alt="QR Code WhatsApp"
+                  className="proposal-brand-qr-image"
+                />
+              ) : sellerQrCode ? (
                 <img
                   src={sellerQrCode}
                   alt={`QR Code ${sellerInfo.name}`}
@@ -991,6 +1001,13 @@ export default function ProposalPrintDocument({
                 <div className="proposal-brand-qr" aria-label="QR CODE" />
               )}
               <div className="proposal-brand-contact">
+                {sellerInfo.avatarUrl && (
+                  <img
+                    src={sellerInfo.avatarUrl}
+                    alt={sellerInfo.name}
+                    className="w-14 h-14 rounded-xl object-cover mb-2"
+                  />
+                )}
                 <p className="proposal-brand-contact-name">{sellerInfo.name}</p>
                 <p className="proposal-brand-contact-role">{sellerInfo.roleLabel}</p>
                 <p>Tel.: {sellerInfo.phone}</p>
@@ -1124,15 +1141,6 @@ export default function ProposalPrintDocument({
                 ) : null}
               </table>
             </section>
-            ) : null}
-
-            {isLastScopePage ? (
-              <div className="proposal-totals-band">
-                <p className="proposal-totals-row">
-                  <span>VALOR TOTAL DO ORÇAMENTO</span>
-                  <strong>{formatCurrency(quotation.totalGeral)}</strong>
-                </p>
-              </div>
             ) : null}
 
             {isLastScopePage ? (

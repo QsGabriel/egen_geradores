@@ -65,6 +65,7 @@ interface QuotationStoreActions {
   updateCliente: <K extends keyof ClienteSnapshot>(field: K, value: ClienteSnapshot[K]) => void;
   setClientId: (clientId: string | null) => void;
   setLeadId: (leadId: string | null) => void;
+  setVendedorId: (vendedorId: string | null) => void;
   
   // Itens Periódicos
   addItemPeriodico: (item?: Partial<ProposalItemPeriodico>) => void;
@@ -144,6 +145,7 @@ function createEmptyQuotation(tipo: DocumentTipo = 'proposta'): SalesQuotation {
     documentId: generateDocumentId(tipo),
     clientId: null,
     leadId: null,
+    vendedorId: null,
     tipo,
     status: 'draft',
     dataEmissao: formatDate(now),
@@ -364,6 +366,16 @@ export const useQuotationStore = create<QuotationStore>()(
             if (!state.current) return state;
             return {
               current: { ...state.current, leadId },
+              isDirty: true,
+            };
+          });
+        },
+
+        setVendedorId: (vendedorId) => {
+          set((state) => {
+            if (!state.current) return state;
+            return {
+              current: { ...state.current, vendedorId },
               isDirty: true,
             };
           });
