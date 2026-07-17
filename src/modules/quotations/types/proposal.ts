@@ -44,7 +44,7 @@ export const DocumentStatusColors: Record<DocumentStatus, string> = {
 export type FranquiaHoras = 'standby' | '120h' | '240h' | '360h' | 'continuo';
 
 export const FranquiaHorasLabels: Record<FranquiaHoras, string> = {
-  standby: 'Stand-By (35h/mês)',
+  standby: 'Stand-By (4h/mês)',
   '120h': '120h/mês (04h/dia)',
   '240h': '240h/mês (08h/dia)',
   '360h': '360h/mês (12h/dia)',
