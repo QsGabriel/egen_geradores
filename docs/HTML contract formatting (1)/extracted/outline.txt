@@ -1,0 +1,114 @@
+¶[jc=center] <B>CONTRATO DE LOCAÇÃO </><B>GERADORES</>
+¶[style=PargrafodaLista jc=both num=2/0 ind:L0,FL0,H0 sp:b,a,l278] <B>Pelo presente instrumento particular de contrato de locação, das partes</>
+¶[style=PargrafodaLista jc=both ind:L0,FL0,H0 sp:b,a,l278] 
+¶[style=PargrafodaLista num=2/1 sp:b,a,l278] <B>LOCADORA:</> ↵NOME: EGEN GERADORES LTDA↵CNPJ:⇥53.457.416/0001-08 
+¶[style=PargrafodaLista ind:L180,FL0,H0] ENDEREÇO: ROD. BR 153, S/N, QUADRACH 07 LOTE 20 SALA 03 KM 03– CHACARÁ RETIRO, GOIÂNIA / GO – CEP: 74.620-425
+¶[style=PargrafodaLista ind:L180,FL0,H0] RESPONSÁVEL: EMMERSON DE JESUS CALDEIRA↵FONE: (62) 9 8470 -3985
+¶[style=PargrafodaLista ind:L0,FL0,H0] 
+¶[style=PargrafodaLista num=2/1] <B>LOCATÁRIA:</><B> </>39.938.575/0002-76↵<B>NOME:</> CCB PARTICIPAÇÕES E EMPREENDIMENTOS LTDA
+¶[] <B>    </><B>CNPJ</>:⇥39.938.575/0002-76
+¶[] <B>    </><B>ENDEREÇO</><B>:</> RUA DAS TULIPAS – RECANTO DAS ÁGUAS GOIANIRA – GO
+¶[ind:L180,FL0,H0] 
+¶[ind:L180,FL0,H0] <B>REPONSÁVE</><B>L</><B>:</><B> </>GUILHERME
+¶[style=PargrafodaLista jc=both ind:L180,FL0,H0 sp:b,a0,l278] 
+¶[style=PargrafodaLista num=2/1 sp:b,a0,l278] <B>LOCAL DE UTILIZAÇÃO:</><B> </><B>↵</><@10>SANTA BARBARA DE GOIAS- GO - https://maps.app.goo.gl/75DfMovRQABuTYG88?g_st=aw</>
+¶[sp:b,a0,l] 
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a0,l278] As partes acima identificadas têm, entre si, justo e acertado o presente <B>Contrato de Locação de Geradores de Energia a Diesel</>, incluindo acessórios, que se regerá pelas cláusulas e condições deste contrato devidamente assinado pelas partes.
+¶[style=PargrafodaLista ind:L180,FL0,H0 sp:b,a0,l] 
+¶[style=PargrafodaLista jc=both num=2/0 ind:L0,FL0,H0 sp:b,a,l278] <B>OBJETO DO CONTRATO E DOCUMENTOS </>
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] O presente contrato tem por objeto a locação os equipamentos relacionados no Anexo I – Proposta de Locação. 
+¶[ind:L709,FL0,H0] § O Anexo I deste Contrato especifica os equipamentos, acessórios, preços, prazos e condições acordados na data de sua celebração. Propostas e orçamentos adicionais não serão incorporados a este Contrato. Qualquer alteração no escopo ou nos valores exigirá a formalização de um aditivo contratual. 
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Os anexos listados abaixo são parte integrante deste Contrato:
+¶[style=PargrafodaLista jc=both num=2/2 ind:L0,FL0,H0 sp:b,a,l278] <B>Anexo I</> – Proposta técnica comercial.
+¶[style=PargrafodaLista jc=both num=2/2 ind:L0,FL0,H0 sp:b,a,l278] <B>Anexo II</> – Checklist de entrega ao cliente.
+¶[style=PargrafodaLista jc=both num=2/2 ind:L0,FL0,H0 sp:b,a,l278] <B>Anexo III</> – Romaneio de acessórios entregues ou NF de remessa.
+¶[style=PargrafodaLista jc=both num=2/2 ind:L0,FL0,H0 sp:b,a,l278] <B>Anexo IV</> – Nota fiscal de remessa.
+¶[style=PargrafodaLista jc=both num=2/2 ind:L0,FL0,H0 sp:b,a,l278] <B>Anexo </><B>VI</> – Checklist devolução a locadora.
+¶[style=PargrafodaLista jc=both num=2/2 ind:L0,FL0,H0 sp:b,a,l278] <B>Anexo VII</> – Romaneio de acessórios devolvidos.
+¶[style=PargrafodaLista jc=both num=2/2 ind:L0,FL0,H0 sp:b,a,l278] <B>Anexo VIII</> – Nota fiscal de remessa de devolução. 
+¶[style=PargrafodaLista jc=both ind:L0,FL0,H0 sp:b,a,l278] 
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Os equipamentos locados deverão ser utilizados no local indicado neste contrato no item 1.3. A transferência ou relocação para outro endereço só poderá ser realizada com autorização por escrito da LOCADORA, sob pena de inadimplemento contratual. 
+¶[style=PargrafodaLista] 
+¶[style=PargrafodaLista jc=both num=2/0 ind:L0,FL0,H0 sp:b,a,l278] <B>PRAZO DA LOCAÇÃO</>
+¶[style=PargrafodaLista ind:L0,FL0,H0] 
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] O prazo de locação e data de início e término é definida na proposta comercial, integrante deste documento como ANEXO I.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] O Contrato será renovado por prazo indeterminado caso a LOCATÁRIA continue na posse dos bens locados, sem oposição da LOCADORA.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Caso uma das partes não deseje dar continuidade à locação, deverá notificar a outra com, no mínimo, 7 (sete) dias de antecedência. Uma vez notificada a LOCADORA sobre a devolução, deverá ser observada as condições de desinstalação, frete e demais itens negociados no Anexo I, podendo, em caso de acordo mútuo, ser objeto de nova negociação entre as partes.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] A cobrança do período de locação será encerrada no dia seguinte à data em que a LOCADORA retomar a posse dos equipamentos locados. O preposto da LOCATÁRIA deverá estar presente para formalizar a devolução, tomar ciência de eventuais danos ou ausência de componentes e assinar a documentação correspondente nos Anexos VI, VII e VIII.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278]  Na ausência das notas fiscais de devolução de remessa, a cobrança da locação permanecerá válida até o recebimento da documentação fiscal correta pela LOCADORA, salvo nos casos em que a LOCATÁRIA não seja contribuinte do ICMS. Nesses casos, poderá ser emitida pela LOCADORA a nota fiscal de remessa de retorno, desde que a LOCATÁRIA assine a recusa de emissão no verso da nota fiscal de remessa da locação, concluindo a operação fiscal.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] As partes concordam que a ausência da LOCATÁRIA ou de seu preposto, conforme previsto anteriormente, será considerada como aceitação dos termos inspecionados no “Checklist de devolução à LOCADORA” e no “romaneio de acessórios devolvidos”.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Após a devolução, os equipamentos serão vistoriados por um preposto da LOCADORA. Se forem constatadas falhas de manutenções, ausência ou danos em peças, acessórios ou componentes, por responsabilidade da LOCATÁRIA, esta arcará com os custos de reposição, serviços e aluguéis pelo período de paralisação para reparo. O valor das peças será baseado no preço de mercado para peças originais na data da devolução.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] A LOCADORA reserva-se o direito de, no prazo de até 30 (trinta) dias após a devolução, verificar danos ocultos que não puderam ser constatados no momento da entrega. Caso sejam identificados e comprovados por meio de ordem de serviço, fotos e laudos, a LOCATÁRIA será responsável pelo ressarcimento das despesas com reparos, incluindo serviços, peças e aluguéis durante o período em que o equipamento permanecer inoperante.
+¶[style=PargrafodaLista] 
+¶[style=PargrafodaLista jc=both num=2/0 ind:L0,FL0,H0 sp:b,a,l278] <B>VALOR E FORMA DE PAGAMENTO</>
+¶[style=PargrafodaLista ind:L0,FL0,H0] 
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] A LOCATÁRIA pagará à LOCADORA os valores indicados no Anexo I deste Contrato, sendo o pagamento efetuado mediante apresentação de nota fiscal, demonstrativo ou outra forma de pagamento aceita. No caso de pagamentos à vista, os valores deverão ser depositados na conta corrente da LOCADORA e confirmados antes da execução dos serviços.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Se o vencimento coincidir com sábado, domingo ou feriado, o pagamento do aluguel deverá ser efetuado no primeiro dia útil subsequente.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Os valores referentes à medição de horas de utilização, horas excedentes e/ou energia gerada serão faturados por período de aferição e/ou ao final do período de locação, conforme descrito no Anexo I.
+¶[ind:L851,FL0,H2] § <I>O valor do </><I>horímetro</><I> a ser considerado será o RUN ABSOLUTE; para os equipamentos eletrônicos, o valor a ser considerado será o OPERATION). O </><I>horímetro</><I> inicial será informado nas observações da nota fiscal de locação. As leituras deverão ser enviadas pelo CLIENTE antes do fim de cada período.</>
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] A prorrogação do contrato não implica na obrigação da LOCADORA de manter o valor original da locação, permitindo-lhe reajustar os valores, inclusive com a aplicação de correção conforme o índice IGPM/FGV, desde que positivo e acumulado no período.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Durante a vigência da locação, caso a LOCATÁRIA solicite a devolução parcial dos bens locados antes do término do prazo estipulado no Anexo I, ela será responsável por todos os custos relacionados à desmobilização, além de arcar com o valor integral do período locado.
+¶[style=PargrafodaLista ind:L180,FL0,H0] 
+¶[style=PargrafodaLista jc=both num=2/0 ind:L0,FL0,H0 sp:b,a,l278] <B>OBRIGAÇÕES DA LOCADORA</>
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Entregar os bens e acessórios locados à LOCATÁRIA em condições perfeitas de funcionamento, devidamente testados e inspecionados, conforme os critérios estabelecidos no Anexo II – Checklist de Entrega ao Cliente.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Garantir o uso pacífico do objeto locado, enquanto a LOCATÁRIA cumprir os termos estabelecidos neste contrato.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Acompanhar e realizar a manutenção dos equipamentos locados conforme estabelecido no Anexo I.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Fornecer as informações técnicas necessárias para assegurar o adequado funcionamento e operação dos equipamentos locados.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Substituir ou reparar qualquer componente do equipamento locado que apresente defeito de fabricação.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Substituir o equipamento em caso de falhas que não possam ser solucionadas pela manutenção no local de utilização, conforme a disponibilidade de equipamento equivalente no pátio da LOCADORA.
+¶[style=PargrafodaLista ind:L180,FL0,H0] 
+¶[style=PargrafodaLista jc=both num=2/0 ind:L0,FL0,H0 sp:b,a,l278] <B> OBRIGAÇÕES DA LOCATÁRIA</>
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Testar e inspecionar os equipamentos no momento do recebimento, atestando sua conformidade por meio da assinatura do Anexo II – Checklist de Entrega ao Cliente. A referida assinatura deverá ser obrigatoriamente realizada por pessoa devidamente designada pela LOCATÁRIA, que se encontrará presente no local para receber os equipamentos e acessórios locados, sendo que a LOCATÁRIA reconhece, desde já, que a assinatura dessa pessoa será considerada como suficiente para representá-la no ato de recebimento.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] A LOCATÁRIA, por meio da assinatura dos Anexos II, III, IV e V no momento do recebimento, declara que os equipamentos se encontram em perfeito estado de uso, e que foi devidamente informada sobre sua correta utilização e operação. Compromete-se, assim, a devolvê-los nas mesmas condições de uso, funcionamento e segurança, ao término do período de locação.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Conservar os equipamentos locados na forma como o recebeu, ressalvando apenas desgaste natural decorrente de uso regular, sendo expressamente vedado a LOCATÁRIA realizar qualquer modificação ou adaptação nos bens locados.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] A LOCATÁRIA compromete-se a notificar a LOCADORA imediatamente, assim que identificar a necessidade de manutenções preventivas ou corretivas. Fica expressamente vedada a realização de qualquer intervenção nos equipamentos pela LOCATÁRIA sem a devida aprovação formal da LOCADORA.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Repassar à LOCADORA todas as informações comerciais e técnicas necessárias para a instalação e operação dos equipamentos, priorizando a segurança e o uso adequado, em estrito cumprimento das especificações técnicas de cada equipamento locado.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Efetuar, pontualmente, o pagamento do valor da locação e seus encargos durante toda a vigência do contrato, sendo expressamente vedada a interrupção do pagamento, por qualquer motivo que seja.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] É de inteira responsabilidade da LOCATÁRIA os encargos sociais, fiscais e trabalhistas decorrentes da contratação de pessoal para o manuseio e operação dos bens locados. Ademais, a LOCATÁRIA se compromete a permitir, a qualquer tempo e durante toda a vigência da locação, a livre inspeção dos equipamentos locados por representantes devidamente autorizados da LOCADORA.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Compromete-se igualmente a LOCATÁRIA a informar imediatamente a LOCADORA qualquer dano ou avaria ocasionado por seus prepostos ou ainda roubo, furto ou extravio do equipamento locado, acionando a Contratada através dos contatos disponibilizados, para a avaliação e elaboração de Laudo Técnico com apuração dos prejuízos ocasionados, respondendo a Contratante por perdas e danos nos termos do artigo 402, 403, 404, 405, 569 e 570 todos do Código Civil. O pagamento da locação será devido até que os bens sejam restaurados, substituídos ou devolvidos em perfeitas condições de uso e conservação.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] É vedado à LOCATÁRIA ceder, emprestar, arrendar, sublocar ou transferir os bens locados para outro local sem a devida autorização prévia e por escrito da LOCADORA.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] A LOCATÁRIA declara ter ciência de que os equipamentos não possuem seguro, sendo de sua responsabilidade a contratação e manutenção do seguro durante toda a vigência deste contrato. As apólices deverão cobrir todos os riscos inerentes ao uso dos equipamentos e a responsabilidade civil perante terceiros, com a LOCATÁRIA arcando com o pagamento do prêmio em caso de sinistro.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] No caso de qualquer apólice perder validade, não ser renovada ou sofrer alterações que comprometam sua eficácia, a LOCATÁRIA será responsável pelo pagamento integral ou complementar de todos os danos que seriam cobertos pelas apólices. A não constituição do seguro e a não apresentação à LOCADORA, por escrito, implicarão na total responsabilidade da LOCATÁRIA em caso de sinistro.
+¶[style=PargrafodaLista ind:L180,FL0,H0] 
+¶[style=PargrafodaLista jc=both num=2/0 ind:L0,FL0,H221 sp:b,a,l278] <B>MANUTENÇÕES E SUPORTE</>
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] A manutenção preventiva dos equipamentos será realizada a cada 250 horas de funcionamento ou a cada 6 meses. Os itens essenciais a serem considerados nas manutenções incluem: a substituição do óleo lubrificante, do filtro de óleo lubrificante, do filtro de combustível, a inspeção e eventual substituição do filtro de ar, a verificação de contatos elétricos e conexões, a inspeção do sistema de admissão de ar, a verificação do estado mecânico de partes móveis e fixas, e a complementação ou troca do líquido de arrefecimento.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Serviços diversos, incluindo, mas não se limitando a limpeza de radiador, tanque de combustível, alternadores, disjuntores, ou quaisquer outros serviços que se tornem necessários em decorrência do acúmulo de sujeira proveniente do local de utilização do equipamento, não serão considerados como parte integrante da manutenção preventiva. Tais serviços serão de responsabilidade da LOCATÁRIA, que arcará com os custos correspondentes, conforme orçamento previamente elaborado e aprovado.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] A LOCATÁRIA reconhece que a responsabilidade pelos custos da manutenção corretiva recairá sobre si em casos de falhas decorrentes de má operação, falta de combustível, mau uso, vandalismo, acidente, imperícia, negligência, imprudência, uso de combustível inadequado, sobrecarga e outros eventos que configuram mau uso. 
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] A LOCATÁRIA é responsável pela aquisição de Diesel de qualidade e por danos causados no sistema de injeção. Caso seja constatada má qualidade do combustível, arcará com os custos de laudos, hora técnica, reparos e quaisquer outros custos necessários.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] A LOCATÁRIA reconhece estar ciente de que ambientes hostis, com partículas em suspensão, umidade excessiva, poeira e vapores corrosivos, podem acelerar o desgaste anormal dos equipamentos e componentes, caracterizando mau uso. 
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Durante a utilização do gerador, deverá ser desconectada do circuito qualquer carga que adiante o fator de potência, como UPS, bancos de capacitores e outros dispositivos similares.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Para atendimentos decorrentes de mau uso, não se limitando às hipóteses especificadas neste contrato, a LOCADORA fornecerá ordem de serviço, documentação fotográfica e relatório detalhado com os custos envolvidos. Os valores apresentados deverão ser reembolsados pela LOCATÁRIA, de forma integral a LOCADORA.
+¶[style=PargrafodaLista jc=both ind:L180,FL0,H0 sp:b,a,l278] 
+¶[style=PargrafodaLista jc=both ind:L180,FL0,H0 sp:b,a,l278] 
+¶[style=PargrafodaLista jc=both num=2/0 ind:L0,FL0,H221 sp:b,a,l278] <B>DO INADIPLIMENTO</>
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Em caso de atraso no pagamento, será aplicada multa de 2%.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Juros de 1% ao mês serão calculados sobre o valor em atraso.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Haverá atualização monetária conforme índice aplicável.
+¶[style=PargrafodaLista ind:L180,FL0,H0] 
+¶[style=PargrafodaLista jc=both num=2/0 ind:L0,FL0,H221 sp:b,a,l278] <B>RESCISÃO DA LOCAÇÃO</>
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] A locadora poderá recolher os equipamentos sem aviso prévio caso ocorra:
+¶[style=PargrafodaLista jc=both num=3/0 sp:b,a,l278] inadimplência superior a 30 dias;
+¶[style=PargrafodaLista jc=both num=3/0 sp:b,a,l278] uso indevido ou em desacordo com as condições acordadas
+¶[style=PargrafodaLista jc=both num=3/0 sp:b,a,l278] mudança do local de instalação sem autorização.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Após o prazo mínimo contratado (conforme Anexo I), qualquer parte poderá encerrar a locação mediante aviso por escrito com, no mínimo, 07 (sete) dias de antecedência. Penalidades, se houver, seguirão o que for previsto no anexo.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Em caso de rescisão, a locatária deverá devolver os equipamentos e quitar eventuais valores em aberto, incluindo encargos. Caso não devolva os bens em até 72 horas após notificação, a locadora poderá retirá-los diretamente, sendo a locatária responsável pelos custos envolvidos.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] A Locatária se compromete a arcar integralmente com todos os custos inerentes à retirada dos equipamentos, em caso de falta de pagamento ou descumprimento de qualquer das cláusulas deste contrato que estejam sob sua responsabilidade.
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] O contrato poderá ser encerrado de imediato, sem aviso ou multa, caso uma das partes entre em falência, recuperação judicial, ou seja, dissolvida, arcando com eventuais custos e prejuízos.
+¶[style=PargrafodaLista] 
+¶[style=PargrafodaLista jc=both num=2/0 ind:L0,FL0,H221 sp:b,a,l278] <B>DISPOSIÇÕES GERAIS</>
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Qualquer alteração neste contrato deverá ser feita por meio de aditivo assinado por ambas as partes. 
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] O não exercício imediato de qualquer direito previsto neste contrato, por qualquer das partes, não será considerado como renúncia ou desistência desses direitos, que poderão ser exigidos a qualquer tempo.
+¶[style=PargrafodaLista jc=both ind:L180,FL0,H0 sp:b,a,l278] 
+¶[style=PargrafodaLista jc=both num=2/0 ind:L0,FL0,H221 sp:b,a,l278] <B>FORO</>
+¶[style=PargrafodaLista jc=both num=2/1 sp:b,a,l278] Fica estabelecido o foro da comarca de Goiânia/GO como o único competente para resolver quaisquer controvérsias decorrentes deste contrato.
+¶[jc=right] <#000000>Goiânia</><#000000>,</><#000000(Arial)> </><#000000>25 de junho de 2026</>
+¶[jc=right] 
+¶[jc=right] 
+¶[] <B>LOCADORA:</> EGEN GERADORES LTDA ⇥⇥                        Assinatura: __________________________
+¶[] 
+¶[] ↵<B>LOCATÁRIA</><B>:</><@10(Arial)> </><B>:</> CCB PARTICIPAÇÕES E EMPREENDIMENTOS      Assinatura: __________________________
+¶[] 
+¶[] <B>Testemunha 1:</> Nome: ______________________ ⇥        CPF: ________________________
+¶[] 
+¶[] <B>Testemunha 2:</> Nome: ______________________ ⇥        CPF: ________________________
+SECT: pgSz=11906x16838 margins T1985 R720 B567 L720 header709 footer224

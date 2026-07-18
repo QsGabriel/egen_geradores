@@ -503,8 +503,12 @@
 }
 
 /* ── Contract body — styled ── */
+/* Contract pages reclaim the generous bottom padding of the shared standard
+   body (15mm → 9mm) so clauses use more of the page height and fewer page
+   breaks are needed. Proposal pages keep their original padding. */
 .proposal-contract-body-container {
   overflow: hidden;
+  padding-bottom: 9mm;
 }
 
 /* ── Continuous-flow contract page (browser handles pagination) ── */
@@ -544,13 +548,14 @@
 .proposal-contract-body-wrapper {
   width: 186mm;
   margin: 0 auto;
-  color: #111111;
+  color: #000000;
+  font-family: Calibri, 'Segoe UI', sans-serif;
   font-size: 9.5pt;
-  line-height: 1.42;
+  line-height: 1.16;
 }
 
 .proposal-contract-main-title {
-  margin: 0 0 1.2mm;
+  margin: 0 0 3.4mm;
   font-size: 12pt;
   font-weight: 700;
   text-align: center;
@@ -558,17 +563,64 @@
   text-transform: uppercase;
 }
 
-.proposal-contract-date-line {
-  margin: 0 0 1.2mm;
-  font-size: 9pt;
-  text-align: center;
-  color: #444;
+/* Bold clause heading ("2. OBJETO DO CONTRATO E DOCUMENTOS") — prototype style. */
+.proposal-contract-heading {
+  margin: 3.4mm 0 2.1mm;
+  font-size: 9.5pt;
+  font-weight: 700;
+  color: #000000;
+  text-align: left;
 }
 
-.proposal-contract-separator {
-  margin: 1.4mm 0;
-  border: none;
-  border-top: 0.3mm solid #173172;
+/* Numbered clause / party paragraph. */
+.proposal-contract-clause {
+  margin: 0 0 2.3mm;
+  font-size: 9.5pt;
+}
+
+.proposal-contract-clause--justify {
+  text-align: justify;
+}
+
+.proposal-contract-clause--left {
+  text-align: left;
+}
+
+/* "§" note paragraph (indent supplied inline via padding-left). */
+.proposal-contract-note {
+  margin: 0 0 2.3mm;
+  font-size: 9.5pt;
+  text-align: justify;
+}
+
+.proposal-contract-note--italic {
+  font-style: italic;
+}
+
+/* Indented list (anexos "-" / alíneas "a) b) c)"). */
+.proposal-contract-list {
+  margin: 0 0 2.3mm;
+  display: grid;
+  gap: 0.6mm;
+  font-size: 9.5pt;
+}
+
+.proposal-contract-list-item {
+  text-align: left;
+}
+
+/* Closing date, right-aligned above the signature block. */
+.proposal-contract-closing-date {
+  margin: 3.4mm 0 4.5mm;
+  font-size: 9.5pt;
+  text-align: right;
+  color: #000000;
+}
+
+/* Signature block kept together (never split across pages). */
+.proposal-contract-signatures {
+  margin-top: 2mm;
+  break-inside: avoid;
 }
 
 .proposal-contract-section-title {

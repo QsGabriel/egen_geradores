@@ -1,6 +1,6 @@
 import React, { Fragment, useEffect, useMemo, useState } from 'react';
 import A4Page from './A4Page';
-import { formatCurrency, formatDate } from '../../engine';
+import { formatDate } from '../../engine';
 import { toDataURL } from 'qrcode';
 import {
   FranquiaHorasLabels,
@@ -12,6 +12,13 @@ import {
   type SalesQuotation,
 } from '../../types/proposal';
 import type { ProposalCoverConfig } from '../../../../hooks/useAppSettings';
+import {
+  buildContractBlocks,
+  buildContractVars,
+  paginateContractBlocks,
+  type ContractBlock,
+  type ContractInline,
+} from '../../services/contractTemplate';
 
 interface ProposalPrintDocumentProps {
   quotation: SalesQuotation;
@@ -340,368 +347,98 @@ function ConditionColumns({ rows }: { rows: ConditionRow[] }) {
 // CONTRACT BODY RENDERER
 // ============================================
 
-const CONTRACT_PAGE_MAX_HEIGHT_MM = 262;
-
-function isSectionTitleLine(line: string): boolean {
-  const t = line.trim();
-  return /^\d+\.\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ\s]{5,}$/.test(t) && !t.includes(':');
+function renderInline(nodes: ContractInline[]): React.ReactNode {
+  return nodes.map((node, idx) => {
+    if (node.t === 'br') return <br key={idx} />;
+    if (node.t === 'b') return <strong key={idx}>{node.value}</strong>;
+    return <React.Fragment key={idx}>{node.value}</React.Fragment>;
+  });
 }
 
-function isSubsectionOrSigLine(line: string): boolean {
-  const t = line.trim();
-  return /^\d+\.\d+\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ\s]{3,}:$/.test(t) || /^ASSINATURAS/.test(t);
+/**
+ * Signature block — kept from the previous layout by explicit request: a blue
+ * "ASSINATURAS" bar followed by flex rows (Locadora / Locatária + witnesses).
+ */
+function ContractSignatureBlock({ locatarioNome }: { locatarioNome: string }) {
+  return (
+    <div className="proposal-contract-signatures">
+      <h3 className="proposal-contract-section-title">ASSINATURAS</h3>
+
+      <div className="contract-signature-row">
+        <div className="contract-signature-left"><strong>Locadora:</strong> EGEN GERADORES LTDA</div>
+        <div className="contract-signature-right">Assinatura: ______________________________________</div>
+      </div>
+      <div className="contract-signature-row">
+        <div className="contract-signature-left"><strong>Locatária:</strong> {locatarioNome}</div>
+        <div className="contract-signature-right">Assinatura: ______________________________________</div>
+      </div>
+      <div className="contract-witness-row">
+        <div className="contract-witness-left"><strong>Testemunha 1:</strong> Nome: ______________________</div>
+        <div className="contract-witness-right">CPF: ________________________</div>
+      </div>
+      <div className="contract-witness-row">
+        <div className="contract-witness-left"><strong>Testemunha 2:</strong> Nome: ______________________</div>
+        <div className="contract-witness-right">CPF: ________________________</div>
+      </div>
+    </div>
+  );
 }
 
-function estimateContractLineHeight(line: string): number {
-  const trimmed = line.trim();
-
-  if (!trimmed) return 0;
-
-  // Separator
-  if (/^[─═]{5,}$/.test(trimmed)) return 3.1;
-
-  // Main title
-  if (/CONTRATO DE LOCAÇÃO/.test(trimmed)) return 5.8;
-
-  // Date line
-  if (/Goiânia,.*\|.*Contrato/.test(trimmed)) return 4.8;
-
-  // Section header (digit-based, no colon)
-  if (isSectionTitleLine(line)) return 8.9;
-
-  // ASSINATURAS heading
-  if (/^ASSINATURAS/.test(trimmed)) return 8.9;
-
-  // Subsection title (digit.digit-based)
-  if (/^\d+\.\d+\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ\s]{3,}:$/.test(trimmed)) return 5.3;
-
-  // Signature line with underscores (legacy)
-  if (/^(.+):\s_{3,}$/.test(trimmed) || /^(.+):\s_{3,}\s+(.+):\s_{3,}$/.test(trimmed)) {
-    return 7;
-  }
-
-  // Flex-separated signature/witness row
-  if (trimmed.includes(' || ')) {
-    return /^Testemunha\s+\d+:/.test(trimmed) ? 7.5 : 8.5;
-  }
-
-  // KV pair
-  if (/^[A-Za-zÀ-úçãõ\s]+:\s+.+$/.test(trimmed)) {
-    return 5.1;
-  }
-
-  // Regular body text
-  return 5;
-}
-
-function chunkContractByHeight(text: string): string[][] {
-  const lines = text.split('\n');
-  const chunks: string[][] = [];
-  let currentChunk: string[] = [];
-  let currentHeight = 0;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const h = estimateContractLineHeight(line);
-
-    if (currentHeight + h > CONTRACT_PAGE_MAX_HEIGHT_MM && currentChunk.length > 0 && h > 0) {
-      // Look for a paragraph break (blank line) within the last 10mm only —
-      // tighter window avoids large empty gaps at page bottoms
-      let breakAt = -1;
-      let lookbackHeight = 0;
-      for (let j = currentChunk.length - 1; j >= 0 && lookbackHeight < 10; j--) {
-        if (!currentChunk[j].trim()) {
-          // Don't orphan a section/subsection title
-          if (j + 1 < currentChunk.length) {
-            const nextLine = currentChunk[j + 1].trim();
-            if (isSectionTitleLine(currentChunk[j + 1]) || isSubsectionOrSigLine(currentChunk[j + 1])) {
-              lookbackHeight += estimateContractLineHeight(currentChunk[j]);
-              continue;
-            }
-          }
-          breakAt = j;
-          break;
+/** Renders a single paginated page of contract blocks. */
+function ContractBlocks({ blocks }: { blocks: ContractBlock[] }) {
+  return (
+    <div className="proposal-contract-body-wrapper">
+      {blocks.map((block, idx) => {
+        switch (block.kind) {
+          case 'doc-title':
+            return <h2 key={idx} className="proposal-contract-main-title">{block.text}</h2>;
+          case 'section':
+            return (
+              <p key={idx} className="proposal-contract-heading">
+                {renderInline(block.content)}
+              </p>
+            );
+          case 'clause':
+            return (
+              <p
+                key={idx}
+                className={`proposal-contract-clause proposal-contract-clause--${block.align}`}
+              >
+                {renderInline(block.content)}
+              </p>
+            );
+          case 'note':
+            return (
+              <p
+                key={idx}
+                className={`proposal-contract-note${block.italic ? ' proposal-contract-note--italic' : ''}`}
+                style={{ paddingLeft: `${block.indentMm}mm` }}
+              >
+                {renderInline(block.content)}
+              </p>
+            );
+          case 'list':
+            return (
+              <div
+                key={idx}
+                className="proposal-contract-list"
+                style={{ paddingLeft: `${block.indentMm}mm` }}
+              >
+                {block.items.map((item, i) => (
+                  <div key={i} className="proposal-contract-list-item">
+                    {renderInline(item)}
+                  </div>
+                ))}
+              </div>
+            );
+          case 'closing-date':
+            return <p key={idx} className="proposal-contract-closing-date">{block.text}</p>;
+          case 'signatures':
+            return <ContractSignatureBlock key={idx} locatarioNome={block.locatarioNome} />;
         }
-        lookbackHeight += estimateContractLineHeight(currentChunk[j]);
-      }
-
-      if (breakAt >= 0) {
-        const carriedLines = currentChunk.slice(breakAt + 1);
-        currentChunk = currentChunk.slice(0, breakAt);
-        while (currentChunk.length > 0 && !currentChunk[currentChunk.length - 1].trim()) {
-          currentChunk.pop();
-        }
-        chunks.push(currentChunk);
-        currentChunk = carriedLines;
-        currentHeight = carriedLines.reduce(
-          (sum, l) => sum + estimateContractLineHeight(l),
-          0,
-        );
-      } else {
-        while (
-          currentChunk.length > 0
-          && !currentChunk[currentChunk.length - 1].trim()
-        ) {
-          currentChunk.pop();
-        }
-        chunks.push(currentChunk);
-        currentChunk = [];
-        currentHeight = 0;
-      }
-    }
-
-    currentChunk.push(line);
-    currentHeight += h;
-  }
-
-  if (currentChunk.length > 0) {
-    chunks.push(currentChunk);
-  }
-
-  return chunks;
-}
-
-function isContinuationLine(line: string): boolean {
-  return line !== line.trim() && (line.startsWith(' ') || line.startsWith('\t'));
-}
-
-function ContractBody({ text }: { text: string }) {
-  const lines = text.split('\n');
-
-  const elements: React.ReactNode[] = [];
-  let key = 0;
-  let inSubsection = false;
-  let inSignatureBlock = false;
-
-  // Accumulate consecutive body-text lines so they render as a single <p>
-  let pendingBody: string[] = [];
-  let pendingBodyType: 'subsection' | 'standalone' | null = null;
-
-  function flushBody() {
-    if (pendingBody.length === 0) return;
-    const merged = pendingBody
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .join(' ');
-
-    const segments = merged.split(/\{br\}/g);
-    const content = segments.map((seg, idx) => (
-      <React.Fragment key={idx}>
-        {idx > 0 && <br />}
-        {seg.trim()}
-      </React.Fragment>
-    ));
-
-    if (pendingBodyType === 'subsection') {
-      elements.push(
-        <p key={key++} className="proposal-contract-body">
-          {content}
-        </p>,
-      );
-    } else if (pendingBodyType === 'standalone') {
-      elements.push(
-        <p key={key++} className="proposal-contract-standalone">
-          {content}
-        </p>,
-      );
-    }
-    pendingBody = [];
-    pendingBodyType = null;
-  }
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const trimmed = line.trim();
-
-    // Blank line
-    if (!trimmed) {
-      flushBody();
-      if (inSubsection) {
-        inSubsection = false;
-        elements.push(<div key={key++} className="proposal-contract-subsection-end" />);
-      }
-      continue;
-    }
-
-    // Separator line (all ─ or similar)
-    if (/^[─═]{5,}$/.test(trimmed)) {
-      flushBody();
-      elements.push(<hr key={key++} className="proposal-contract-separator" />);
-      inSubsection = false;
-      continue;
-    }
-
-    // Main title (first non-separator line)
-    if (key === 0 && /CONTRATO DE LOCAÇÃO/.test(trimmed)) {
-      flushBody();
-      elements.push(<h2 key={key++} className="proposal-contract-main-title">{trimmed}</h2>);
-      continue;
-    }
-
-    // Date line (Goiânia, ... | Contrato ...)
-    if (/Goiânia,.*\|.*Contrato/.test(trimmed)) {
-      flushBody();
-      elements.push(<p key={key++} className="proposal-contract-date-line">{trimmed}</p>);
-      continue;
-    }
-
-    // Section header: "1. PARTES CONTRATANTES E LOCAL"
-    if (isSectionTitleLine(line)) {
-      flushBody();
-      elements.push(<h3 key={key++} className="proposal-contract-section-title">{trimmed}</h3>);
-      inSubsection = false;
-      continue;
-    }
-
-    // ASSINATURAS heading — blue bar like numbered sections
-    if (trimmed === 'ASSINATURAS' || trimmed.startsWith('ASSINATURAS')) {
-      flushBody();
-      inSignatureBlock = true;
-      inSubsection = false;
-      elements.push(<h3 key={key++} className="proposal-contract-section-title">{trimmed}</h3>);
-      continue;
-    }
-
-    // Subsection header: "1.1 LOCADORA:" or "1.2 LOCATÁRIO:"
-    if (/^\d+\.\d+\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ\s]{3,}:$/.test(trimmed)) {
-      flushBody();
-      if (inSubsection) {
-        elements.push(<div key={key++} className="proposal-contract-subsection-end" />);
-      }
-      inSubsection = true;
-
-      elements.push(
-        <div key={key++} className="proposal-contract-subsection">
-          <h4 className="proposal-contract-subsection-title">{trimmed}</h4>
-        </div>,
-      );
-      continue;
-    }
-
-    // Signature-block flex-separated rows: "Left || Right"
-    if (inSignatureBlock && trimmed.includes(' || ')) {
-      flushBody();
-      const sepIdx = trimmed.indexOf(' || ');
-      const leftPart = trimmed.slice(0, sepIdx);
-      const rightPart = trimmed.slice(sepIdx + 4);
-      const isWitness = /^Testemunha\s+\d+:/.test(leftPart);
-
-      const renderPart = (text: string): React.ReactNode => {
-        const colonIdx = text.indexOf(':');
-        if (colonIdx === -1) return text;
-        return (
-          <>
-            <strong>{text.slice(0, colonIdx + 1)}</strong>
-            {text.slice(colonIdx + 1)}
-          </>
-        );
-      };
-
-      elements.push(
-        <div
-          key={key++}
-          className={
-            isWitness ? 'contract-witness-row' : 'contract-signature-row'
-          }
-        >
-          <div
-            className={
-              isWitness ? 'contract-witness-left' : 'contract-signature-left'
-            }
-          >
-            {renderPart(leftPart)}
-          </div>
-          <div
-            className={
-              isWitness ? 'contract-witness-right' : 'contract-signature-right'
-            }
-          >
-            {renderPart(rightPart)}
-          </div>
-        </div>,
-      );
-      continue;
-    }
-
-    // Body text inside subsection or standalone paragraph
-    if (inSubsection) {
-      // Key-value pair: "Nome: EGEN GERADORES" (with continuation support)
-      const kvMatch = trimmed.match(/^([A-Za-zÀ-úçãõ\s]+):\s+(.+)$/);
-      if (kvMatch && !trimmed.startsWith('Assinatura:')) {
-        flushBody();
-        let valStr = kvMatch[2];
-        // Consume continuation lines for this KV value
-        while (i + 1 < lines.length) {
-          const nextLine = lines[i + 1];
-          const nextTrimmed = nextLine.trim();
-          if (!nextTrimmed) break;
-          if (/^[─═]{5,}$/.test(nextTrimmed)) break;
-          // Stop if next line looks like a new KV pair or section header
-          if (/^([A-Za-zÀ-úçãõ\s]+):\s+.+$/.test(nextTrimmed)) break;
-          if (/^\d+\.\d+\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ\s]{3,}:$/.test(nextTrimmed)) break;
-          if (isContinuationLine(nextLine)) {
-            i++;
-            valStr += ' ' + nextTrimmed;
-          } else {
-            break;
-          }
-        }
-        elements.push(
-          <p key={key++} className="proposal-contract-kv">
-            <span className="proposal-contract-kv-key">{kvMatch[1]}:</span>{' '}
-            <span className="proposal-contract-kv-value">{valStr}</span>
-          </p>,
-        );
-        continue;
-      }
-
-      // Signature lines
-      if (inSignatureBlock && /^(.+):\s_{3,}$/.test(trimmed)) {
-        flushBody();
-        const sigMatch = trimmed.match(/^(.+):\s(_{3,})$/);
-        elements.push(
-          <p key={key++} className="proposal-contract-signature-line">
-            <strong>{sigMatch![1]}:</strong> {sigMatch![2]}
-          </p>,
-        );
-        continue;
-      }
-
-      if (inSignatureBlock && /^(.+):\s_{3,}\s+(.+):\s_{3,}$/.test(trimmed)) {
-        flushBody();
-        elements.push(
-          <p key={key++} className="proposal-contract-signature-line">{trimmed}</p>,
-        );
-        continue;
-      }
-
-      // Regular body text inside subsection — accumulate continuation lines
-      if (isContinuationLine(line) && pendingBodyType === 'subsection' && pendingBody.length > 0) {
-        pendingBody.push(trimmed);
-      } else {
-        flushBody();
-        pendingBody = [trimmed];
-        pendingBodyType = 'subsection';
-      }
-    } else {
-      // Standalone paragraph — accumulate continuation lines
-      if (isContinuationLine(line) && pendingBodyType === 'standalone' && pendingBody.length > 0) {
-        pendingBody.push(trimmed);
-      } else {
-        flushBody();
-        pendingBody = [trimmed];
-        pendingBodyType = 'standalone';
-      }
-    }
-  }
-
-  flushBody();
-
-  if (inSubsection) {
-    elements.push(<div key={key++} className="proposal-contract-subsection-end" />);
-  }
-
-  return <div className="proposal-contract-body-wrapper">{elements}</div>;
+      })}
+    </div>
+  );
 }
 
 function ExceedingHoursTable({ rows }: { rows: ProposalHoraExcedente[] }) {
@@ -785,10 +522,11 @@ export default function ProposalPrintDocument({
     [quotation.itensPeriodicos, quotation.itensSpot],
   );
 
-  const contractPageChunks = useMemo(() => {
-    if (quotation.tipo !== 'contrato' || !quotation.contractText) return [];
-    return chunkContractByHeight(quotation.contractText);
-  }, [quotation.tipo, quotation.contractText]);
+  const contractPages = useMemo(() => {
+    if (quotation.tipo !== 'contrato') return [];
+    const vars = buildContractVars(quotation, quotation.documentId);
+    return paginateContractBlocks(buildContractBlocks(vars));
+  }, [quotation]);
 
   const issueLine = formatIssueLine(quotation.dataEmissao);
   const conditionRows = buildConditionRows(quotation.condicoes);
@@ -878,7 +616,7 @@ export default function ProposalPrintDocument({
 
   const proposalPageCount = 1 + scopePages.length + (includeCommercialPage ? 1 : 0) + 1;
   const totalPages = showAsAnnex
-    ? 1 + contractPageChunks.length + proposalPageCount
+    ? 1 + contractPages.length + proposalPageCount
     : 1 + proposalPageCount;
 
   const coverTitleColor = coverConfig?.textColor || '#ffffff';
@@ -907,15 +645,15 @@ export default function ProposalPrintDocument({
     ),
   });
 
-  if (showAsAnnex && contractPageChunks.length > 0) {
-    contractPageChunks.forEach((chunk, idx) => {
+  if (showAsAnnex && contractPages.length > 0) {
+    contractPages.forEach((blocks, idx) => {
       pages.push({
         key: `contract-body-${idx}`,
         content: (
           <A4Page className="proposal-standard-page">
             <ProposalHeader issueLine={issueLine} documentId={quotation.documentId} tipo={quotation.tipo} />
             <div className="proposal-standard-body proposal-contract-body-container">
-              <ContractBody text={chunk.join('\n')} />
+              <ContractBlocks blocks={blocks} />
             </div>
             <ProposalFooter pageNumber={idx + 2} totalPages={totalPages} />
           </A4Page>
@@ -924,7 +662,7 @@ export default function ProposalPrintDocument({
     });
   }
 
-  const proposalPageOffset = contractPageChunks.length;
+  const proposalPageOffset = contractPages.length;
   const proposalAnnexLabel = showAsAnnex ? 'ANEXO0001' : annexLabel;
 
   pages.push({
