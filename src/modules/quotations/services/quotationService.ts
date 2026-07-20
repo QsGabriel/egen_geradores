@@ -280,7 +280,23 @@ export interface SalesQuotationFilters {
   limit?: number;
   offset?: number;
   excludeDraft?: boolean;
+  sortField?: string;
+  sortDir?: 'asc' | 'desc';
+  minValue?: number;
+  maxValue?: number;
+  page?: number;
+  pageSize?: number;
 }
+
+const SORT_FIELD_MAP: Record<string, string> = {
+  documentId: 'document_id',
+  dataEmissao: 'data_emissao',
+  status: 'status',
+  valorTotal: 'total_com_desconto',
+  tipo: 'tipo',
+  cliente: 'conteudo->cliente->>nome',
+  vendedor: 'vendedor_id',
+};
 
 export async function listQuotations(filters: SalesQuotationFilters = {}): Promise<{
   data: SalesQuotation[];
@@ -288,10 +304,8 @@ export async function listQuotations(filters: SalesQuotationFilters = {}): Promi
 }> {
   let query = supabase
     .from('sales_quotations')
-    .select('*', { count: 'exact' })
-    .order('created_at', { ascending: false });
+    .select('*', { count: 'exact' });
 
-  // Apply filters
   if (filters.status) {
     if (Array.isArray(filters.status)) {
       query = query.in('status', filters.status);
@@ -328,16 +342,38 @@ export async function listQuotations(filters: SalesQuotationFilters = {}): Promi
     query = query.lte('data_emissao', filters.toDate);
   }
 
+  if (filters.minValue != null) {
+    query = query.gte('total_com_desconto', filters.minValue);
+  }
+
+  if (filters.maxValue != null) {
+    query = query.lte('total_com_desconto', filters.maxValue);
+  }
+
   if (filters.search) {
-    query = query.or(`document_id.ilike.%${filters.search}%,conteudo->cliente->nome.ilike.%${filters.search}%`);
+    query = query.or(`document_id.ilike.%${filters.search}%,conteudo->cliente->>nome.ilike.%${filters.search}%`);
   }
 
-  if (filters.limit) {
+  if (filters.sortField && SORT_FIELD_MAP[filters.sortField]) {
+    const dbField = SORT_FIELD_MAP[filters.sortField];
+    const ascending = filters.sortDir !== 'desc';
+    query = query.order(dbField, { ascending });
+  } else {
+    query = query.order('created_at', { ascending: false });
+  }
+
+  const page = filters.page ?? 1;
+  const pageSize = filters.pageSize ?? 25;
+
+  if (filters.page != null) {
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+    query = query.range(from, to);
+  } else if (filters.limit) {
     query = query.limit(filters.limit);
-  }
-
-  if (filters.offset) {
-    query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1);
+    if (filters.offset) {
+      query = query.range(filters.offset, filters.offset + filters.limit - 1);
+    }
   }
 
   const { data, error, count } = await query;

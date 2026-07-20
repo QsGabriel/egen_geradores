@@ -49,6 +49,7 @@ export interface CRMDashboardMetrics {
   recentActivity: CrmActivity[];
   monthlyClientGrowth: MonthlyTrend[];
   monthlyLeadGrowth: MonthlyTrend[];
+  vendedorRanking: VendedorRanking[];
 }
 
 export interface CrmActivity {
@@ -64,11 +65,20 @@ export interface MonthlyTrend {
   count: number;
 }
 
-export function useCRMDashboard() {
+export interface VendedorRanking {
+  id: string;
+  name: string;
+  totalPropostas: number;
+  valorTotal: number;
+  propostasFechadas: number;
+}
+
+export function useCRMDashboard(vendedorId?: string | null, includeRanking: boolean = true) {
   const [clients, setClients] = useState<Client[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [quotations, setQuotations] = useState<CRMQuotation[]>([]);
   const [salesQuotations, setSalesQuotations] = useState<SalesQuotationSummary[]>([]);
+  const [vendedorRanking, setVendedorRanking] = useState<VendedorRanking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -77,11 +87,16 @@ export function useCRMDashboard() {
       setLoading(true);
       setError(null);
 
+      let salesQuery = supabase.from('sales_quotations').select('*').order('created_at', { ascending: false });
+      if (vendedorId) {
+        salesQuery = salesQuery.eq('vendedor_id', vendedorId);
+      }
+
       const [clientsRes, leadsRes, quotationsRes, salesRes] = await Promise.all([
         supabase.from('clients').select('*').order('created_at', { ascending: false }),
         supabase.from('leads').select('*').order('created_at', { ascending: false }),
         supabase.from('quotations').select('*').order('created_at', { ascending: false }),
-        supabase.from('sales_quotations').select('*').order('created_at', { ascending: false }),
+        salesQuery,
       ]);
 
       if (clientsRes.error) console.warn('Erro ao buscar clients:', clientsRes.error.message);
@@ -102,18 +117,55 @@ export function useCRMDashboard() {
 
       setQuotations(rawQuotations.map((q: any) => mapQuotation(q, clientMap)));
       setSalesQuotations(rawSales.map(mapSalesQuotation));
+
+      // Ranking de vendedores — só busca quando o usuário tem permissão
+      // (evita expor a produção de terceiros a quem não pode vê-la).
+      if (includeRanking) {
+        const rankingRes = await supabase
+          .from('sales_quotations')
+          .select('vendedor_id, total_com_desconto, status')
+          .not('vendedor_id', 'is', null);
+        const rankingRaw: any[] = rankingRes.data || [];
+        if (rankingRaw.length > 0) {
+          const vendedorIds = [...new Set(rankingRaw.map(r => r.vendedor_id))];
+          const { data: profiles } = await supabase.from('user_profiles').select('id, name').in('id', vendedorIds);
+          const nameMap = new Map<string, string>();
+          (profiles || []).forEach((p: any) => nameMap.set(p.id, p.name));
+          const rankingMap = new Map<string, VendedorRanking>();
+          rankingRaw.forEach((r: any) => {
+            const entry = rankingMap.get(r.vendedor_id) || {
+              id: r.vendedor_id,
+              name: nameMap.get(r.vendedor_id) || 'Desconhecido',
+              totalPropostas: 0,
+              valorTotal: 0,
+              propostasFechadas: 0,
+            };
+            entry.totalPropostas++;
+            entry.valorTotal += r.total_com_desconto || 0;
+            if (r.status === 'closed') entry.propostasFechadas++;
+            rankingMap.set(r.vendedor_id, entry);
+          });
+          setVendedorRanking(
+            Array.from(rankingMap.values()).sort((a, b) => b.valorTotal - a.valorTotal),
+          );
+        } else {
+          setVendedorRanking([]);
+        }
+      } else {
+        setVendedorRanking([]);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar dados');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [vendedorId, includeRanking]);
 
   useEffect(() => {
     fetchAll();
   }, [fetchAll]);
 
-  const metrics = computeMetrics(clients, leads, quotations, salesQuotations);
+  const metrics = computeMetrics(clients, leads, quotations, salesQuotations, vendedorRanking);
 
   return {
     clients,
@@ -210,6 +262,7 @@ function computeMetrics(
   leads: Lead[],
   quotations: CRMQuotation[],
   salesQuotations: SalesQuotationSummary[],
+  vendedorRanking: VendedorRanking[],
 ): CRMDashboardMetrics {
   const now = new Date();
   const thisMonth = now.getMonth();
@@ -287,6 +340,7 @@ function computeMetrics(
     recentActivity,
     monthlyClientGrowth,
     monthlyLeadGrowth,
+    vendedorRanking,
   };
 }
 

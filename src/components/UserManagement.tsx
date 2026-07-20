@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Edit, Shield, Plus, X, Save, UserCog, User, ShieldCheck, Search, UserPlus, Trash2, Lock, Building2, Check } from 'lucide-react';
+import { Users, Edit, Shield, Plus, X, Save, UserCog, User, ShieldCheck, Search, UserPlus, Trash2, Lock, Building2, Check, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNotification } from '../hooks/useNotification';
 import { supabase } from '../lib/supabase';
@@ -56,6 +56,9 @@ const UserManagement: React.FC = () => {
     customRoleId: '' as string,
     department: '' as string,
   });
+
+  const [deleteTarget, setDeleteTarget] = useState<UserProfile | null>(null);
+  const [deletingUser, setDeletingUser] = useState(false);
 
   const topRef = React.useRef<HTMLDivElement>(null);
 
@@ -168,6 +171,29 @@ const UserManagement: React.FC = () => {
     setEditingUser(null);
     setShowAddForm(false);
   };
+
+  const handleDeleteUser = async () => {
+    if (!deleteTarget) return;
+    setDeletingUser(true);
+    try {
+      const { error: profileErr } = await supabase
+        .from('user_profiles')
+        .delete()
+        .eq('id', deleteTarget.id);
+
+      if (profileErr) throw new Error(profileErr.message);
+
+      showSuccess('Usuário excluído', `${deleteTarget.name} foi removido com sucesso.`);
+      setDeleteTarget(null);
+      await fetchUsers();
+    } catch (error: any) {
+      showError('Erro ao excluir', error?.message || 'Não foi possível excluir o usuário.');
+    } finally {
+      setDeletingUser(false);
+    }
+  };
+
+  const userPermissions = userProfile?.permissions ?? [];
 
   const handleUserCreated = (tempPassword: string) => {
     setShowNewUserForm(false);
@@ -321,8 +347,6 @@ const UserManagement: React.FC = () => {
 
   const activeFilterCount = (filterRole !== 'all' ? 1 : 0) + (filterDept !== 'all' ? 1 : 0);
 
-  const userPermissions = userProfile?.permissions || [];
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -351,9 +375,50 @@ const UserManagement: React.FC = () => {
           <button onClick={() => setShowNewUserForm(true)} className="flex items-center px-4 py-2 bg-gradient-to-r from-[#F3B229] to-[#E5A320] text-white rounded-xl hover:from-[#E5A320] hover:to-[#D4941A] transition-all duration-200 shadow-md">
             <UserPlus className="w-4 h-4 mr-2" /> Novo Usuário
           </button>
-        )}
-      </div>
+      )}
 
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => !deletingUser && setDeleteTarget(null)} />
+          <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md">
+            <div className="flex items-start gap-4 mb-6">
+              <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Excluir Usuário</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Tem certeza que deseja excluir <span className="font-semibold text-gray-700 dark:text-gray-300">{deleteTarget.name}</span>?
+                  Esta ação não pode ser desfeita.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                disabled={deletingUser}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-all duration-150 active:scale-[0.97] disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeleteUser}
+                disabled={deletingUser}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg transition-all duration-150 active:scale-[0.97] disabled:opacity-50 flex items-center gap-2"
+              >
+                {deletingUser ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
       {/* Tabs */}
       <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl w-fit">
         {(['users', 'roles', 'departments'] as const).map(tab => (
@@ -584,9 +649,16 @@ const UserManagement: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{new Date(user.createdAt).toLocaleDateString('pt-BR')}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button onClick={() => handleEdit(user)} className="text-[#F3B229] hover:text-[#E5A320] flex items-center px-3 py-1.5 rounded-lg hover:bg-[#F3B229]/10 transition-all duration-200">
-                            <Edit className="w-4 h-4 mr-1" /> Editar
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => handleEdit(user)} className="text-[#F3B229] hover:text-[#E5A320] flex items-center px-3 py-1.5 rounded-lg hover:bg-[#F3B229]/10 transition-all duration-200">
+                              <Edit className="w-4 h-4 mr-1" /> Editar
+                            </button>
+                            {hasPermission(userPermissions, 'canDeleteUsers') && user.id !== userProfile?.id && (
+                              <button onClick={() => setDeleteTarget(user)} className="text-red-500 hover:text-red-600 flex items-center px-3 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200">
+                                <Trash2 className="w-4 h-4 mr-1" /> Excluir
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );

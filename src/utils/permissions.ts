@@ -2,6 +2,7 @@ import { UserRole } from '../types';
 
 export const ALL_PERMISSION_KEYS: { key: string; label: string; group: string }[] = [
   { key: 'canViewDashboard', label: 'Visualizar Dashboard', group: 'Dashboard' },
+  { key: 'canViewSalesRanking', label: 'Ver Ranking de Vendedores (produção de todos)', group: 'Dashboard' },
 
   { key: 'canManageEquipment', label: 'Gerenciar Equipamentos', group: 'Equipamentos' },
   { key: 'canViewEquipment', label: 'Visualizar Equipamentos', group: 'Equipamentos' },
@@ -20,12 +21,14 @@ export const ALL_PERMISSION_KEYS: { key: string; label: string; group: string }[
   { key: 'canDeleteLeads', label: 'Excluir Leads', group: 'CRM' },
 
   { key: 'canManageQuotations', label: 'Gerenciar Propostas', group: 'Propostas' },
+  { key: 'canDeleteQuotations', label: 'Excluir Propostas', group: 'Propostas' },
   { key: 'canConfigureRequestPeriods', label: 'Configurar Períodos', group: 'Propostas' },
 
   { key: 'canViewMaintenance', label: 'Visualizar Manutenções', group: 'Manutenção' },
   { key: 'canManageMaintenance', label: 'Gerenciar Manutenções', group: 'Manutenção' },
 
   { key: 'canManageUsers', label: 'Gerenciar Usuários', group: 'Administração' },
+  { key: 'canDeleteUsers', label: 'Excluir Usuários', group: 'Administração' },
   { key: 'canManageRoles', label: 'Gerenciar Cargos', group: 'Administração' },
   { key: 'canManageDepartments', label: 'Gerenciar Departamentos', group: 'Administração' },
   { key: 'canManageWhitelist', label: 'Gerenciar Whitelist', group: 'Administração' },
@@ -35,7 +38,7 @@ export const ALL_PERMISSION_KEYS: { key: string; label: string; group: string }[
 const LEGACY_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
   admin: ALL_PERMISSION_KEYS.map(p => p.key),
   operator: ALL_PERMISSION_KEYS.map(p => p.key).filter(
-    k => !['canViewDashboard', 'canManageUsers', 'canManageRoles', 'canManageDepartments', 'canManageWhitelist'].includes(k)
+    k => !['canViewDashboard', 'canManageUsers', 'canDeleteUsers', 'canManageRoles', 'canManageDepartments', 'canManageWhitelist'].includes(k)
   ),
   requester: ['canViewClients', 'canViewLeads', 'canViewMaintenance'],
 };

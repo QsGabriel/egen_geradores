@@ -10,6 +10,15 @@
   }
 }
 
+/* Sincroniza a UI nativa do navegador (scrollbars, popups de <option>,
+   calendário de date/time) com o tema atual — evita popups claros no dark. */
+:root {
+  color-scheme: light;
+}
+.dark {
+  color-scheme: dark;
+}
+
 /* ========================================
    ANIMAÇÕES E TRANSIÇÕES GLOBAIS
    ======================================== */
@@ -427,7 +436,11 @@ input, select, textarea {
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
-input:focus, select:focus, textarea:focus {
+/* Ring suave de marca no foco — exceto checkbox/radio, que usam o
+   próprio estado (:checked) + o outline contextual de :focus-visible. */
+input:not([type="checkbox"]):not([type="radio"]):focus,
+select:focus,
+textarea:focus {
   outline: none;
   border-color: #6A93C7;
   box-shadow: 0 0 0 2px rgba(106, 147, 199, 0.2);
@@ -524,14 +537,22 @@ html, body {
    ACESSIBILIDADE
    ======================================== */
 
-/* Focus visible ring moderno */
+/* Focus visible ring — contextual (marca EGEN)
+   - Superfícies claras (tema claro): navy
+   - Superfícies escuras (tema escuro): azul-marca
+   - Superfícies escuras dentro do tema claro (ex.: sidebar navy): amarelo
+   Escopo de superfície escura via classe utilitária `.on-dark-surface`. */
 :focus-visible {
-  outline: 2px solid rgb(59, 130, 246);
+  outline: 2px solid #0D2A59; /* egen-navy */
   outline-offset: 2px;
 }
 
 .dark :focus-visible {
-  outline-color: rgb(96, 165, 250);
+  outline-color: #6A93C7; /* egen-blue */
+}
+
+.on-dark-surface :focus-visible {
+  outline-color: #F3B229; /* egen-yellow — alto contraste sobre navy */
 }
 
 /* Skip link para navegação por teclado */
@@ -575,4 +596,161 @@ html.theme-transition *::before,
 html.theme-transition *::after {
   transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease !important;
   transition-delay: 0s !important;
+}
+
+/* ========================================
+   FORM CONTROLS — DESIGN SYSTEM GLOBAL
+   Elimina o "chrome" padrão do navegador/SO e aplica a identidade EGEN.
+   Elementos que já declaram `appearance-none` (têm tratamento próprio)
+   são preservados via :not([class~="appearance-none"]).
+   ======================================== */
+
+/* ── Select nativo: remove seta do SO, aplica chevron de marca ── */
+select:not([class~="appearance-none"]):not([multiple]) {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20fill%3D%22none%22%20stroke%3D%22%236B6B6B%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  background-size: 1.15rem;
+  padding-right: 2.25rem;
+}
+
+.dark select:not([class~="appearance-none"]):not([multiple]) {
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20fill%3D%22none%22%20stroke%3D%22%2394A3B8%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E");
+}
+
+/* Remove o fundo azul nativo das <option> em foco (Windows/Blink) */
+select:not([class~="appearance-none"]) option {
+  background-color: #ffffff;
+  color: #2B2B2B;
+}
+.dark select:not([class~="appearance-none"]) option {
+  background-color: #102140; /* egen-dark-surface */
+  color: #F5F7FA;
+}
+
+/* ── Checkbox & Radio: totalmente customizados (sem o controle nativo) ── */
+input[type="checkbox"]:not([class~="appearance-none"]),
+input[type="radio"]:not([class~="appearance-none"]) {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: 0;
+  flex-shrink: 0;
+  vertical-align: middle;
+  background-color: #ffffff;
+  border: 2px solid #cbd5e1; /* slate-300 */
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+input[type="checkbox"]:not([class~="appearance-none"]) { border-radius: 5px; }
+input[type="radio"]:not([class~="appearance-none"]) { border-radius: 9999px; }
+
+.dark input[type="checkbox"]:not([class~="appearance-none"]),
+.dark input[type="radio"]:not([class~="appearance-none"]) {
+  background-color: #1f2937; /* gray-800 */
+  border-color: #475569;     /* slate-600 */
+}
+
+input[type="checkbox"]:not([class~="appearance-none"]):hover,
+input[type="radio"]:not([class~="appearance-none"]):hover {
+  border-color: #6A93C7; /* egen-blue */
+}
+
+/* Estado marcado — checkbox: navy + check branco */
+input[type="checkbox"]:not([class~="appearance-none"]):checked {
+  background-color: #0D2A59; /* egen-navy */
+  border-color: #0D2A59;
+  background-size: 0.8rem;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%222.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m3%208%203.5%203.5L13%204.5%22%2F%3E%3C%2Fsvg%3E");
+}
+.dark input[type="checkbox"]:not([class~="appearance-none"]):checked {
+  background-color: #F3B229; /* egen-yellow */
+  border-color: #F3B229;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20stroke%3D%22%230D2A59%22%20stroke-width%3D%222.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m3%208%203.5%203.5L13%204.5%22%2F%3E%3C%2Fsvg%3E");
+}
+
+/* Estado marcado — radio: ponto central */
+input[type="radio"]:not([class~="appearance-none"]):checked {
+  border-color: #0D2A59;
+  background-image: radial-gradient(circle at center, #0D2A59 0 40%, transparent 46%);
+}
+.dark input[type="radio"]:not([class~="appearance-none"]):checked {
+  border-color: #F3B229;
+  background-image: radial-gradient(circle at center, #F3B229 0 40%, transparent 46%);
+}
+
+input[type="checkbox"]:not([class~="appearance-none"]):disabled,
+input[type="radio"]:not([class~="appearance-none"]):disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Placeholder consistente ── */
+::placeholder {
+  color: #9ca3af; /* gray-400 */
+  opacity: 1;
+}
+.dark ::placeholder {
+  color: #64748b; /* slate-500 */
+}
+
+/* ── Autofill do Chrome: mata o fundo amarelo padrão ── */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: #0D2A59;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+  caret-color: #0D2A59;
+  transition: background-color 9999s ease-in-out 0s;
+}
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
+.dark textarea:-webkit-autofill,
+.dark select:-webkit-autofill {
+  -webkit-text-fill-color: #F5F7FA;
+  -webkit-box-shadow: 0 0 0 1000px #1f2937 inset;
+  caret-color: #F5F7FA;
+}
+
+/* ── Date/time: ícone do seletor visível no dark ── */
+.dark input[type="date"]::-webkit-calendar-picker-indicator,
+.dark input[type="time"]::-webkit-calendar-picker-indicator,
+.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+.dark input[type="month"]::-webkit-calendar-picker-indicator,
+.dark input[type="week"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.85);
+  cursor: pointer;
+}
+
+/* ========================================
+   SCROLLBAR ENXUTA (.custom-scrollbar)
+   Usada em áreas de navegação (ex.: sidebar navy).
+   Antes referenciada sem definição — agora implementada.
+   ======================================== */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
 }

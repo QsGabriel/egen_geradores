@@ -22,9 +22,9 @@ const ProtectedRoute: React.FC<{
 }> = ({ children, permission, userPermissions }) => {
   if (permission && !hasPermission(userPermissions, permission)) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-        <h3 className="text-lg font-medium text-red-800 mb-2">Acesso Negado</h3>
-        <p className="text-red-600">Você não tem permissão para acessar esta página.</p>
+      <div className="max-w-md mx-auto mt-10 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-card p-6 text-center shadow-card">
+        <h3 className="text-lg font-semibold text-red-800 dark:text-red-300 mb-2">Acesso Negado</h3>
+        <p className="text-red-600 dark:text-red-400">Você não tem permissão para acessar esta página.</p>
       </div>
     );
   }
@@ -37,8 +37,8 @@ const AuthenticatedApp: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+      <div className="min-h-screen bg-egen-bg dark:bg-egen-dark-bg flex items-center justify-center transition-colors duration-300">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-egen-navy dark:border-egen-yellow border-t-transparent"></div>
       </div>
     );
   }

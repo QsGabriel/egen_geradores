@@ -218,6 +218,7 @@ export const TEMPLATE_ESCOPO = `
           <th class="col-unit">Valor Unitário</th>
           <th class="col-total">Valor Total</th>
           <th class="col-franquia">Franquia</th>
+          <th class="col-periodo">Período</th>
         </tr>
       </thead>
       <tbody>

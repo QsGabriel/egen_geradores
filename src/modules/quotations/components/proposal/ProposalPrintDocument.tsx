@@ -4,6 +4,7 @@ import { formatDate } from '../../engine';
 import { toDataURL } from 'qrcode';
 import {
   FranquiaHorasLabels,
+  PeriodoLocacaoLabels,
   type CondicoesComerciais,
   type DocumentTipo,
   type ProposalHoraExcedente,
@@ -188,6 +189,7 @@ function buildConditionRows(condicoes: CondicoesComerciais): ConditionRow[] {
   const rows: Array<[string, string]> = [
     ['Local de utilização', textValue(condicoes.localUtilizacao)],
     ['Forma de pagamento', textValue(condicoes.formaPagamento)],
+    ['Prazo de pagamento', textValue(condicoes.prazoPagamento)],
     ['Faturamento', textValue(condicoes.faturamento)],
     ['Prazo de entrega', textValue(condicoes.prazoEntrega)],
     ['Início da cobrança', textValue(condicoes.inicioCobranca)],
@@ -219,16 +221,9 @@ function buildConditionRows(condicoes: CondicoesComerciais): ConditionRow[] {
 }
 
 function splitConditionRows(rows: ConditionRow[]): [ConditionRow[], ConditionRow[]] {
-  const left: ConditionRow[] = [];
-  const right: ConditionRow[] = [];
-
-  rows.forEach((row, index) => {
-    if (index % 2 === 0) {
-      left.push(row);
-    } else {
-      right.push(row);
-    }
-  });
+  const mid = Math.ceil(rows.length / 2);
+  const left: ConditionRow[] = rows.slice(0, mid);
+  const right: ConditionRow[] = rows.slice(mid);
 
   return [left, right];
 }
@@ -800,12 +795,13 @@ export default function ProposalPrintDocument({
                     <th className="col-unit">Valor Unitário</th>
                     <th className="col-total">Valor Total</th>
                     <th className="col-franquia">Franquia</th>
+                    <th className="col-periodo">Período</th>
                   </tr>
                 </thead>
                 <tbody>
                   {slice.equipmentItems.length === 0 ? (
                     <tr>
-                      <td className="proposal-empty-row" colSpan={6}>Nenhum item periódico informado</td>
+                      <td className="proposal-empty-row" colSpan={7}>Nenhum item periódico informado</td>
                     </tr>
                   ) : (
                     slice.equipmentItems.map((item, rowIndex) => (
@@ -816,6 +812,7 @@ export default function ProposalPrintDocument({
                         <td><CurrencyCell value={item.valorUnitario} /></td>
                         <td><CurrencyCell value={item.valorTotal} /></td>
                         <td>{FranquiaHorasLabels[item.franquiaHoras]}</td>
+                        <td>{PeriodoLocacaoLabels[item.periodoLocacao] || item.periodoLocacao}</td>
                       </tr>
                     ))
                   )}
@@ -823,7 +820,7 @@ export default function ProposalPrintDocument({
                 {isLastEquipmentPage ? (
                   <tfoot>
                     <tr className="proposal-table-subtotal">
-                      <td colSpan={4} className="proposal-table-subtotal-label">{getPeriodTotalLabel(quotation.condicoes.periodoOrcado)}</td>
+                      <td colSpan={5} className="proposal-table-subtotal-label">{getPeriodTotalLabel(quotation.condicoes.periodoOrcado)}</td>
                       <td className="proposal-table-subtotal-value">
                         <CurrencyCell value={quotation.totalPeriodicos} />
                       </td>
@@ -887,13 +884,6 @@ export default function ProposalPrintDocument({
             </section>
             ) : null}
 
-            {isLastScopePage && quotation.observacoesGerais?.trim() ? (
-              <section className="proposal-observations-block">
-                <h3 className="proposal-blue-section-title">Observações:</h3>
-                <p className="proposal-observations-text">{quotation.observacoesGerais}</p>
-              </section>
-            ) : null}
-
             {includeInlineSections ? (
               <section className="proposal-inline-commercial-sections">
                 <ConditionColumns rows={conditionRows} />
@@ -918,6 +908,13 @@ export default function ProposalPrintDocument({
                   </div>
                 ) : null}
               </>
+            ) : null}
+
+            {isLastScopePage && quotation.observacoesGerais?.trim() ? (
+              <section className="proposal-observations-block">
+                <h3 className="proposal-blue-section-title">Observações:</h3>
+                <p className="proposal-observations-text">{quotation.observacoesGerais}</p>
+              </section>
             ) : null}
           </div>
 

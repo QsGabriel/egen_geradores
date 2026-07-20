@@ -51,14 +51,21 @@ export const FranquiaHorasLabels: Record<FranquiaHoras, string> = {
   continuo: 'Contínuo/Livre (24h/dia)',
 };
 
-export type PeriodoLocacao = 'semanal' | 'quinzenal' | 'mensal' | 'anual';
+export type PeriodoLocacao = string;
 
-export const PeriodoLocacaoLabels: Record<PeriodoLocacao, string> = {
+export const PeriodoLocacaoLabels: Record<string, string> = {
   semanal: 'Semanal (7 dias)',
   quinzenal: 'Quinzenal (15 dias)',
   mensal: 'Mensal (30 dias)',
   anual: 'Anual (360 dias)',
 };
+
+export const PERIODO_LOCACAO_OPTIONS = [
+  'Semanal (7 dias)',
+  'Quinzenal (15 dias)',
+  'Mensal (30 dias)',
+  'Anual (360 dias)',
+];
 
 // ============================================
 // ITEM CATEGORIES (NEW)
@@ -302,7 +309,7 @@ export const DEFAULT_CLIENTE_SNAPSHOT: ClienteSnapshot = {
 export const DEFAULT_CONDICOES: CondicoesComerciais = {
   localUtilizacao: '',
   formaPagamento: 'Boleto',
-  prazoPagamento: '14 dias',
+  prazoPagamento: '30 dias',
   faturamento: 'Data da saída do pátio',
   prazoEntrega: 'A combinar',
   validadeProposta: '15 dias',

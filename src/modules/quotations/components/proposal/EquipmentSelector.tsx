@@ -11,8 +11,9 @@ import {
 import { useQuotationStore, selectItensPeriodicos } from '../../stores/quotationStore';
 import { usePricing } from '../../../pricing';
 import { Select } from './Select';
+import ComboBox from '../../../../components/ComboBox';
 import type { ProposalItemPeriodico, FranquiaHoras, PeriodoLocacao, ItemTipoPeriodico } from '../../types/proposal';
-import { FranquiaHorasLabels, PeriodoLocacaoLabels, ItemTipoPeriodicoLabels } from '../../types/proposal';
+import { FranquiaHorasLabels, PeriodoLocacaoLabels, PERIODO_LOCACAO_OPTIONS, ItemTipoPeriodicoLabels } from '../../types/proposal';
 
 // ============================================
 // HELPERS
@@ -69,13 +70,14 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
     itensPeriodicos.forEach((item) => {
       if (item.tipo === 'cabo_380v' || item.tipo === 'cabo_220v') {
         const voltage = item.tipo === 'cabo_380v' ? '380v' : '220v';
-        const periodMap: Record<PeriodoLocacao, 'mensal' | 'quinzenal' | 'semanal'> = {
+        const periodMap: Record<string, 'mensal' | 'quinzenal' | 'semanal'> = {
           mensal: 'mensal',
           quinzenal: 'quinzenal',
           semanal: 'semanal',
           anual: 'mensal',
         };
-        const cablePrice = getCableKitPrice(potencia, periodMap[periodo], voltage);
+        const mappedPeriod = periodMap[periodo] || 'mensal';
+        const cablePrice = getCableKitPrice(potencia, mappedPeriod, voltage);
         const finalPrice = cablePrice != null && periodo === 'anual' ? cablePrice * 12 : cablePrice;
         updateItemPeriodico(item.id, { valorUnitario: finalPrice ?? 0 });
       }
@@ -84,13 +86,14 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
 
   const getCableKitPriceForItem = (tipo: 'cabo_380v' | 'cabo_220v', potencia: string, periodo: PeriodoLocacao): number | null => {
     const voltage = tipo === 'cabo_380v' ? '380v' : '220v';
-    const periodMap: Record<PeriodoLocacao, 'mensal' | 'quinzenal' | 'semanal'> = {
+    const periodMap: Record<string, 'mensal' | 'quinzenal' | 'semanal'> = {
       mensal: 'mensal',
       quinzenal: 'quinzenal',
       semanal: 'semanal',
       anual: 'mensal',
     };
-    const cablePrice = getCableKitPrice(potencia, periodMap[periodo], voltage);
+    const mappedPeriod = periodMap[periodo] || 'mensal';
+    const cablePrice = getCableKitPrice(potencia, mappedPeriod, voltage);
     return cablePrice != null && periodo === 'anual' ? cablePrice * 12 : cablePrice;
   };
 
@@ -124,7 +127,7 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
       const newPeriodo = field === 'periodoLocacao' ? value : current.periodoLocacao;
       const newFranquia = field === 'franquiaHoras' ? value : current.franquiaHoras;
 
-      const periodMap: Record<PeriodoLocacao, 'mensal' | 'quinzenal' | 'semanal'> = {
+      const periodMap: Record<string, 'mensal' | 'quinzenal' | 'semanal'> = {
         mensal: 'mensal',
         quinzenal: 'quinzenal',
         semanal: 'semanal',
@@ -142,7 +145,7 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
       if (newPotencia && newPeriodo && newFranquia) {
         const basePrice = getGeneratorPrice(
           newPotencia,
-          periodMap[newPeriodo],
+          periodMap[newPeriodo] || 'mensal',
           franquiaMap[newFranquia],
         );
         const price = basePrice != null && newPeriodo === 'anual'
@@ -322,14 +325,15 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                     Período
                   </label>
-                  <Select
-                    value={item.periodoLocacao}
-                    onChange={(value) => handleFieldUpdate(item.id, 'periodoLocacao', value as PeriodoLocacao)}
-                  >
-                    {Object.entries(PeriodoLocacaoLabels).map(([value, label]) => (
-                      <option key={value} value={value}>{label}</option>
-                    ))}
-                  </Select>
+                  <ComboBox
+                    value={PeriodoLocacaoLabels[item.periodoLocacao] || item.periodoLocacao}
+                    onChange={(value) => {
+                      const knownEntry = Object.entries(PeriodoLocacaoLabels).find(([, label]) => label === value);
+                      handleFieldUpdate(item.id, 'periodoLocacao', knownEntry ? knownEntry[0] : value);
+                    }}
+                    options={PERIODO_LOCACAO_OPTIONS}
+                    placeholder="Selecione ou digite..."
+                  />
                 </div>
               </div>
 

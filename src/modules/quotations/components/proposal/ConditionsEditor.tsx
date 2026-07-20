@@ -6,6 +6,7 @@ import React from 'react';
 import { Settings, FileText, Truck, Wrench, Shield, Clock } from 'lucide-react';
 import { useQuotationStore, selectCondicoes } from '../../stores/quotationStore';
 import { Select } from './Select';
+import ComboBox from '../../../../components/ComboBox';
 import type { CondicoesComerciais } from '../../types/proposal';
 
 // ============================================
@@ -21,7 +22,7 @@ interface ConditionFieldProps {
   field: keyof CondicoesComerciais;
   value: string;
   onChange: (field: keyof CondicoesComerciais, value: string) => void;
-  type?: 'text' | 'select' | 'textarea';
+  type?: 'text' | 'select' | 'textarea' | 'combobox';
   options?: string[];
   placeholder?: string;
 }
@@ -66,6 +67,13 @@ function ConditionField({
             </option>
           ))}
         </Select>
+      ) : type === 'combobox' ? (
+        <ComboBox
+          value={value}
+          onChange={(val) => onChange(field, val)}
+          options={options}
+          placeholder={placeholder}
+        />
       ) : type === 'textarea' ? (
         <textarea
           value={value}
@@ -144,16 +152,13 @@ export function ConditionsEditor({ className = '' }: ConditionsEditorProps) {
             field="prazoPagamento"
             value={condicoes.prazoPagamento}
             onChange={handleChange}
-            type="select"
+            type="combobox"
             options={[
-              'À vista',
-              '01 dia',
-              '14 dias',
+              '7 dias',
+              '15 dias',
               '21 dias',
               '30 dias',
-              '60 dias',
-              '90 dias',
-              '120 dias',
+              'Anual',
             ]}
           />
           <ConditionField

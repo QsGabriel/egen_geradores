@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   Users, UserPlus, TrendingUp, Building2, Target,
   PhoneCall, FileText, DollarSign, ArrowUpRight,
@@ -7,6 +7,7 @@ import {
   TrendingDown, ChevronRight, Sparkles, Zap,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { hasPermission } from '../utils/permissions';
 import { useCRMDashboard } from '../hooks/useCRMDashboard';
 import type { CRMDashboardMetrics } from '../hooks/useCRMDashboard';
 import type { LeadStatus } from '../modules/crm/types';
@@ -21,6 +22,7 @@ import {
   CartesianGrid, Tooltip, ResponsiveContainer, Legend,
   AreaChart, Area, ComposedChart, Line,
 } from 'recharts';
+import { supabase } from '../lib/supabase';
 
 // ============================================
 // PALETA DE CORES EGEN
@@ -146,8 +148,20 @@ const ChartCard: React.FC<{ title: string; icon: React.ElementType; children: Re
 // ============================================
 const Dashboard: React.FC = () => {
   const { userProfile } = useAuth();
-  const { metrics, loading, error } = useCRMDashboard();
+  const userPermissions = userProfile?.permissions || [];
+  const canViewRanking = hasPermission(userPermissions, 'canViewSalesRanking');
+  const [vendedorId, setVendedorId] = useState<string | null>(null);
+  const [vendedores, setVendedores] = useState<{ id: string; name: string }[]>([]);
+  const { metrics, loading, error } = useCRMDashboard(vendedorId, canViewRanking);
   const [showCharts, setShowCharts] = useState(true);
+
+  useEffect(() => {
+    // Lista de vendedores para o filtro — só carrega se o usuário puder ver a produção de todos.
+    if (!canViewRanking) return;
+    supabase.from('user_profiles').select('id, name').order('name').then(({ data }) => {
+      if (data) setVendedores(data);
+    });
+  }, [canViewRanking]);
 
   const userName = userProfile?.name?.split(' ')[0] || 'Usuário';
 
@@ -187,7 +201,7 @@ const Dashboard: React.FC = () => {
               {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2.5 text-center">
               <p className="text-2xl font-bold text-egen-yellow">{metrics.totalClients}</p>
               <p className="text-xs text-white/60">Clientes</p>
@@ -203,6 +217,86 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* ============================================ */}
+      {/* PRODUÇÃO POR VENDEDOR (restrito: canViewSalesRanking) */}
+      {/* ============================================ */}
+      {canViewRanking && (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <select
+              value={vendedorId || ''}
+              onChange={e => setVendedorId(e.target.value || null)}
+              className="px-3 py-2 text-sm font-medium bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-yellow-500 cursor-pointer transition-all min-w-[180px] shadow-sm"
+            >
+              <option value="">Todos os vendedores</option>
+              {vendedores.map(v => (
+                <option key={v.id} value={v.id}>{v.name}</option>
+              ))}
+            </select>
+            {vendedorId && (
+              <button
+                onClick={() => setVendedorId(null)}
+                className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+              >
+                Limpar filtro
+              </button>
+            )}
+          </div>
+
+          {metrics.vendedorRanking.length > 0 && (
+            <div className="bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-100 dark:border-white/[0.06] p-5 sm:p-6 backdrop-blur-sm">
+              <h3 className="text-base sm:text-lg font-semibold mb-4 flex items-center gap-2 text-gray-800 dark:text-gray-100">
+                <TrendingUp className="w-5 h-5 text-egen-yellow flex-shrink-0" />
+                Ranking de Vendedores
+              </h3>
+              <div className="overflow-x-auto -mx-1 px-1">
+                <table className="w-full min-w-[520px] text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100 dark:border-white/[0.06] text-left text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                      <th className="pb-3 pr-4 w-8">#</th>
+                      <th className="pb-3 pr-4">Vendedor</th>
+                      <th className="pb-3 pr-4 text-center">Propostas</th>
+                      <th className="pb-3 pr-4 text-center">Fechadas</th>
+                      <th className="pb-3 text-right">Valor Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50 dark:divide-white/[0.04]">
+                    {metrics.vendedorRanking.map((v, i) => (
+                      <tr key={v.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors">
+                        <td className="py-3 pr-4">
+                          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                            i === 0 ? 'bg-egen-yellow text-white' :
+                            i === 1 ? 'bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200' :
+                            i === 2 ? 'bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200' :
+                            'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                          }`}>
+                            {i + 1}
+                          </span>
+                        </td>
+                        <td className="py-3 pr-4 font-medium text-gray-800 dark:text-gray-200">{v.name}</td>
+                        <td className="py-3 pr-4 text-center text-gray-600 dark:text-gray-400">{v.totalPropostas}</td>
+                        <td className="py-3 pr-4 text-center text-gray-600 dark:text-gray-400">{v.propostasFechadas}</td>
+                        <td className="py-3 text-right font-mono whitespace-nowrap text-gray-800 dark:text-gray-200">
+                          {formatCurrency(v.valorTotal)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t border-gray-100 dark:border-white/[0.06] font-semibold">
+                      <td colSpan={4} className="pt-3 text-right text-sm text-gray-500 dark:text-gray-400">Total Geral:</td>
+                      <td className="pt-3 text-right font-mono whitespace-nowrap text-gray-800 dark:text-gray-200">
+                        {formatCurrency(metrics.vendedorRanking.reduce((sum, v) => sum + v.valorTotal, 0))}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ============================================ */}
       {/* KEY METRICS CARDS */}

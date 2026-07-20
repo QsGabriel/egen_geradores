@@ -255,6 +255,7 @@
   margin: 0 0 0;
   font-size: 10.5pt;
   line-height: 1.75;
+  text-align: justify;
   flex: 1;
 }
 
@@ -416,16 +417,24 @@
   width: 25mm;
 }
 
-.proposal-table-main .col-franquia,
+.proposal-table-main .col-franquia {
+  width: 32mm;
+}
+
+.proposal-table-main .col-periodo {
+  width: 25mm;
+}
+
 .proposal-table-main .col-obs {
   width: 47mm;
 }
 
-/* Fixed 6-column body: center Item, Qtd. and Franquia/Observações;
+/* Fixed 7-column body: center Item, Qtd. Franquia and Período;
    the currency columns (4 and 5) are handled by the flex currency cell. */
 .proposal-table-main tbody td:nth-child(1),
 .proposal-table-main tbody td:nth-child(3),
-.proposal-table-main tbody td:nth-child(6) {
+.proposal-table-main tbody td:nth-child(6),
+.proposal-table-main tbody td:nth-child(7) {
   text-align: center;
 }
 
@@ -822,6 +831,7 @@
   margin: 0 0 2.5mm;
   font-size: 9.5pt;
   line-height: 1.5;
+  text-align: justify;
   color: #111111;
   white-space: pre-wrap;
 }
@@ -838,9 +848,10 @@
 }
 
 .proposal-dispositions-inline p {
-  margin: 0 0 2.5mm;
-  font-size: 9.5pt;
+  margin: 0 0 2mm;
+  font-size: 9pt;
   line-height: 1.5;
+  text-align: justify;
   color: #111111;
 }
 
@@ -860,6 +871,7 @@
   margin: 0 0 3mm;
   font-size: 9.5pt;
   line-height: 1.5;
+  text-align: justify;
   color: #111111;
 }
 
@@ -886,6 +898,7 @@
   margin: 0 0 8mm;
   font-size: 10pt;
   line-height: 1.45;
+  text-align: justify;
   color: #111111;
 }
 
