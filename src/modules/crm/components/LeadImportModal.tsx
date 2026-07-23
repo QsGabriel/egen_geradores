@@ -18,6 +18,7 @@ import { LEAD_SOURCES } from '../types';
 const FIXED_HEADERS = [
   'Nome*',
   'Razão Social',
+  'Responsável',
   'CNPJ/CPF',
   'DDD',
   'Telefone',
@@ -92,6 +93,7 @@ const HEADER_TO_FIELD: Record<string, keyof LeadFormData> = {
   nome: 'name',
   razaosocial: 'company',
   razao: 'company',
+  responsavel: 'responsavel',
   cnpjcpf: 'documentNumber',
   cnpj: 'documentNumber',
   cpf: 'documentNumber',
@@ -187,6 +189,7 @@ function parseRows(sheet: XLSX.WorkSheet): LeadFormData[] {
     rows.push({
       name: get(r, 'name'),
       company: get(r, 'company'),
+      responsavel: get(r, 'responsavel'),
       documentNumber: get(r, 'documentNumber'),
       areaCode: get(r, 'areaCode'),
       phone: get(r, 'phone'),
@@ -235,6 +238,7 @@ const LeadImportModal: React.FC<LeadImportModalProps> = ({ onClose, onImport }) 
       [
         'João da Silva',          // Nome*
         'Empresa Exemplo Ltda',   // Razão Social
+        'Maria Souza',            // Responsável
         '12.345.678/0001-90',     // CNPJ/CPF
         '11',                     // DDD
         '99999-0001',             // Telefone

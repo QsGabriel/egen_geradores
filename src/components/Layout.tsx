@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
-import { hasPermission, getRoleLabel } from '../utils/permissions';
+import { hasPermission, hasAnyPermission, getRoleLabel } from '../utils/permissions';
 import { ThemeToggle } from './ThemeToggle';
 import { CollapsedFlyoutMenu } from './CollapsedFlyoutMenu';
 
@@ -35,6 +35,8 @@ interface NavigationItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   permission?: string;
+  /** Se informado, o item aparece quando o usuário tem QUALQUER uma destas permissões. */
+  permissions?: string[];
   subItems?: NavigationItem[];
 }
 
@@ -112,7 +114,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         subItems: [
           { name: 'Clientes', href: '/crm/clients', icon: Building2, permission: 'canViewClients' },
           { name: 'Leads', href: '/crm/leads', icon: UserCircle, permission: 'canViewLeads' },
-          { name: 'Propostas', href: '/propostas', icon: FileText, permission: 'canManageQuotations' },
+          { name: 'Propostas', href: '/propostas', icon: FileText, permissions: ['canManageQuotations', 'canViewAllProposals'] },
         ],
       },
       {
@@ -149,6 +151,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const canAccessItem = (item: NavigationItem) => {
+    if (item.permissions) return hasAnyPermission(userPermissions, item.permissions);
     if (!item.permission) return true;
     return hasPermission(userPermissions, item.permission);
   };

@@ -41,9 +41,9 @@ export const DocumentStatusColors: Record<DocumentStatus, string> = {
   closed: 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200',
 };
 
-export type FranquiaHoras = 'standby' | '120h' | '240h' | '360h' | 'continuo';
+export type FranquiaHoras = 'standby' | '120h' | '240h' | '360h' | 'continuo' | string;
 
-export const FranquiaHorasLabels: Record<FranquiaHoras, string> = {
+export const FranquiaHorasLabels: Record<string, string> = {
   standby: 'Stand-By (4h/mês)',
   '120h': '120h/mês (04h/dia)',
   '240h': '240h/mês (08h/dia)',

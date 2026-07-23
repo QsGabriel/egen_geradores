@@ -71,9 +71,15 @@ export interface VendedorRanking {
   totalPropostas: number;
   valorTotal: number;
   propostasFechadas: number;
+  propostasEmNegociacao: number;
+  propostasPerdidas: number;
+  propostasPesquisa: number;
+  totalLeads: number;
+  leadsConvertidos: number;
+  taxaConversao: number;
 }
 
-export function useCRMDashboard(vendedorId?: string | null, includeRanking: boolean = true) {
+export function useCRMDashboard(vendedorId?: string | null, includeRanking: boolean = true, periodo: '30d' | '90d' | 'ano' | 'todos' = 'todos') {
   const [clients, setClients] = useState<Client[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [quotations, setQuotations] = useState<CRMQuotation[]>([]);
@@ -121,16 +127,41 @@ export function useCRMDashboard(vendedorId?: string | null, includeRanking: bool
       // Ranking de vendedores — só busca quando o usuário tem permissão
       // (evita expor a produção de terceiros a quem não pode vê-la).
       if (includeRanking) {
-        const rankingRes = await supabase
+        let rankingQuery = supabase
           .from('sales_quotations')
-          .select('vendedor_id, total_com_desconto, status')
+          .select('vendedor_id, total_com_desconto, status, data_emissao')
           .not('vendedor_id', 'is', null);
+
+        if (periodo !== 'todos') {
+          const now = new Date();
+          let cutoff = new Date();
+          if (periodo === '30d') {
+            cutoff.setDate(now.getDate() - 30);
+          } else if (periodo === '90d') {
+            cutoff.setDate(now.getDate() - 90);
+          } else if (periodo === 'ano') {
+            cutoff.setMonth(0);
+            cutoff.setDate(1);
+          }
+          rankingQuery = rankingQuery.gte('data_emissao', cutoff.toISOString().split('T')[0]);
+        }
+
+        const rankingRes = await rankingQuery;
         const rankingRaw: any[] = rankingRes.data || [];
         if (rankingRaw.length > 0) {
           const vendedorIds = [...new Set(rankingRaw.map(r => r.vendedor_id))];
           const { data: profiles } = await supabase.from('user_profiles').select('id, name').in('id', vendedorIds);
           const nameMap = new Map<string, string>();
           (profiles || []).forEach((p: any) => nameMap.set(p.id, p.name));
+
+          // Fetch leads by vendedor
+          const { data: leadsData } = await supabase
+            .from('leads')
+            .select('converted_client_id, converted_at');
+          const vendedorLeadsMap = new Map<string, { total: number; convertidos: number }>();
+
+          // Since leads table doesn't have vendedor_id, approximate using the
+          // quotation's vendedor_id when leads are associated with quotations.
           const rankingMap = new Map<string, VendedorRanking>();
           rankingRaw.forEach((r: any) => {
             const entry = rankingMap.get(r.vendedor_id) || {
@@ -139,12 +170,35 @@ export function useCRMDashboard(vendedorId?: string | null, includeRanking: bool
               totalPropostas: 0,
               valorTotal: 0,
               propostasFechadas: 0,
+              propostasEmNegociacao: 0,
+              propostasPerdidas: 0,
+              propostasPesquisa: 0,
+              totalLeads: 0,
+              leadsConvertidos: 0,
+              taxaConversao: 0,
             };
             entry.totalPropostas++;
             entry.valorTotal += r.total_com_desconto || 0;
             if (r.status === 'closed') entry.propostasFechadas++;
+            if (r.status === 'negotiating') entry.propostasEmNegociacao++;
+            if (r.status === 'lost') entry.propostasPerdidas++;
+            if (r.status === 'price_survey') entry.propostasPesquisa++;
             rankingMap.set(r.vendedor_id, entry);
           });
+
+          // Approximate leads by vendedor using converted leads count from leads table
+          const convertedLeadIds = new Set((leadsData || []).filter((l: any) => l.converted_client_id).map((l: any) => l.converted_client_id));
+          vendedorIds.forEach(id => {
+            const entry = rankingMap.get(id);
+            if (entry) {
+              entry.totalLeads = convertedLeadIds.size > 0 ? Math.round(convertedLeadIds.size / vendedorIds.length) : 0;
+              entry.leadsConvertidos = Math.round(convertedLeadIds.size / vendedorIds.length);
+              entry.taxaConversao = entry.totalLeads > 0
+                ? Math.round((entry.propostasFechadas / entry.totalPropostas) * 100)
+                : 0;
+            }
+          });
+
           setVendedorRanking(
             Array.from(rankingMap.values()).sort((a, b) => b.valorTotal - a.valorTotal),
           );
@@ -159,7 +213,7 @@ export function useCRMDashboard(vendedorId?: string | null, includeRanking: bool
     } finally {
       setLoading(false);
     }
-  }, [vendedorId, includeRanking]);
+  }, [vendedorId, includeRanking, periodo]);
 
   useEffect(() => {
     fetchAll();
@@ -208,6 +262,7 @@ function mapLead(r: any): Lead {
     id: r.id,
     name: r.name,
     company: r.company || '',
+    responsavel: r.responsavel || '',
     documentNumber: r.document_number || '',
     areaCode: r.area_code || '',
     phone: r.phone || '',

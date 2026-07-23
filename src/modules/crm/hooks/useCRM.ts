@@ -83,6 +83,7 @@ export function useCRM() {
       id: r.id,
       name: r.name,
       company: r.company || '',
+      responsavel: r.responsavel || '',
       documentNumber: r.document_number || '',
       areaCode: r.area_code || '',
       phone: r.phone || '',
@@ -225,6 +226,7 @@ export function useCRM() {
     const { error: err } = await supabase.from('leads').insert({
       name: data.name,
       company: data.company,
+      responsavel: data.responsavel?.trim() || null,
       document_number: data.documentNumber?.trim() || null,
       area_code: data.areaCode?.trim() || null,
       phone: data.phone,
@@ -247,6 +249,7 @@ export function useCRM() {
     const updateData: Record<string, unknown> = {};
     if (data.name !== undefined) updateData.name = data.name;
     if (data.company !== undefined) updateData.company = data.company;
+    if (data.responsavel !== undefined) updateData.responsavel = data.responsavel?.trim() || null;
     if (data.documentNumber !== undefined) updateData.document_number = data.documentNumber?.trim() || null;
     if (data.areaCode !== undefined) updateData.area_code = data.areaCode?.trim() || null;
     if (data.phone !== undefined) updateData.phone = data.phone;
@@ -356,6 +359,19 @@ export function useCRM() {
   };
 
   /**
+   * Formata telefone para proposta, evitando duplicação de DDD.
+   * Se o phone já contém o DDD entre parênteses, remove para não duplicar.
+   */
+  function formatPhoneForProposal(areaCode: string, phone: string): string {
+    const rawPhone = phone.replace(/[^\d]/g, '');
+    if (!areaCode) return phone;
+    const rawDdd = areaCode.replace(/[^\d]/g, '');
+    if (!rawDdd) return phone;
+    const phoneWithoutDdd = rawPhone.startsWith(rawDdd) ? rawPhone.slice(rawDdd.length) : rawPhone;
+    return `(${rawDdd}) ${phoneWithoutDdd}`;
+  }
+
+  /**
    * Gera um rascunho de proposta a partir dos dados do lead.
    * Retorna o ID da proposta criada para navegação.
    */
@@ -378,9 +394,9 @@ export function useCRM() {
       validade: new Date(today.getTime() + 30 * 86400000).toISOString().split('T')[0],
       cliente: {
         nome: lead.company || lead.name,
-        responsavel: lead.name,
+        responsavel: lead.responsavel || lead.name,
         email: lead.email,
-        telefone: lead.areaCode ? `(${lead.areaCode}) ${lead.phone}` : lead.phone,
+        telefone: formatPhoneForProposal(lead.areaCode, lead.phone),
         documento: lead.documentNumber || '',
         endereco: '',
         cidadeUf: [lead.city, lead.state].filter(Boolean).join('/'),

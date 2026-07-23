@@ -834,6 +834,7 @@
   text-align: justify;
   color: #111111;
   white-space: pre-wrap;
+  overflow: hidden;
 }
 
 .proposal-dispositions-inline .proposal-blue-section-title {
@@ -1070,6 +1071,12 @@
 
   /* Keep contract intro panel together */
   .proposal-intro-panel {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Keep observation block together */
+  .proposal-observations-block {
     break-inside: avoid;
     page-break-inside: avoid;
   }

@@ -77,7 +77,7 @@ export function ClientSelector({ onClientSelect, className = '' }: ClientSelecto
   // Convert Lead to ClienteSnapshot
   const leadToSnapshot = useCallback((lead: Lead): ClienteSnapshot => ({
     nome: lead.company || lead.name,
-    responsavel: lead.name,
+    responsavel: lead.responsavel || lead.name,
     email: lead.email || '',
     telefone: lead.phone || '',
     documento: lead.documentNumber || '',

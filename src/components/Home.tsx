@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { hasPermission } from '../utils/permissions';
+import { hasPermission, hasAnyPermission } from '../utils/permissions';
 import {
   LayoutDashboard,
   Users,
@@ -23,7 +23,9 @@ interface ModuleItem {
   path: string;
   label: string;
   description: string;
-  permission: string;
+  permission?: string;
+  /** Se informado, o card aparece quando o usuário tem QUALQUER uma destas permissões. */
+  permissions?: string[];
   icon: React.ComponentType<any>;
 }
 
@@ -60,12 +62,12 @@ const moduleGroups: ModuleGroup[] = [
         permission: 'canViewLeads', 
         icon: UserCircle 
       },
-      { 
-        path: '/propostas', 
-        label: 'Propostas', 
+      {
+        path: '/propostas',
+        label: 'Propostas',
         description: 'Criar e gerenciar propostas',
-        permission: 'canManageQuotations', 
-        icon: FileText 
+        permissions: ['canManageQuotations', 'canViewAllProposals'],
+        icon: FileText
       },
     ],
   },
@@ -112,8 +114,12 @@ const Home: React.FC = () => {
   const accessibleGroups = moduleGroups
     .map(group => ({
       ...group,
-      items: group.items.filter(item => 
-        hasPermission(userPermissions, item.permission)
+      items: group.items.filter(item =>
+        item.permissions
+          ? hasAnyPermission(userPermissions, item.permissions)
+          : item.permission
+            ? hasPermission(userPermissions, item.permission)
+            : true
       )
     }))
     .filter(group => group.items.length > 0);

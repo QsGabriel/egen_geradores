@@ -174,6 +174,8 @@ export default function ProposalManagementPage() {
   const { notification, showSuccess, showError, hideNotification } = useNotification();
   const { userProfile } = useAuth();
   const userPermissions = userProfile?.permissions ?? [];
+  const canViewAll = hasPermission(userPermissions, 'canViewAllProposals');
+  const userId = userProfile?.id;
 
   const [proposals, setProposals] = useState<SalesQuotation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -183,6 +185,15 @@ export default function ProposalManagementPage() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<DocumentStatus | 'all'>('all');
   const [vendedorFilter, setVendedorFilter] = useState<string>('all');
+
+  // Sincroniza filtro de vendedor com permissões (cobre carregamento assíncrono)
+  useEffect(() => {
+    if (canViewAll) {
+      setVendedorFilter(prev => prev === 'all' ? prev : 'all');
+    } else if (userId) {
+      setVendedorFilter(userId);
+    }
+  }, [canViewAll, userId]);
   const [tipoFilter, setTipoFilter] = useState<string>('all');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
@@ -228,7 +239,6 @@ export default function ProposalManagementPage() {
         toDate: toDate || undefined,
         minValue: minValue ? Number(minValue) : undefined,
         maxValue: maxValue ? Number(maxValue) : undefined,
-        excludeDraft: statusFilter === 'all',
         sortField: sortField || undefined,
         sortDir: sortField ? sortDir : undefined,
         page,
@@ -312,7 +322,7 @@ export default function ProposalManagementPage() {
     setSearch('');
     setDebouncedSearch('');
     setStatusFilter('all');
-    setVendedorFilter('all');
+    setVendedorFilter(!canViewAll && userId ? userId : 'all');
     setTipoFilter('all');
     setFromDate('');
     setToDate('');
@@ -525,16 +535,22 @@ export default function ProposalManagementPage() {
             )}
           </div>
 
-          <select
-            value={vendedorFilter}
-            onChange={e => { setVendedorFilter(e.target.value); setPage(1); }}
-            className="px-3 py-2.5 text-sm font-medium bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 cursor-pointer transition-all min-w-[140px]"
-          >
-            <option value="all">Todos os vendedores</option>
-            {vendedores.map(v => (
-              <option key={v.id} value={v.id}>{v.name}</option>
-            ))}
-          </select>
+          {canViewAll ? (
+            <select
+              value={vendedorFilter}
+              onChange={e => { setVendedorFilter(e.target.value); setPage(1); }}
+              className="px-3 py-2.5 text-sm font-medium bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 cursor-pointer transition-all min-w-[140px]"
+            >
+              <option value="all">Todos os vendedores</option>
+              {vendedores.map(v => (
+                <option key={v.id} value={v.id}>{v.name}</option>
+              ))}
+            </select>
+          ) : (
+            <div className="px-3 py-2.5 text-sm font-medium bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300">
+              Minhas propostas
+            </div>
+          )}
 
           <button
             onClick={() => setShowFilters(!showFilters)}

@@ -18,9 +18,18 @@ import ProposalConfigPage from './components/ProposalConfigPage';
 const ProtectedRoute: React.FC<{
   children: React.ReactNode;
   permission?: string;
+  permissions?: string[];
   userPermissions: string[];
-}> = ({ children, permission, userPermissions }) => {
+}> = ({ children, permission, permissions, userPermissions }) => {
   if (permission && !hasPermission(userPermissions, permission)) {
+    return (
+      <div className="max-w-md mx-auto mt-10 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-card p-6 text-center shadow-card">
+        <h3 className="text-lg font-semibold text-red-800 dark:text-red-300 mb-2">Acesso Negado</h3>
+        <p className="text-red-600 dark:text-red-400">Você não tem permissão para acessar esta página.</p>
+      </div>
+    );
+  }
+  if (permissions && !permissions.some(p => hasPermission(userPermissions, p))) {
     return (
       <div className="max-w-md mx-auto mt-10 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-card p-6 text-center shadow-card">
         <h3 className="text-lg font-semibold text-red-800 dark:text-red-300 mb-2">Acesso Negado</h3>
@@ -73,7 +82,7 @@ const AuthenticatedApp: React.FC = () => {
         <Route
           path="/propostas"
           element={
-            <ProtectedRoute permission="canManageQuotations" userPermissions={userPermissions}>
+            <ProtectedRoute permissions={['canManageQuotations', 'canViewAllProposals', 'canViewOwnProposals']} userPermissions={userPermissions}>
               <ProposalManagementPage />
             </ProtectedRoute>
           }
@@ -89,7 +98,7 @@ const AuthenticatedApp: React.FC = () => {
         <Route
           path="/propostas/:id"
           element={
-            <ProtectedRoute permission="canManageQuotations" userPermissions={userPermissions}>
+            <ProtectedRoute permissions={['canManageQuotations', 'canViewAllProposals']} userPermissions={userPermissions}>
               <SalesQuotationPage />
             </ProtectedRoute>
           }

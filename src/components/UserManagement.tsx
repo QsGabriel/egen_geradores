@@ -20,7 +20,7 @@ const GROUP_COLORS: Record<string, { dot: string; activePill: string; activeText
 };
 
 const UserManagement: React.FC = () => {
-  const { userProfile } = useAuth();
+  const { userProfile, refreshProfile } = useAuth();
   const { notification, showSuccess, showError, hideNotification } = useNotification();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -243,6 +243,9 @@ const UserManagement: React.FC = () => {
         }).eq('id', editingRole.id);
         if (error) throw error;
         showSuccess('Cargo atualizado!');
+        if (editingRole.id === userProfile?.customRoleId) {
+          await refreshProfile();
+        }
       } else {
         const { error } = await supabase.from('custom_roles').insert({
           name: roleFormData.name.trim(),

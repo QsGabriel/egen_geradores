@@ -416,15 +416,12 @@ export async function updateQuotationStatus(
 }
 
 /**
- * Delete quotation (soft delete by setting status to cancelled)
+ * Delete quotation (hard delete)
  */
 export async function deleteQuotation(id: string, userId?: string): Promise<void> {
   const { error } = await supabase
     .from('sales_quotations')
-    .update({
-      status: 'cancelled',
-      updated_by: userId || null,
-    })
+    .delete()
     .eq('id', id);
 
   if (error) {

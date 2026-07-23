@@ -19,6 +19,9 @@ import { FranquiaHorasLabels, PeriodoLocacaoLabels, PERIODO_LOCACAO_OPTIONS, Ite
 // HELPERS
 // ============================================
 
+const FRANQUIA_OPTIONS = Object.values(FranquiaHorasLabels);
+const FRANQUIA_KNOWN_KEYS = Object.keys(FranquiaHorasLabels);
+
 const TIPO_ICONS: Record<ItemTipoPeriodico, React.ReactNode> = {
   gerador: <Zap className="w-4 h-4" />,
   cabo_380v: <Cable className="w-4 h-4" />,
@@ -134,7 +137,7 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
         anual: 'mensal',
       };
 
-      const franquiaMap: Record<FranquiaHoras, 'standby' | '120h' | '240h' | '360h' | 'continuous'> = {
+      const franquiaMap: Record<string, 'standby' | '120h' | '240h' | '360h' | 'continuous'> = {
         standby: 'standby',
         '120h': '120h',
         '240h': '240h',
@@ -142,7 +145,9 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
         continuo: 'continuous',
       };
 
-      if (newPotencia && newPeriodo && newFranquia) {
+      const isKnownFranquia = newFranquia in franquiaMap;
+
+      if (newPotencia && newPeriodo && isKnownFranquia) {
         const basePrice = getGeneratorPrice(
           newPotencia,
           periodMap[newPeriodo] || 'mensal',
@@ -310,14 +315,15 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                     Franquia
                   </label>
-                  <Select
-                    value={item.franquiaHoras}
-                    onChange={(value) => handleFieldUpdate(item.id, 'franquiaHoras', value as FranquiaHoras)}
-                  >
-                    {Object.entries(FranquiaHorasLabels).map(([value, label]) => (
-                      <option key={value} value={value}>{label}</option>
-                    ))}
-                  </Select>
+                  <ComboBox
+                    value={FranquiaHorasLabels[item.franquiaHoras] || item.franquiaHoras}
+                    onChange={(value) => {
+                      const knownEntry = Object.entries(FranquiaHorasLabels).find(([, label]) => label === value);
+                      handleFieldUpdate(item.id, 'franquiaHoras', knownEntry ? knownEntry[0] : value);
+                    }}
+                    options={FRANQUIA_OPTIONS}
+                    placeholder="Selecione ou digite..."
+                  />
                 </div>
 
                 {/* Período */}

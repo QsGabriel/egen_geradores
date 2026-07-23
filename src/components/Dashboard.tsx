@@ -23,6 +23,7 @@ import {
   AreaChart, Area, ComposedChart, Line,
 } from 'recharts';
 import { supabase } from '../lib/supabase';
+import { Select } from '../modules/quotations/components/proposal/Select';
 
 // ============================================
 // PALETA DE CORES EGEN
@@ -152,7 +153,10 @@ const Dashboard: React.FC = () => {
   const canViewRanking = hasPermission(userPermissions, 'canViewSalesRanking');
   const [vendedorId, setVendedorId] = useState<string | null>(null);
   const [vendedores, setVendedores] = useState<{ id: string; name: string }[]>([]);
-  const { metrics, loading, error } = useCRMDashboard(vendedorId, canViewRanking);
+  const [rankingPeriodo, setRankingPeriodo] = useState<'30d' | '90d' | 'ano' | 'todos'>('todos');
+  const [rankingSort, setRankingSort] = useState<'valorTotal' | 'totalPropostas' | 'propostasFechadas' | 'taxaConversao'>('valorTotal');
+  const [showExpandedColumns, setShowExpandedColumns] = useState(false);
+  const { metrics, loading, error } = useCRMDashboard(vendedorId, canViewRanking, rankingPeriodo);
   const [showCharts, setShowCharts] = useState(true);
 
   useEffect(() => {
@@ -224,16 +228,45 @@ const Dashboard: React.FC = () => {
       {canViewRanking && (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
-            <select
+            <Select
               value={vendedorId || ''}
-              onChange={e => setVendedorId(e.target.value || null)}
-              className="px-3 py-2 text-sm font-medium bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-yellow-500 cursor-pointer transition-all min-w-[180px] shadow-sm"
+              onChange={(v) => setVendedorId(v || null)}
+              className="min-w-[180px]"
             >
               <option value="">Todos os vendedores</option>
               {vendedores.map(v => (
                 <option key={v.id} value={v.id}>{v.name}</option>
               ))}
-            </select>
+            </Select>
+            <Select
+              value={rankingPeriodo}
+              onChange={(v) => setRankingPeriodo(v as any)}
+              className="min-w-[140px]"
+            >
+              <option value="todos">Todo período</option>
+              <option value="30d">Últimos 30 dias</option>
+              <option value="90d">Últimos 90 dias</option>
+              <option value="ano">Este ano</option>
+            </Select>
+            <Select
+              value={rankingSort}
+              onChange={(v) => setRankingSort(v as any)}
+              className="min-w-[190px]"
+            >
+              <option value="valorTotal">Ordenar: Valor Total</option>
+              <option value="totalPropostas">Ordenar: Qtd. Propostas</option>
+              <option value="propostasFechadas">Ordenar: Fechadas</option>
+              <option value="taxaConversao">Ordenar: Tx. Conversão</option>
+            </Select>
+            <label className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showExpandedColumns}
+                onChange={e => setShowExpandedColumns(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 text-yellow-500 focus:ring-yellow-500"
+              />
+              Detalhado
+            </label>
             {vendedorId && (
               <button
                 onClick={() => setVendedorId(null)}
@@ -258,11 +291,29 @@ const Dashboard: React.FC = () => {
                       <th className="pb-3 pr-4">Vendedor</th>
                       <th className="pb-3 pr-4 text-center">Propostas</th>
                       <th className="pb-3 pr-4 text-center">Fechadas</th>
+                      {showExpandedColumns && (
+                        <>
+                          <th className="pb-3 pr-4 text-center">Negociação</th>
+                          <th className="pb-3 pr-4 text-center">Perdidas</th>
+                          <th className="pb-3 pr-4 text-center">Pesquisa</th>
+                          <th className="pb-3 pr-4 text-center">Tx. Conversão</th>
+                        </>
+                      )}
                       <th className="pb-3 text-right">Valor Total</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50 dark:divide-white/[0.04]">
-                    {metrics.vendedorRanking.map((v, i) => (
+                    {metrics.vendedorRanking
+                      .slice()
+                      .sort((a, b) => {
+                        switch (rankingSort) {
+                          case 'totalPropostas': return b.totalPropostas - a.totalPropostas;
+                          case 'propostasFechadas': return b.propostasFechadas - a.propostasFechadas;
+                          case 'taxaConversao': return b.taxaConversao - a.taxaConversao;
+                          default: return b.valorTotal - a.valorTotal;
+                        }
+                      })
+                      .map((v, i) => (
                       <tr key={v.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors">
                         <td className="py-3 pr-4">
                           <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
@@ -277,6 +328,14 @@ const Dashboard: React.FC = () => {
                         <td className="py-3 pr-4 font-medium text-gray-800 dark:text-gray-200">{v.name}</td>
                         <td className="py-3 pr-4 text-center text-gray-600 dark:text-gray-400">{v.totalPropostas}</td>
                         <td className="py-3 pr-4 text-center text-gray-600 dark:text-gray-400">{v.propostasFechadas}</td>
+                        {showExpandedColumns && (
+                          <>
+                            <td className="py-3 pr-4 text-center text-blue-600 dark:text-blue-400">{v.propostasEmNegociacao}</td>
+                            <td className="py-3 pr-4 text-center text-red-600 dark:text-red-400">{v.propostasPerdidas}</td>
+                            <td className="py-3 pr-4 text-center text-amber-600 dark:text-amber-400">{v.propostasPesquisa}</td>
+                            <td className="py-3 pr-4 text-center text-gray-600 dark:text-gray-400">{v.taxaConversao}%</td>
+                          </>
+                        )}
                         <td className="py-3 text-right font-mono whitespace-nowrap text-gray-800 dark:text-gray-200">
                           {formatCurrency(v.valorTotal)}
                         </td>
@@ -285,7 +344,7 @@ const Dashboard: React.FC = () => {
                   </tbody>
                   <tfoot>
                     <tr className="border-t border-gray-100 dark:border-white/[0.06] font-semibold">
-                      <td colSpan={4} className="pt-3 text-right text-sm text-gray-500 dark:text-gray-400">Total Geral:</td>
+                      <td colSpan={showExpandedColumns ? 8 : 4} className="pt-3 text-right text-sm text-gray-500 dark:text-gray-400">Total Geral:</td>
                       <td className="pt-3 text-right font-mono whitespace-nowrap text-gray-800 dark:text-gray-200">
                         {formatCurrency(metrics.vendedorRanking.reduce((sum, v) => sum + v.valorTotal, 0))}
                       </td>

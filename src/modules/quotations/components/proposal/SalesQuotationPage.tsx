@@ -3,7 +3,7 @@
  * Página principal para criação e edição de propostas comerciais
  */
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FileText,
@@ -32,6 +32,8 @@ import QuotationForm from './QuotationForm';
 import QuotationPreview from './QuotationPreview';
 import type { DocumentTipo, DocumentStatus } from '../../types/proposal';
 import { useNotification } from '../../../../hooks/useNotification';
+import { useAuth } from '../../../../hooks/useAuth';
+import { hasPermission } from '../../../../utils/permissions';
 import { useProposalCoverConfig } from '../../../../hooks/useAppSettings';
 import Notification from '../../../../components/Notification';
 
@@ -52,12 +54,19 @@ type ViewMode = 'form' | 'preview' | 'split';
 export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
   const { id: quotationId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
-  const [viewMode, setViewMode] = useState<ViewMode>('split');
+  const [searchParams] = useSearchParams();
+
+  // "Visualizar" abre direto na pré-visualização (?mode=preview); edição usa split
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    searchParams.get('mode') === 'preview' ? 'preview' : 'split'
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const { notification, showSuccess, showError, showInfo, hideNotification } = useNotification();
+  const { userProfile, isInitialized, loading: authLoading } = useAuth();
+  const userPermissions = userProfile?.permissions ?? [];
+  const canViewAll = hasPermission(userPermissions, 'canViewAllProposals');
 
   const { value: coverConfig } = useProposalCoverConfig();
 
@@ -75,6 +84,11 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
 
   // Load quotation if editing
   useEffect(() => {
+    // Aguarda a sessão inicializar E o perfil (permissões) terminar de carregar
+    // antes de aplicar o guard de propriedade. Sem isso, `canViewAll`/`userProfile`
+    // são avaliados como falsos/nulos e a proposta de outro vendedor é rejeitada
+    // por engano, redirecionando de volta para a lista.
+    if (!isInitialized || authLoading) return;
     if (quotationId) {
       setIsInitialLoading(true);
       loadExistingQuotation(quotationId);
@@ -82,17 +96,22 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
       setIsInitialLoading(false);
       createNew('proposta');
     }
-    
+
     return () => {
       clearCurrent();
     };
-  }, [quotationId]);
+  }, [quotationId, isInitialized, authLoading]);
 
   // Load existing quotation
   const loadExistingQuotation = async (id: string) => {
     try {
       const quotation = await quotationService.getById(id);
       if (quotation) {
+        if (!canViewAll && quotation.vendedorId && quotation.vendedorId !== userProfile?.id) {
+          showError('Acesso negado', 'Você não tem permissão para acessar esta proposta.');
+          navigate('/propostas');
+          return;
+        }
         loadQuotation(quotation);
         setIsInitialLoading(false);
       } else {

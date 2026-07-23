@@ -131,6 +131,19 @@ function estimateDispositionMm(text: string): number {
   return lines * LINE_MM + PARAGRAPH_MARGIN_MM;
 }
 
+/**
+ * Conservative height estimate (mm) of the observation block
+ * (title + body text), matching the proposal-observations-block styles.
+ */
+function estimateObservationMm(text: string): number {
+  const CHARS_PER_LINE = 95;
+  const LINE_MM = 4.7;
+  const PARAGRAPH_MARGIN_MM = 2.5;
+  const TITLE_MM = 9;
+  const lines = Math.max(1, Math.ceil(text.length / CHARS_PER_LINE));
+  return TITLE_MM + lines * LINE_MM + PARAGRAPH_MARGIN_MM;
+}
+
 function buildScopePages(
   equipmentItems: ProposalItemPeriodico[],
   serviceItems: ProposalItemSpot[],
@@ -527,7 +540,7 @@ export default function ProposalPrintDocument({
   const conditionRows = buildConditionRows(quotation.condicoes);
   if (quotation.validade) {
     conditionRows.push({
-      code: '1.23',
+      code: '1.24',
       label: 'Validade da proposta',
       value: formatDate(quotation.validade),
     });
@@ -594,8 +607,9 @@ export default function ProposalPrintDocument({
   const includeCommercialPage = !showCommercialInline;
 
   let inlineParagraphCount = 0;
+  let dispositionsRemainingMm = 0;
   if (showCommercialInline) {
-    let dispositionsRemainingMm = commercialAvailableMm - conditionsHeightMm - DISPOSITION_TITLE_MM;
+    dispositionsRemainingMm = commercialAvailableMm - conditionsHeightMm - DISPOSITION_TITLE_MM;
     for (const paragraph of DISPOSITION_PARAGRAPHS) {
       const paragraphMm = estimateDispositionMm(paragraph);
       if (dispositionsRemainingMm - paragraphMm < 0) {
@@ -606,10 +620,20 @@ export default function ProposalPrintDocument({
     }
   }
 
+  let observationFitsInline = false;
+  if (quotation.observacoesGerais?.trim()) {
+    const obsAvailableMm = showCommercialInline
+      ? dispositionsRemainingMm
+      : commercialAvailableMm;
+    const obsHeight = estimateObservationMm(quotation.observacoesGerais);
+    observationFitsInline = obsAvailableMm >= obsHeight;
+  }
+  const observationOnSeparatePage = !!quotation.observacoesGerais?.trim() && !observationFitsInline;
+
   const annexLabel = quotation.isAnnex ? 'ANEXO0001' : undefined;
   const showAsAnnex = quotation.tipo === 'contrato';
 
-  const proposalPageCount = 1 + scopePages.length + (includeCommercialPage ? 1 : 0) + 1;
+  const proposalPageCount = 1 + scopePages.length + (includeCommercialPage ? 1 : 0) + (observationOnSeparatePage ? 1 : 0) + 1;
   const totalPages = showAsAnnex
     ? 1 + contractPages.length + proposalPageCount
     : 1 + proposalPageCount;
@@ -811,7 +835,7 @@ export default function ProposalPrintDocument({
                         <td>{item.quantidade}</td>
                         <td><CurrencyCell value={item.valorUnitario} /></td>
                         <td><CurrencyCell value={item.valorTotal} /></td>
-                        <td>{FranquiaHorasLabels[item.franquiaHoras]}</td>
+                        <td>{FranquiaHorasLabels[item.franquiaHoras] || item.franquiaHoras}</td>
                         <td>{PeriodoLocacaoLabels[item.periodoLocacao] || item.periodoLocacao}</td>
                       </tr>
                     ))
@@ -910,7 +934,7 @@ export default function ProposalPrintDocument({
               </>
             ) : null}
 
-            {isLastScopePage && quotation.observacoesGerais?.trim() ? (
+            {isLastScopePage && quotation.observacoesGerais?.trim() && observationFitsInline ? (
               <section className="proposal-observations-block">
                 <h3 className="proposal-blue-section-title">Observações:</h3>
                 <p className="proposal-observations-text">{quotation.observacoesGerais}</p>
@@ -943,6 +967,27 @@ export default function ProposalPrintDocument({
           </div>
 
           <ProposalFooter pageNumber={scopePages.length + 3 + proposalPageOffset} totalPages={totalPages} />
+        </A4Page>
+      ),
+    });
+  }
+
+  if (observationOnSeparatePage) {
+    const obsPageNum = scopePages.length + 3 + proposalPageOffset + (includeCommercialPage ? 1 : 0);
+    pages.push({
+      key: 'observations',
+      content: (
+        <A4Page className="proposal-standard-page">
+          <ProposalHeader issueLine={issueLine} documentId={quotation.documentId} tipo={quotation.tipo} annexLabel={proposalAnnexLabel} />
+
+          <div className="proposal-standard-body proposal-acceptance-body">
+            <section className="proposal-observations-block">
+              <h3 className="proposal-blue-section-title">Observações:</h3>
+              <p className="proposal-observations-text">{quotation.observacoesGerais}</p>
+            </section>
+          </div>
+
+          <ProposalFooter pageNumber={obsPageNum} totalPages={totalPages} />
         </A4Page>
       ),
     });

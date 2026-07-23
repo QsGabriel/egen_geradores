@@ -72,6 +72,17 @@ export const CLIENT_CLASSIFICATIONS = [
   'Paradas de Manutenção',
   'Hospital',
   'Construtora',
+  'Saneamento',
+  'Órgãos Públicos',
+  'Supermercado',
+  'Eventos',
+  'Usina',
+  'Fazenda',
+  'Frigorífico',
+  'Laticínios',
+  'Metalúrgica',
+  'Calcário',
+  'Outros',
 ] as const;
 
 export const CLIENT_STATUS_LABELS: Record<ClientStatus, string> = {
@@ -105,6 +116,7 @@ export interface Lead {
   id: string;
   name: string;
   company: string;
+  responsavel: string;
   documentNumber: string;
   areaCode: string;
   phone: string;
@@ -126,6 +138,7 @@ export interface Lead {
 export interface LeadFormData {
   name: string;
   company: string;
+  responsavel: string;
   documentNumber: string;
   areaCode: string;
   phone: string;

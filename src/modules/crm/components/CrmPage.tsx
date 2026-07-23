@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Users,
   UserPlus,
@@ -21,10 +22,30 @@ interface HistoryContext {
   entityName: string;
 }
 
+const CRM_TAB_MAP: Record<string, CrmTab> = {
+  clients: 'clients',
+  leads: 'leads',
+  pipeline: 'pipeline',
+  history: 'history',
+};
+
 const CrmPage: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const { clients, leads, loading, error } = useCRM();
-  const [activeTab, setActiveTab] = useState<CrmTab>('clients');
+  const [activeTab, setActiveTab] = useState<CrmTab>(() => {
+    const pathSegment = location.pathname.split('/').filter(Boolean).pop();
+    return CRM_TAB_MAP[pathSegment || ''] || 'clients';
+  });
   const [historyContext, setHistoryContext] = useState<HistoryContext | null>(null);
+
+  useEffect(() => {
+    const pathSegment = location.pathname.split('/').filter(Boolean).pop();
+    const tabFromPath = CRM_TAB_MAP[pathSegment || ''];
+    if (tabFromPath) {
+      setActiveTab(tabFromPath);
+    }
+  }, [location.pathname]);
 
   const tabs: { id: CrmTab; label: string; icon: React.ComponentType<any> }[] = [
     { id: 'clients', label: 'Clientes', icon: Users },
@@ -35,7 +56,7 @@ const CrmPage: React.FC = () => {
 
   const handleViewClientHistory = (clientId: string, clientName: string) => {
     setHistoryContext({ entityType: 'client', entityId: clientId, entityName: clientName });
-    setActiveTab('history');
+    navigate('/crm/history', { replace: true });
   };
 
   const handleBackFromHistory = () => {
@@ -101,7 +122,7 @@ const CrmPage: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => {
-                  setActiveTab(tab.id);
+                  navigate(`/crm/${tab.id}`, { replace: true });
                   if (tab.id !== 'history') setHistoryContext(null);
                 }}
                 className={`inline-flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-all ${

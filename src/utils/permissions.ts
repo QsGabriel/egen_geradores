@@ -21,6 +21,8 @@ export const ALL_PERMISSION_KEYS: { key: string; label: string; group: string }[
   { key: 'canDeleteLeads', label: 'Excluir Leads', group: 'CRM' },
 
   { key: 'canManageQuotations', label: 'Gerenciar Propostas', group: 'Propostas' },
+  { key: 'canViewAllProposals', label: 'Ver Todas as Propostas', group: 'Propostas' },
+  { key: 'canViewOwnProposals', label: 'Ver Próprias Propostas', group: 'Propostas' },
   { key: 'canDeleteQuotations', label: 'Excluir Propostas', group: 'Propostas' },
   { key: 'canConfigureRequestPeriods', label: 'Configurar Períodos', group: 'Propostas' },
 
@@ -38,9 +40,9 @@ export const ALL_PERMISSION_KEYS: { key: string; label: string; group: string }[
 const LEGACY_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
   admin: ALL_PERMISSION_KEYS.map(p => p.key),
   operator: ALL_PERMISSION_KEYS.map(p => p.key).filter(
-    k => !['canViewDashboard', 'canManageUsers', 'canDeleteUsers', 'canManageRoles', 'canManageDepartments', 'canManageWhitelist'].includes(k)
+    k => !['canViewDashboard', 'canManageUsers', 'canDeleteUsers', 'canManageRoles', 'canManageDepartments', 'canManageWhitelist', 'canViewAllProposals'].includes(k)
   ),
-  requester: ['canViewClients', 'canViewLeads', 'canViewMaintenance'],
+  requester: ['canViewClients', 'canViewLeads', 'canViewMaintenance', 'canViewOwnProposals'],
 };
 
 export const getPermissionsForLegacyRole = (role: UserRole): string[] => {
@@ -49,6 +51,10 @@ export const getPermissionsForLegacyRole = (role: UserRole): string[] => {
 
 export const hasPermission = (permissions: string[], permission: string): boolean => {
   return permissions.includes(permission);
+};
+
+export const hasAnyPermission = (permissions: string[], keys: string[]): boolean => {
+  return keys.some(k => permissions.includes(k));
 };
 
 export const getRoleLabel = (role: UserRole): string => {
