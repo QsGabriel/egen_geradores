@@ -128,6 +128,58 @@ export function usePricing() {
   // ============================================
 
   /**
+   * Extrai o valor mínimo de KVA de uma string de potência (ex: "170KVA à 207KVA" → 170)
+   */
+  function extractMinKva(powerString: string): number {
+    const match = powerString.match(/^(\d+)/);
+    return match ? parseInt(match[1], 10) : 0;
+  }
+
+  /**
+   * Extrai o valor máximo de KVA (ex: "170KVA à 207KVA" → 207, "200KVA" → 200)
+   */
+  function extractMaxKva(powerString: string): number {
+    const numbers = powerString.match(/\d+/g);
+    if (!numbers || numbers.length === 0) return 0;
+    return parseInt(numbers[numbers.length - 1], 10);
+  }
+
+  /**
+   * Busca um gerador por powerKva com fallback por faixa numérica.
+   * O banco usa labels diferentes para a mesma potência em períodos distintos
+   * (ex: "200KVA" no mensal vs "170KVA à 207KVA" no quinzenal).
+   * O fallback verifica se o min_kva selecionado está dentro da faixa do banco,
+   * ou se o min_kva do banco está dentro da faixa selecionada.
+   */
+  const findGenerator = useCallback((
+    powerKva: string,
+    period: RentalPeriod,
+    equipmentType: EquipmentType = 'gerador'
+  ) => {
+    const exact = generators.find(
+      g => g.powerKva === powerKva &&
+           g.rentalPeriod === period &&
+           g.equipmentType === equipmentType &&
+           g.isActive
+    );
+    if (exact) return exact;
+
+    const selMin = extractMinKva(powerKva);
+    const selMax = extractMaxKva(powerKva);
+    if (selMin > 0) {
+      return generators.find(
+        g => g.powerMinKva != null && g.powerMaxKva != null &&
+             g.rentalPeriod === period &&
+             g.equipmentType === equipmentType &&
+             g.isActive &&
+             ((selMin >= g.powerMinKva && selMin <= g.powerMaxKva) ||
+              (g.powerMinKva >= selMin && g.powerMinKva <= selMax))
+      );
+    }
+    return undefined;
+  }, [generators]);
+
+  /**
    * Obtém o preço de um gerador para um período e pacote de horas específicos
    */
   const getGeneratorPrice = useCallback((
@@ -136,13 +188,7 @@ export function usePricing() {
     hoursPackage: HoursPackage,
     equipmentType: EquipmentType = 'gerador'
   ): number | null => {
-    const gen = generators.find(
-      g => g.powerKva === powerKva && 
-           g.rentalPeriod === period && 
-           g.equipmentType === equipmentType &&
-           g.isActive
-    );
-
+    const gen = findGenerator(powerKva, period, equipmentType);
     if (!gen) return null;
 
     const priceMap: Record<HoursPackage, number | null> = {
@@ -164,14 +210,9 @@ export function usePricing() {
     period: RentalPeriod,
     equipmentType: EquipmentType = 'gerador'
   ): number | null => {
-    const gen = generators.find(
-      g => g.powerKva === powerKva && 
-           g.rentalPeriod === period && 
-           g.equipmentType === equipmentType &&
-           g.isActive
-    );
+    const gen = findGenerator(powerKva, period, equipmentType);
     return gen?.priceExtraHour ?? null;
-  }, [generators]);
+  }, [findGenerator]);
 
   /**
    * Obtém o preço do kit cabo (380V ou 220V) para um gerador e período
@@ -182,15 +223,10 @@ export function usePricing() {
     voltage: '380v' | '220v',
     equipmentType: EquipmentType = 'gerador'
   ): number | null => {
-    const gen = generators.find(
-      g => g.powerKva === powerKva && 
-           g.rentalPeriod === period && 
-           g.equipmentType === equipmentType &&
-           g.isActive
-    );
+    const gen = findGenerator(powerKva, period, equipmentType);
     if (!gen) return null;
     return voltage === '380v' ? gen.priceCableKit380v : gen.priceCableKit220v;
-  }, [generators]);
+  }, [findGenerator]);
 
   /**
    * Obtém o preço de um acessório para um período específico

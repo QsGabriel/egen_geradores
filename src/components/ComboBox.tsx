@@ -25,7 +25,8 @@ export default function ComboBox({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
-  const filtered = search
+  const isUserFiltering = search && search !== value;
+  const filtered = isUserFiltering
     ? options.filter((opt) => opt.toLowerCase().includes(search.toLowerCase()))
     : options;
 
@@ -33,7 +34,7 @@ export default function ComboBox({
     (opt) => opt.toLowerCase() === search.toLowerCase()
   );
 
-  const showCustomOption = allowCustom && search && !exactMatch;
+  const showCustomOption = allowCustom && isUserFiltering && !exactMatch;
 
   const handleSelect = useCallback(
     (opt: string) => {

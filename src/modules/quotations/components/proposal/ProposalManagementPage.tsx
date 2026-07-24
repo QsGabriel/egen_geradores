@@ -418,6 +418,69 @@ export default function ProposalManagementPage() {
 
   const isEmpty = !loading && proposals.length === 0;
 
+  // Barra de paginação reutilizada pela tabela (desktop) e pelos cards (mobile)
+  const renderPaginationBar = () => (
+    <>
+      <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-3">
+        <span className="text-xs text-gray-400 dark:text-gray-400">
+          {totalCount > 0
+            ? `Mostrando ${(page - 1) * pageSize + 1}-${Math.min(page * pageSize, totalCount)} de ${totalCount}`
+            : 'Nenhuma proposta'}
+        </span>
+        <span className="text-xs text-gray-400 dark:text-gray-400">
+          Valor em aberto:{' '}
+          <span className="font-semibold text-gray-600 dark:text-gray-300">
+            {formatCurrency(metrics.totalValue)}
+          </span>
+        </span>
+      </div>
+
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => setPage(Math.max(1, page - 1))}
+          disabled={page <= 1}
+          className="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        {Array.from({ length: Math.min(5, Math.ceil(totalCount / pageSize)) }, (_, i) => {
+          const totalPages = Math.ceil(totalCount / pageSize);
+          let pageNum: number;
+          if (totalPages <= 5) {
+            pageNum = i + 1;
+          } else if (page <= 3) {
+            pageNum = i + 1;
+          } else if (page >= totalPages - 2) {
+            pageNum = totalPages - 4 + i;
+          } else {
+            pageNum = page - 2 + i;
+          }
+          if (pageNum < 1 || pageNum > totalPages) return null;
+          return (
+            <button
+              key={pageNum}
+              onClick={() => setPage(pageNum)}
+              className={`w-8 h-8 text-sm rounded-lg font-medium transition-all ${
+                pageNum === page
+                  ? 'bg-yellow-500 text-white shadow-md'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+            >
+              {pageNum}
+            </button>
+          );
+        })}
+        <button
+          onClick={() => setPage(page + 1)}
+          disabled={page >= Math.ceil(totalCount / pageSize)}
+          className="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+    </>
+  );
+
   return (
     <div className="space-y-4 sm:space-y-5 lg:space-y-6 animate-fade-in">
 
@@ -734,7 +797,7 @@ export default function ProposalManagementPage() {
 
           {/* Desktop table */}
           <div className="hidden md:block bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-x-auto">
-            <table className="w-full min-w-[800px] text-sm">
+            <table className="w-full min-w-[520px] 2xl:min-w-[820px] text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                   <th className="px-3 py-3.5 w-10">
@@ -758,13 +821,13 @@ export default function ProposalManagementPage() {
                     Cliente {sortIndicator('cliente')}
                   </th>
                   <th
-                    className="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-36 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 select-none"
+                    className="hidden 2xl:table-cell px-5 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-36 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 select-none"
                     onClick={() => handleSort('vendedor')}
                   >
                     Vendedor {sortIndicator('vendedor')}
                   </th>
                   <th
-                    className="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-36 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 select-none"
+                    className="hidden xl:table-cell px-5 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-36 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 select-none"
                     onClick={() => handleSort('dataEmissao')}
                   >
                     Data de Emissão {sortIndicator('dataEmissao')}
@@ -830,14 +893,14 @@ export default function ProposalManagementPage() {
                     </td>
 
                     {/* Vendedor */}
-                    <td className="px-5 py-4">
+                    <td className="px-5 py-4 hidden 2xl:table-cell">
                       <span className="text-sm text-gray-700 dark:text-gray-300">
                         {vendedores.find(v => v.id === p.vendedorId)?.name || <span className="text-gray-400 italic">—</span>}
                       </span>
                     </td>
 
                     {/* Data */}
-                    <td className="px-5 py-4">
+                    <td className="px-5 py-4 hidden xl:table-cell">
                       <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
                         <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
                         <span className="text-sm">{formatDate(p.dataEmissao)}</span>
@@ -851,7 +914,7 @@ export default function ProposalManagementPage() {
 
                     {/* Ações */}
                     <td className="px-5 py-4">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => handleView(p)}
                           title="Visualizar / Exportar PDF"
@@ -881,67 +944,6 @@ export default function ProposalManagementPage() {
                 ))}
               </tbody>
             </table>
-
-            {/* Table footer with pagination */}
-            <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-gray-400 dark:text-gray-400">
-                  {totalCount > 0
-                    ? `Mostrando ${(page - 1) * pageSize + 1}-${Math.min(page * pageSize, totalCount)} de ${totalCount}`
-                    : 'Nenhuma proposta'}
-                </span>
-                <span className="text-xs text-gray-400 dark:text-gray-400">
-                  Valor em aberto:{' '}
-                  <span className="font-semibold text-gray-600 dark:text-gray-300">
-                    {formatCurrency(metrics.totalValue)}
-                  </span>
-                </span>
-              </div>
-
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setPage(Math.max(1, page - 1))}
-                  disabled={page <= 1}
-                  className="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                {Array.from({ length: Math.min(5, Math.ceil(totalCount / pageSize)) }, (_, i) => {
-                  const totalPages = Math.ceil(totalCount / pageSize);
-                  let pageNum: number;
-                  if (totalPages <= 5) {
-                    pageNum = i + 1;
-                  } else if (page <= 3) {
-                    pageNum = i + 1;
-                  } else if (page >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i;
-                  } else {
-                    pageNum = page - 2 + i;
-                  }
-                  if (pageNum < 1 || pageNum > totalPages) return null;
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => setPage(pageNum)}
-                      className={`w-8 h-8 text-sm rounded-lg font-medium transition-all ${
-                        pageNum === page
-                          ? 'bg-yellow-500 text-white shadow-md'
-                          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                      }`}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
-                <button
-                  onClick={() => setPage(page + 1)}
-                  disabled={page >= Math.ceil(totalCount / pageSize)}
-                  className="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* Mobile/Tablet cards */}
@@ -1019,6 +1021,11 @@ export default function ProposalManagementPage() {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* ===== PAGINATION (compartilhada: desktop + mobile) ===== */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm px-4 sm:px-5 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+            {renderPaginationBar()}
           </div>
         </>
       )}
