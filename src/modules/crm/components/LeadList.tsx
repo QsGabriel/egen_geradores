@@ -776,21 +776,21 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
                 </th>
                 <th
                   onClick={() => handleSort('state')}
-                  className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none transition-colors"
+                  className="hidden @[820px]/page:table-cell text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none transition-colors"
                 >
                   Localização{sortIndicator('state')}
                 </th>
-                <th className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Documento</th>
+                <th className="hidden @[1100px]/page:table-cell text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Documento</th>
                 <th
                   onClick={() => handleSort('classification')}
-                  className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none transition-colors whitespace-nowrap"
+                  className="hidden @[1240px]/page:table-cell text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none transition-colors whitespace-nowrap"
                 >
                   Classificação{sortIndicator('classification')}
                 </th>
                 <th className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Contatos</th>
                 <th
                   onClick={() => handleSort('source')}
-                  className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none transition-colors"
+                  className="hidden @[960px]/page:table-cell text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none transition-colors"
                 >
                   Origem{sortIndicator('source')}
                 </th>
@@ -800,7 +800,7 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
                 >
                   Status{sortIndicator('status')}
                 </th>
-                <th className="text-right px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Ações</th>
+                <th className="col-actions-sticky text-right px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -840,13 +840,13 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
                           </div>
                         ) : '—'}
                       </td>
-                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300 text-xs whitespace-nowrap">
+                      <td className="hidden @[820px]/page:table-cell px-6 py-4 text-gray-600 dark:text-gray-300 text-xs whitespace-nowrap">
                         {[lead.city, lead.state].filter(Boolean).join(' / ') || '—'}
                       </td>
-                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300 text-xs font-mono">
+                      <td className="hidden @[1100px]/page:table-cell px-6 py-4 text-gray-600 dark:text-gray-300 text-xs font-mono">
                         {lead.documentNumber || '—'}
                       </td>
-                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300 text-xs">
+                      <td className="hidden @[1240px]/page:table-cell px-6 py-4 text-gray-600 dark:text-gray-300 text-xs">
                         {lead.classification ? (
                           <span className="inline-block px-2 py-0.5 rounded-md text-[11px] font-medium bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400">
                             {lead.classification}
@@ -874,7 +874,7 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
                           </div>
                         ) : '—'}
                       </td>
-                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300 text-xs">
+                      <td className="hidden @[960px]/page:table-cell px-6 py-4 text-gray-600 dark:text-gray-300 text-xs">
                         {lead.source || '—'}
                       </td>
                       <td className="px-6 py-4">
@@ -896,7 +896,7 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
                           <div className="text-xs text-green-500 mt-1">Convertido</div>
                         )}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="col-actions-sticky px-6 py-4">
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={(e) => { e.stopPropagation(); handleGenerateProposal(lead); }}

@@ -438,12 +438,12 @@ const EquipmentPage: React.FC = () => {
                 <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
                   <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-400">Codigo</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-400">Equipamento</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-400 hidden md:table-cell">Marca/Modelo</th>
-                  <th className="text-center px-4 py-3 font-semibold text-gray-600 dark:text-gray-400 hidden lg:table-cell">Potencia</th>
-                  <th className="text-center px-4 py-3 font-semibold text-gray-600 dark:text-gray-400 hidden lg:table-cell">Combustivel</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-400 hidden @[720px]/page:table-cell">Marca/Modelo</th>
+                  <th className="text-center px-4 py-3 font-semibold text-gray-600 dark:text-gray-400 hidden @[900px]/page:table-cell">Potencia</th>
+                  <th className="text-center px-4 py-3 font-semibold text-gray-600 dark:text-gray-400 hidden @[1020px]/page:table-cell">Combustivel</th>
                   <th className="text-center px-4 py-3 font-semibold text-gray-600 dark:text-gray-400">Status</th>
-                  <th className="text-right px-4 py-3 font-semibold text-gray-600 dark:text-gray-400 hidden sm:table-cell">Valor/Mes</th>
-                  <th className="text-right px-4 py-3 font-semibold text-gray-600 dark:text-gray-400">Acoes</th>
+                  <th className="text-right px-4 py-3 font-semibold text-gray-600 dark:text-gray-400 hidden @[560px]/page:table-cell">Valor/Mes</th>
+                  <th className="col-actions-sticky text-right px-4 py-3 font-semibold text-gray-600 dark:text-gray-400">Acoes</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -469,13 +469,13 @@ const EquipmentPage: React.FC = () => {
                           <div className="text-xs text-gray-400 dark:text-gray-500">SN: {eq.serialNumber}</div>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300 hidden md:table-cell">
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300 hidden @[720px]/page:table-cell">
                         {eq.brand && eq.model ? `${eq.brand} / ${eq.model}` : '—'}
                       </td>
-                      <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300 hidden lg:table-cell">
+                      <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300 hidden @[900px]/page:table-cell">
                         {eq.powerKva != null ? `${eq.powerKva} kVA` : '—'}
                       </td>
-                      <td className="px-4 py-3 text-center hidden lg:table-cell">
+                      <td className="px-4 py-3 text-center hidden @[1020px]/page:table-cell">
                         {eq.fuelType ? (
                           <span className="text-xs text-gray-600 dark:text-gray-300">{FUEL_TYPE_LABELS[eq.fuelType] || eq.fuelType}</span>
                         ) : '—'}
@@ -486,10 +486,10 @@ const EquipmentPage: React.FC = () => {
                           {EQUIPMENT_STATUS_LABELS[eq.status]}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-300 hidden sm:table-cell">
+                      <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-300 hidden @[560px]/page:table-cell">
                         {formatCurrency(eq.rentalMonthlyRate)}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="col-actions-sticky px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={(e) => { e.stopPropagation(); handleEdit(eq); }}

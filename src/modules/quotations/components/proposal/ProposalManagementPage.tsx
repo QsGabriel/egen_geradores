@@ -797,7 +797,7 @@ export default function ProposalManagementPage() {
 
           {/* Desktop table */}
           <div className="hidden md:block bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-x-auto">
-            <table className="w-full min-w-[520px] 2xl:min-w-[820px] text-sm">
+            <table className="w-full min-w-[520px] text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                   <th className="px-3 py-3.5 w-10">
@@ -821,13 +821,13 @@ export default function ProposalManagementPage() {
                     Cliente {sortIndicator('cliente')}
                   </th>
                   <th
-                    className="hidden 2xl:table-cell px-5 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-36 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 select-none"
+                    className="hidden @[960px]/page:table-cell px-5 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-36 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 select-none"
                     onClick={() => handleSort('vendedor')}
                   >
                     Vendedor {sortIndicator('vendedor')}
                   </th>
                   <th
-                    className="hidden xl:table-cell px-5 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-36 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 select-none"
+                    className="hidden @[800px]/page:table-cell px-5 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-36 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 select-none"
                     onClick={() => handleSort('dataEmissao')}
                   >
                     Data de Emissão {sortIndicator('dataEmissao')}
@@ -838,7 +838,7 @@ export default function ProposalManagementPage() {
                   >
                     Status {sortIndicator('status')}
                   </th>
-                  <th className="px-5 py-3.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32">
+                  <th className="col-actions-sticky px-5 py-3.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32">
                     Ações
                   </th>
                 </tr>
@@ -893,14 +893,14 @@ export default function ProposalManagementPage() {
                     </td>
 
                     {/* Vendedor */}
-                    <td className="px-5 py-4 hidden 2xl:table-cell">
+                    <td className="px-5 py-4 hidden @[960px]/page:table-cell">
                       <span className="text-sm text-gray-700 dark:text-gray-300">
                         {vendedores.find(v => v.id === p.vendedorId)?.name || <span className="text-gray-400 italic">—</span>}
                       </span>
                     </td>
 
                     {/* Data */}
-                    <td className="px-5 py-4 hidden xl:table-cell">
+                    <td className="px-5 py-4 hidden @[800px]/page:table-cell">
                       <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
                         <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
                         <span className="text-sm">{formatDate(p.dataEmissao)}</span>
@@ -913,7 +913,7 @@ export default function ProposalManagementPage() {
                     </td>
 
                     {/* Ações */}
-                    <td className="px-5 py-4">
+                    <td className="col-actions-sticky px-5 py-4">
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => handleView(p)}

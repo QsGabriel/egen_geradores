@@ -125,6 +125,8 @@ export interface ProposalItemPeriodico {
   descricao: string;
   /** Only used for type === 'gerador' */
   potenciaKva?: string;
+  /** Only used for type === 'qta' */
+  amperagem?: string;
   quantidade: number;
   franquiaHoras: FranquiaHoras;
   periodoLocacao: PeriodoLocacao;

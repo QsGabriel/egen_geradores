@@ -646,8 +646,8 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                     <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{item.code}</p>
                   </div>
                 </div>
-                {/* Botões sempre visíveis em mobile, hover em desktop */}
-                <div className="flex space-x-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0 ml-2">
+                {/* Botões de ação sempre visíveis (não dependem de hover) */}
+                <div className="flex space-x-1 flex-shrink-0 ml-2">
                   <button onClick={() => handleEditClick(item)} className="p-2 text-blue-500 md:text-gray-400 dark:md:text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all" title="Editar equipamento">
                     <Edit className="w-4 h-4" />
                   </button>

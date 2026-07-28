@@ -527,7 +527,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
         {/* Conteúdo da página */}
         <main
-          className={`min-h-screen ${
+          className={`min-h-screen @container/page ${
             location.pathname === '/' || location.pathname.startsWith('/propostas/') ? '' : 'py-4 px-4 sm:px-6 lg:px-6 xl:px-8'
           }`}
         >

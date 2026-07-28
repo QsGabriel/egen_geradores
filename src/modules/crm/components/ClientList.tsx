@@ -673,17 +673,17 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
                 >
                   Cliente{sortIndicator('name')}
                 </th>
-                <th className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Documento</th>
+                <th className="hidden @[900px]/page:table-cell text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Documento</th>
                 <th className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Contato</th>
                 <th
                   onClick={() => handleSort('classification')}
-                  className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none transition-colors whitespace-nowrap"
+                  className="hidden @[1040px]/page:table-cell text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none transition-colors whitespace-nowrap"
                 >
                   Classificação{sortIndicator('classification')}
                 </th>
                 <th
                   onClick={() => handleSort('state')}
-                  className="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none transition-colors"
+                  className="hidden @[760px]/page:table-cell text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none transition-colors"
                 >
                   Cidade/UF{sortIndicator('state')}
                 </th>
@@ -693,7 +693,7 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
                 >
                   Status{sortIndicator('clientStatus')}
                 </th>
-                <th className="text-right px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Ações</th>
+                <th className="col-actions-sticky text-right px-6 py-3 font-semibold text-gray-600 dark:text-gray-400">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -725,7 +725,7 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
                         </a>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-gray-600 dark:text-gray-300 font-mono text-xs">
+                    <td className="hidden @[900px]/page:table-cell px-6 py-4 text-gray-600 dark:text-gray-300 font-mono text-xs">
                       {client.documentNumber ? formatDocument(client.documentNumber) : '—'}
                     </td>
                     <td className="px-6 py-4">
@@ -750,10 +750,10 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-gray-600 dark:text-gray-300 text-xs">
+                    <td className="hidden @[1040px]/page:table-cell px-6 py-4 text-gray-600 dark:text-gray-300 text-xs">
                       {client.classification || '—'}
                     </td>
-                    <td className="px-6 py-4 text-gray-600 dark:text-gray-300 text-xs">
+                    <td className="hidden @[760px]/page:table-cell px-6 py-4 text-gray-600 dark:text-gray-300 text-xs">
                       {client.city || client.state
                         ? `${client.city}${client.city && client.state ? '/' : ''}${client.state}`
                         : '—'}
@@ -763,7 +763,7 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
                         {CLIENT_STATUS_LABELS[client.clientStatus]}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="col-actions-sticky px-6 py-4">
                       <div className="flex items-center justify-end gap-1">
                         {onViewHistory && (
                           <button

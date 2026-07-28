@@ -233,9 +233,14 @@ export function usePricing() {
    */
   const getAccessoryPrice = useCallback((
     itemCode: string,
-    period: RentalPeriod
+    period: RentalPeriod,
+    amperage?: string
   ): number | null => {
-    const acc = accessories.find(a => a.itemCode === itemCode && a.isActive);
+    const acc = accessories.find(a =>
+      a.itemCode === itemCode &&
+      a.isActive &&
+      (!amperage || a.amperage === amperage)
+    );
 
     if (!acc) return null;
 

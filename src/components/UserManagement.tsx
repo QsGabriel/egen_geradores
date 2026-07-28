@@ -603,10 +603,10 @@ const UserManagement: React.FC = () => {
                 <thead className="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-700 dark:to-slate-700">
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Usuário</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Departamento</th>
+                    <th className="hidden @[900px]/page:table-cell px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Departamento</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cargo</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Criado em</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ações</th>
+                    <th className="hidden @[720px]/page:table-cell px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Criado em</th>
+                    <th className="col-actions-sticky px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
@@ -642,7 +642,7 @@ const UserManagement: React.FC = () => {
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap"><span className="text-sm text-gray-700 dark:text-gray-300 font-medium">{user.department}</span></td>
+                        <td className="hidden @[900px]/page:table-cell px-6 py-4 whitespace-nowrap"><span className="text-sm text-gray-700 dark:text-gray-300 font-medium">{user.department}</span></td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-3 py-1 text-xs font-medium rounded-full ${
                             user.role === 'admin' ? 'bg-gradient-to-r from-red-100 to-rose-100 dark:from-red-900/50 dark:to-rose-900/50 text-red-800 dark:text-red-200' :
@@ -650,8 +650,8 @@ const UserManagement: React.FC = () => {
                             'bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/50 dark:to-emerald-900/50 text-green-800 dark:text-green-200'
                           }`}>{user.roleName || getRoleLabel(user.role)}</span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{new Date(user.createdAt).toLocaleDateString('pt-BR')}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <td className="hidden @[720px]/page:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{new Date(user.createdAt).toLocaleDateString('pt-BR')}</td>
+                        <td className="col-actions-sticky px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center gap-1">
                             <button onClick={() => handleEdit(user)} className="text-[#F3B229] hover:text-[#E5A320] flex items-center px-3 py-1.5 rounded-lg hover:bg-[#F3B229]/10 transition-all duration-200">
                               <Edit className="w-4 h-4 mr-1" /> Editar
@@ -829,9 +829,9 @@ const UserManagement: React.FC = () => {
                 <thead className="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-700 dark:to-slate-700">
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Departamento</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Descrição</th>
+                    <th className="hidden @[700px]/page:table-cell px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Descrição</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ações</th>
+                    <th className="col-actions-sticky px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
@@ -850,13 +850,13 @@ const UserManagement: React.FC = () => {
                             <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{dept.name}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{dept.description || '-'}</td>
+                        <td className="hidden @[700px]/page:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{dept.description || '-'}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <button onClick={() => handleToggleDeptActive(dept)} className={`px-3 py-1 text-xs font-medium rounded-full transition-all ${dept.isActive ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-500'}`}>
                             {dept.isActive ? 'Ativo' : 'Inativo'}
                           </button>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <td className="col-actions-sticky px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <button onClick={() => handleEditDept(dept)} className="text-[#F3B229] hover:text-[#E5A320] flex items-center px-3 py-1.5 rounded-lg hover:bg-[#F3B229]/10 transition-all duration-200">
                             <Edit className="w-4 h-4 mr-1" /> Editar
                           </button>

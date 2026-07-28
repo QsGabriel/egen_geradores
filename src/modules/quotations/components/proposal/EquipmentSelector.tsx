@@ -53,14 +53,23 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
   
   const {
     generators,
+    accessories,
     getGeneratorPrice,
     getCableKitPrice,
+    getAccessoryPrice,
     getAvailablePowers,
     formatCurrency,
-    loading: pricingLoading,
   } = usePricing();
 
   const availablePowers = useMemo(() => getAvailablePowers('gerador'), [getAvailablePowers]);
+
+  const qtaAmperagens = useMemo(() => {
+    return accessories
+      .filter(a => a.category === 'qta' && a.isActive)
+      .map(a => a.amperage)
+      .filter((a): a is string => a !== null)
+      .sort();
+  }, [accessories]);
 
   const findGeneratorReference = (): { potencia: string | undefined; periodo: PeriodoLocacao } | null => {
     const gen = itensPeriodicos.find(e => e.tipo === 'gerador' && e.potenciaKva);
@@ -108,6 +117,16 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
       const cablePrice = getCableKitPriceForItem(tipo, genRef.potencia, genRef.periodo);
       const price = cablePrice ?? 0;
       addItemPeriodico({ tipo, descricao: ItemTipoPeriodicoLabels[tipo], valorUnitario: price, valorTotal: price });
+    } else if (tipo === 'qta') {
+      const firstAmperagem = qtaAmperagens[0] || '';
+      const price = firstAmperagem ? getAccessoryPrice('QTA', 'mensal', firstAmperagem) : null;
+      addItemPeriodico({
+        tipo,
+        descricao: firstAmperagem ? `QTA ${firstAmperagem}` : ItemTipoPeriodicoLabels[tipo],
+        amperagem: firstAmperagem,
+        valorUnitario: price ?? 0,
+        valorTotal: price ?? 0,
+      });
     } else {
       addItemPeriodico({ tipo, descricao: tipo === 'gerador' ? '' : ItemTipoPeriodicoLabels[tipo] });
     }
@@ -181,6 +200,30 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
       } else {
         updateItemPeriodico(id, { [field]: value });
       }
+    } else if (
+      current.tipo === 'qta' &&
+      (field === 'amperagem' || field === 'periodoLocacao')
+    ) {
+      const newAmperagem = field === 'amperagem' ? value : (current.amperagem || '');
+      const newPeriodo = field === 'periodoLocacao' ? value : current.periodoLocacao;
+
+      const periodMap: Record<string, 'mensal' | 'quinzenal' | 'semanal'> = {
+        mensal: 'mensal',
+        quinzenal: 'quinzenal',
+        semanal: 'semanal',
+        anual: 'mensal',
+      };
+
+      const basePrice = newAmperagem
+        ? getAccessoryPrice('QTA', periodMap[newPeriodo] || 'mensal', newAmperagem)
+        : null;
+      const price = basePrice != null && newPeriodo === 'anual' ? basePrice * 12 : basePrice;
+
+      updateItemPeriodico(id, {
+        [field]: value,
+        valorUnitario: price ?? 0,
+        descricao: newAmperagem ? `QTA ${newAmperagem}` : current.descricao,
+      });
     } else {
       updateItemPeriodico(id, { [field]: value });
     }
@@ -296,6 +339,24 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
                   </div>
                 )}
 
+                {/* Amperagem — only for QTA */}
+                {item.tipo === 'qta' && qtaAmperagens.length > 0 && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                      Amperagem
+                    </label>
+                    <Select
+                      value={item.amperagem ?? ''}
+                      onChange={(value) => handleFieldUpdate(item.id, 'amperagem', value)}
+                    >
+                      <option value="">Selecione...</option>
+                      {qtaAmperagens.map(amp => (
+                        <option key={amp} value={amp}>{amp}</option>
+                      ))}
+                    </Select>
+                  </div>
+                )}
+
                 {/* Quantidade */}
                 <div>
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
@@ -393,6 +454,14 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
                 <div className="flex items-center gap-2 px-3 py-2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 rounded-lg text-sm">
                   <AlertTriangle className="w-4 h-4" />
                   Preço não encontrado para esta configuração. Verifique a tabela de preços.
+                </div>
+              )}
+
+              {/* Price warning for QTA */}
+              {item.tipo === 'qta' && item.valorUnitario === 0 && item.amperagem && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 rounded-lg text-sm">
+                  <AlertTriangle className="w-4 h-4" />
+                  Preço não encontrado para esta amperagem. Verifique a tabela de preços.
                 </div>
               )}
             </motion.div>

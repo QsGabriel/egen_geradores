@@ -20,6 +20,37 @@
 }
 
 /* ========================================
+   COLUNA DE AÇÕES FIXA (sticky) EM TABELAS
+   Mantém as ações sempre visíveis à direita
+   enquanto o restante da tabela rola na horizontal.
+   Aplicar a mesma classe no <th> e no <td> finais;
+   o seletor por elemento escolhe o fundo (cabeçalho x corpo).
+   O fundo é sólido de propósito, para ocluir o conteúdo
+   que rola por baixo da coluna fixa.
+   ======================================== */
+
+@layer components {
+  .col-actions-sticky {
+    position: sticky;
+    right: 0;
+    z-index: 10;
+    box-shadow: -6px 0 8px -6px rgb(0 0 0 / 0.10);
+  }
+  td.col-actions-sticky {
+    background-color: #ffffff; /* surface (card) */
+  }
+  th.col-actions-sticky {
+    background-color: #f9fafb; /* gray-50 (cabeçalho) */
+  }
+  .dark td.col-actions-sticky {
+    background-color: #1f2937; /* gray-800 */
+  }
+  .dark th.col-actions-sticky {
+    background-color: #111827; /* gray-900 */
+  }
+}
+
+/* ========================================
    ANIMAÇÕES E TRANSIÇÕES GLOBAIS
    ======================================== */
 

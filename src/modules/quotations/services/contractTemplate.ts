@@ -2,7 +2,7 @@
  * EGEN System - Contract Template
  *
  * Modelo estruturado do "CONTRATO DE LOCAÇÃO GERADORES", fiel ao protótipo
- * fornecido pelo cliente (docs/HTML contract formatting (1)/Contrato EGEN.dc.html).
+ * fornecido pelo cliente (docs/renderizacao-documentos/HTML contract formatting (1)/Contrato EGEN.dc.html).
  *
  * O contrato é representado como uma lista de blocos tipados (ContractBlock[]),
  * com formatação inline (negrito, quebras de linha) preservada. A partir dessa
