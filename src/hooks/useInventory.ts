@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { translateError } from '../utils/translateError';
 import { Equipment, StockMovement, Request, DashboardData, FinancialMetrics, Quotation, QuotationItem, EquipmentChangeLog } from '../types';
 
 export const useInventory = () => {
@@ -27,7 +28,7 @@ export const useInventory = () => {
         fetchChangeLogs()
       ]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(translateError(err));
     } finally {
       setLoading(false);
     }

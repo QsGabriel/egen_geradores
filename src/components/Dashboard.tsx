@@ -865,6 +865,7 @@ function formatStatusLabel(status: string): string {
     cancelled: 'Cancelada',
     lost: 'Perdida',
     price_survey: 'Pesquisa',
+    contract_finished: 'Contrato Finalizado',
     pending: 'Pendente',
     in_progress: 'Em andamento',
     completed: 'Concluída',

@@ -4,6 +4,7 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
+import { translateError } from '../../../utils/translateError';
 import type {
   PricingGenerator,
   PricingAccessory,
@@ -322,7 +323,7 @@ export function usePricing() {
         fetchAccessories({ isActive: true }),
       ]);
     } catch (err: any) {
-      setError(err.message || 'Erro ao carregar tabelas de preço');
+      setError(translateError(err));
       console.error('[usePricing] Error:', err);
     } finally {
       setLoading(false);

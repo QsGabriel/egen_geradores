@@ -7,6 +7,7 @@ import {
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/useTheme';
 import { DEPARTMENTS } from '../utils/permissions';
+import { translateError } from '../utils/translateError';
 
 /* ================================================
    Animation variants
@@ -643,91 +644,12 @@ const Auth: React.FC = () => {
   // Key for AnimatePresence to detect form change
   const formKey = isForgotPassword ? 'forgot' : isSignUp ? 'signup' : 'login';
 
-  /**
-   * Traduz mensagens de erro do Supabase Auth para português
-   */
   const translateAuthError = (errorMessage: string, isSignUpContext: boolean): string => {
     const msg = errorMessage.toLowerCase();
-    
-    // Credenciais inválidas
-    if (msg.includes('invalid login credentials') || msg.includes('invalid credentials')) {
-      return isSignUpContext
-        ? 'Falha ao criar conta. Verifique se o email é válido e a senha tem pelo menos 6 caracteres.'
-        : 'Email ou senha incorretos. Verifique suas credenciais e tente novamente.';
+    if ((msg.includes('invalid login credentials') || msg.includes('invalid credentials')) && isSignUpContext) {
+      return 'Falha ao criar conta. Verifique se o email é válido e a senha tem pelo menos 6 caracteres.';
     }
-    
-    // Email não confirmado
-    if (msg.includes('email not confirmed') || msg.includes('email_not_confirmed')) {
-      return 'Por favor, confirme seu email antes de fazer login. Verifique sua caixa de entrada e spam.';
-    }
-    
-    // Senha muito curta
-    if (msg.includes('password should be at least') || msg.includes('password is too short')) {
-      return 'A senha deve ter pelo menos 6 caracteres.';
-    }
-    
-    // Senha muito fraca
-    if (msg.includes('weak password') || msg.includes('password is too weak')) {
-      return 'A senha é muito fraca. Use letras maiúsculas, minúsculas, números e símbolos.';
-    }
-    
-    // Email inválido
-    if (msg.includes('invalid email') || msg.includes('unable to validate email')) {
-      return 'Por favor, insira um endereço de email válido.';
-    }
-    
-    // Usuário já cadastrado
-    if (msg.includes('user already registered') || msg.includes('email already registered') || msg.includes('already exists')) {
-      return 'Este email já está cadastrado. Tente fazer login ou use outro email.';
-    }
-    
-    // Rate limiting / muitas tentativas
-    if (msg.includes('rate limit') || msg.includes('too many requests') || msg.includes('request rate limit')) {
-      return 'Muitas tentativas. Por favor, aguarde alguns minutos antes de tentar novamente.';
-    }
-    
-    // Conta desabilitada ou banida
-    if (msg.includes('user is banned') || msg.includes('account disabled') || msg.includes('user disabled')) {
-      return 'Esta conta foi desabilitada. Entre em contato com o administrador.';
-    }
-    
-    // Signup desabilitado
-    if (msg.includes('signups not allowed') || msg.includes('signup is disabled')) {
-      return 'Novos cadastros estão temporariamente desabilitados. Tente novamente mais tarde.';
-    }
-    
-    // Token expirado ou inválido
-    if (msg.includes('token expired') || msg.includes('invalid token') || msg.includes('otp has expired')) {
-      return 'O link expirou. Por favor, solicite um novo.';
-    }
-    
-    // Erro de rede / conexão
-    if (msg.includes('network') || msg.includes('fetch') || msg.includes('connection') || msg.includes('timeout')) {
-      return 'Erro de conexão. Verifique sua internet e tente novamente.';
-    }
-    
-    // Email não encontrado (para reset de senha)
-    if (msg.includes('user not found') || msg.includes('no user found')) {
-      return 'Nenhuma conta encontrada com este email.';
-    }
-    
-    // Credenciais antigas / sessão expirada
-    if (msg.includes('refresh_token') || msg.includes('session') || msg.includes('jwt expired')) {
-      return 'Sua sessão expirou. Por favor, faça login novamente.';
-    }
-    
-    // Campos obrigatórios
-    if (msg.includes('provide') && (msg.includes('email') || msg.includes('password'))) {
-      return 'Por favor, preencha todos os campos obrigatórios.';
-    }
-
-    // Confirmação de email necessária (pode não ser um erro, mas uma confirmação)
-    if (msg.includes('confirmation') || msg.includes('verify your email')) {
-      return 'Verifique seu email para confirmar o cadastro.';
-    }
-    
-    // Erro genérico - mantém a mensagem original se não reconhecida
-    return `Erro: ${errorMessage}`;
+    return translateError(errorMessage);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

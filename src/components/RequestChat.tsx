@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import { supabase } from '../lib/supabase';
 import { X, Send, Check, CheckCheck, MessageSquare } from 'lucide-react';
 import { useNotification } from '../hooks/useNotification';
+import { translateError } from '../utils/translateError';
 
 interface RequestChatProps {
   requestId: string;
@@ -21,7 +22,7 @@ interface Message {
 }
 
 const RequestChat: React.FC<RequestChatProps> = ({ requestId, currentUser, onClose }) => {
-  const { showError } = useNotification();
+  const { showError, showOperationError } = useNotification();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -65,7 +66,7 @@ const RequestChat: React.FC<RequestChatProps> = ({ requestId, currentUser, onClo
 
       if (error) {
         console.error('Erro ao carregar mensagens:', error);
-        showError('Erro ao carregar mensagens.');
+        showOperationError(error, 'carregar', 'as mensagens');
         return;
       }
       setMessages((data as Message[]) || []);
@@ -144,7 +145,7 @@ const RequestChat: React.FC<RequestChatProps> = ({ requestId, currentUser, onClo
 
     if (error) {
       console.error('Erro ao enviar mensagem:', error);
-      showError('Não foi possível enviar a mensagem.');
+      showOperationError(error, 'enviar', 'a mensagem');
       setNewMessage(messageContent);
     }
     

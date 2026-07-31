@@ -813,6 +813,7 @@
 }
 
 .proposal-observations-block {
+  width: 186mm;
   margin-top: 3mm;
 }
 
@@ -834,6 +835,8 @@
   text-align: justify;
   color: #111111;
   white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
   overflow: hidden;
 }
 

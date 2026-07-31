@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { useMaintenance } from '../hooks/useMaintenance';
 import { useNotification } from '../../../hooks/useNotification';
+import { translateError } from '../../../utils/translateError';
 import { useDialog } from '../../../hooks/useDialog';
 import Notification from '../../../components/Notification';
 import ConfirmDialog from '../../../components/ConfirmDialog';
@@ -59,7 +60,7 @@ const MaintenancePage: React.FC = () => {
     addMaintenanceOrder, updateMaintenanceOrder, updateMaintenanceStatus, deleteMaintenanceOrder,
     getAlerts, getOverdueAlerts, exportToExcel,
   } = useMaintenance();
-  const { notification, showSuccess, showError, hideNotification } = useNotification();
+  const { notification, showSuccess, showError, showOperationError, hideNotification } = useNotification();
   const { confirmDialog, showConfirmDialog, hideConfirmDialog } = useDialog();
 
   const [showForm, setShowForm] = useState(false);
@@ -95,8 +96,8 @@ const MaintenancePage: React.FC = () => {
         showSuccess('Ordem de manutencao criada!');
       }
       resetForm();
-    } catch (err) {
-      showError('Erro ao salvar ordem de manutencao.');
+    } catch (error) {
+      showOperationError(error, 'salvar', 'a ordem de manutenção');
     } finally {
       setIsSubmitting(false);
     }
@@ -128,8 +129,8 @@ const MaintenancePage: React.FC = () => {
         try {
           await deleteMaintenanceOrder(order.id);
           showSuccess('OS excluida!');
-        } catch {
-          showError('Erro ao excluir OS.');
+        } catch (error) {
+          showOperationError(error, 'excluir', 'a ordem de manutenção');
         }
       },
       { type: 'danger', confirmText: 'Excluir' }
@@ -140,8 +141,8 @@ const MaintenancePage: React.FC = () => {
     try {
       await updateMaintenanceStatus(id, status);
       showSuccess('Status atualizado!');
-    } catch {
-      showError('Erro ao atualizar status.');
+    } catch (error) {
+      showOperationError(error, 'atualizar', 'o status');
     }
   };
 

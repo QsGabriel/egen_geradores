@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../hooks/useAuth';
+import { translateError } from '../../../utils/translateError';
 import type {
   Equipment,
   EquipmentFormData,
@@ -52,7 +53,7 @@ export function useEquipment() {
     try {
       await fetchEquipment();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar equipamentos');
+      setError(translateError(err));
     } finally {
       setLoading(false);
     }

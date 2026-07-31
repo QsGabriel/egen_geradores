@@ -219,19 +219,6 @@ function renderObservacoesGerais(obs: string): string {
   `;
 }
 
-/**
- * Renderiza o bloco de observações das condições comerciais
- */
-function renderCondicoesObservacoes(obs: string): string {
-  if (!obs || !obs.trim()) return '';
-  return `
-    <div class="observacoes-box condicoes-obs">
-      <h3 class="subsection-title">Observações das Condições</h3>
-      <p class="observacoes-text">${obs.replace(/\n/g, '<br>')}</p>
-    </div>
-  `;
-}
-
 // ============================================
 // PLACEHOLDER REPLACEMENT
 // ============================================
@@ -295,8 +282,7 @@ function extractPlaceholderValues(quotation: SalesQuotation): PlaceholderValues 
     
     // Observações
     [PLACEHOLDERS.OBSERVACOES_GERAIS]: renderObservacoesGerais(quotation.observacoesGerais),
-    [PLACEHOLDERS.CONDICOES_OBSERVACOES]: renderCondicoesObservacoes(quotation.condicoes.observacoes ?? ''),
-    
+
     // Condições
     [PLACEHOLDERS.LOCAL_UTILIZACAO]: condicoes.localUtilizacao || '-',
     [PLACEHOLDERS.FORMA_PAGAMENTO]: condicoes.formaPagamento || '-',

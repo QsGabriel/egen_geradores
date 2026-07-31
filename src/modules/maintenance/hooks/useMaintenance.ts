@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../hooks/useAuth';
+import { translateError } from '../../../utils/translateError';
 import * as XLSX from 'xlsx';
 import type {
   MaintenanceOrder,
@@ -64,7 +65,7 @@ export function useMaintenance() {
     try {
       await Promise.all([fetchOrders(), fetchEquipmentList()]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar dados');
+      setError(translateError(err));
     } finally {
       setLoading(false);
     }

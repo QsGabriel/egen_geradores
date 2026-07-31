@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { translateError } from '../utils/translateError';
 import { 
   PaymentRequest, 
   PaymentRequestFormValues, 
@@ -74,7 +75,7 @@ export const usePaymentRequest = () => {
 
       setPaymentRequests(formattedRequests);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar solicitações de pagamento');
+      setError(translateError(err));
     } finally {
       setLoading(false);
     }

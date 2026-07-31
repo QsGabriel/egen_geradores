@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
+import { translateError } from '../utils/translateError';
 
 const ResetPassword: React.FC = () => {
   const [newPassword, setNewPassword] = useState('');
@@ -40,34 +41,7 @@ const ResetPassword: React.FC = () => {
    * Traduz mensagens de erro do Supabase Auth para português
    */
   const translateResetError = (errorMessage: string): string => {
-    const msg = errorMessage.toLowerCase();
-    
-    if (msg.includes('password should be at least') || msg.includes('password is too short')) {
-      return 'A senha deve ter pelo menos 6 caracteres.';
-    }
-    if (msg.includes('weak password') || msg.includes('password is too weak')) {
-      return 'A senha é muito fraca. Use letras maiúsculas, minúsculas, números e símbolos.';
-    }
-    if (msg.includes('same_password') || msg.includes('different from the old password')) {
-      return 'A nova senha não pode ser igual à senha anterior.';
-    }
-    if (msg.includes('token expired') || msg.includes('otp has expired') || msg.includes('link expired')) {
-      return 'O link de redefinição expirou. Por favor, solicite um novo.';
-    }
-    if (msg.includes('invalid token') || msg.includes('invalid otp')) {
-      return 'Link inválido ou já utilizado. Solicite uma nova redefinição.';
-    }
-    if (msg.includes('rate limit') || msg.includes('too many requests')) {
-      return 'Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.';
-    }
-    if (msg.includes('network') || msg.includes('fetch') || msg.includes('connection')) {
-      return 'Erro de conexão. Verifique sua internet e tente novamente.';
-    }
-    if (msg.includes('session') || msg.includes('not authenticated')) {
-      return 'Sessão inválida. Use o link enviado no email ou solicite uma nova redefinição.';
-    }
-    
-    return 'Erro ao redefinir a senha. O link pode ter expirado. Solicite uma nova redefinição.';
+    return translateError(errorMessage);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -100,14 +74,13 @@ const ResetPassword: React.FC = () => {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
 
       if (error) {
-        setError(translateResetError(error.message));
+        setError(translateError(error.message));
       } else {
         setSuccess(true);
         setTimeout(() => navigate('/'), 2500);
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
-      setError(translateResetError(errorMessage));
+      setError(translateError(err));
     } finally {
       setLoading(false);
     }

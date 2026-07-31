@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { supabase } from '../lib/supabase';
 import { useNotification } from '../hooks/useNotification';
+import { translateError } from '../utils/translateError';
 import { useDialog } from '../hooks/useDialog';
 import { useAuth } from '../hooks/useAuth';
 import Notification from './Notification';
@@ -17,7 +18,7 @@ import AddStockModal from './AddStockModal';
 const EquipmentList: React.FC = () => {
   const { equipment, updateEquipment, addMovement, deleteEquipment, setEquipment, fetchEquipment, addEquipmentChangeLog } = useInventory();
   const navigate = useNavigate();
-  const { notification, showSuccess, showError, hideNotification } = useNotification();
+  const { notification, showSuccess, showError, hideNotification, showOperationError } = useNotification();
   const { confirmDialog, showConfirmDialog, hideConfirmDialog, handleConfirmDialogConfirm, inputDialog, showInputDialog, hideInputDialog, handleInputDialogConfirm } = useDialog();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -127,7 +128,7 @@ const EquipmentList: React.FC = () => {
           showSuccess('Equipamento excluído com sucesso!');
         } catch (error) {
           console.error('Erro ao excluir equipamento:', error);
-          showError('Erro ao excluir equipamento', 'Tente novamente.');
+          showOperationError(error, 'excluir', 'o equipamento');
         }
       },
       { type: 'danger', confirmText: 'Excluir' }
@@ -274,7 +275,7 @@ const handleSaveChanges = async () => {
     handleCloseModal();
   } catch (error) {
     console.error('Erro ao atualizar equipamento:', error);
-    showError('Erro ao atualizar equipamento', 'Tente novamente.');
+    showOperationError(error, 'atualizar', 'o equipamento');
   } finally {
     setIsSubmitting(false);
   }
@@ -301,7 +302,7 @@ const handleSaveChanges = async () => {
       showSuccess(`✅ Estoque atualizado! Nova quantidade: ${newQuantity}`);
     } catch (error) {
       console.error(error);
-      showError('Erro ao adicionar estoque', 'Tente novamente.');
+      showOperationError(error, 'adicionar', 'o estoque');
     } finally {
       setSelectedProduct(null);
     }
@@ -351,7 +352,7 @@ const handleSaveChanges = async () => {
       handleCloseMovementModal();
     } catch (error) {
       console.error('Erro ao registrar movimentação:', error);
-      showError('Erro ao registrar movimentação', 'Tente novamente.');
+      showOperationError(error, 'registrar', 'a movimentação');
     }
   };
 
@@ -485,7 +486,7 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
       if (error) {
         console.error("Erro ao importar:", error);
-        showError("Erro ao importar equipamentos.");
+        showOperationError(error, 'importar', 'os equipamentos');
       } else {
         showSuccess("Importação concluída com sucesso!");
         window.location.reload();
@@ -495,7 +496,7 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     reader.readAsBinaryString(file);
   } catch (err) {
     console.error("Erro ao ler o arquivo:", err);
-    showError("Erro ao processar o arquivo.");
+    showOperationError(err, 'processar', 'o arquivo');
   }
 };
 

@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { translateError } from '../utils/translateError';
 
 export function useAppSettings<T = any>(key: string) {
   const [value, setValue] = useState<T | null>(null);
@@ -27,7 +28,7 @@ export function useAppSettings<T = any>(key: string) {
         setValue(data?.value as T ?? null);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar configuração');
+      setError(translateError(err));
     } finally {
       setLoading(false);
     }
@@ -45,7 +46,7 @@ export function useAppSettings<T = any>(key: string) {
 
       setValue(newValue);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao salvar configuração');
+      setError(translateError(err));
       throw err;
     } finally {
       setSaving(false);

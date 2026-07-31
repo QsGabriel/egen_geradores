@@ -28,6 +28,7 @@ import { useAuth } from '../hooks/useAuth';
 import { usePaymentRequest } from '../hooks/usePaymentRequest';
 import { useNotification } from '../hooks/useNotification';
 import { useDialog } from '../hooks/useDialog';
+import { translateError } from '../utils/translateError';
 import { DEPARTMENTS } from '../utils/permissions';
 import { 
   PaymentRequest, 
@@ -60,7 +61,7 @@ const PaymentRequestManagement: React.FC = () => {
     deletePaymentRequest,
     getNextPaymentDate 
   } = usePaymentRequest();
-  const { notification, showSuccess, showError, showWarning, showInfo, hideNotification } = useNotification();
+  const { notification, showSuccess, showError, showWarning, showInfo, showOperationError, hideNotification } = useNotification();
   const { confirmDialog, showConfirmDialog, hideConfirmDialog, handleConfirmDialogConfirm } = useDialog();
 
   // Form state
@@ -307,12 +308,12 @@ const PaymentRequestManagement: React.FC = () => {
             `${result.message} Sugestão: ${formatDateDisplay(result.suggestedDate)} (${getDayOfWeekName(result.suggestedDate)})`
           );
         } else {
-          showError('Erro ao criar pedido', result.error || result.message);
+          showError('Erro ao criar pedido', translateError(result.error || result.message));
         }
       }
     } catch (error) {
       console.error('Erro ao criar pedido:', error);
-      showError('Erro', 'Ocorreu um erro ao criar o pedido. Tente novamente.');
+      showOperationError(error, 'criar', 'o pedido de pagamento');
     } finally {
       setIsSubmitting(false);
     }
@@ -351,7 +352,7 @@ const PaymentRequestManagement: React.FC = () => {
           await updatePaymentRequestStatus(request.id, 'approved', userProfile?.name);
           showSuccess('Pedido aprovado com sucesso!');
         } catch (error) {
-          showError('Erro ao aprovar pedido');
+          showOperationError(error, 'aprovar', 'o pedido');
         }
       }
     );
@@ -367,7 +368,7 @@ const PaymentRequestManagement: React.FC = () => {
           await updatePaymentRequestStatus(request.id, 'rejected', undefined, 'Rejeitado pelo operador');
           showSuccess('Pedido rejeitado.');
         } catch (error) {
-          showError('Erro ao rejeitar pedido');
+          showOperationError(error, 'rejeitar', 'o pedido');
         }
       },
       { type: 'danger', confirmText: 'Rejeitar' }
@@ -384,7 +385,7 @@ const PaymentRequestManagement: React.FC = () => {
           await updatePaymentRequestStatus(request.id, 'paid', userProfile?.name);
           showSuccess('Pedido marcado como pago!');
         } catch (error) {
-          showError('Erro ao atualizar pedido');
+          showOperationError(error, 'atualizar', 'o pedido');
         }
       }
     );
@@ -400,7 +401,7 @@ const PaymentRequestManagement: React.FC = () => {
           await deletePaymentRequest(request.id);
           showSuccess('Pedido excluído com sucesso!');
         } catch (error) {
-          showError('Erro ao excluir pedido');
+          showOperationError(error, 'excluir', 'o pedido');
         }
       },
       { type: 'danger', confirmText: 'Excluir' }

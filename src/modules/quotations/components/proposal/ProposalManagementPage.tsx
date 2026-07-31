@@ -28,11 +28,13 @@ import {
   XCircle,
   Filter,
   Settings,
+  FileCheck,
 } from 'lucide-react';
 import { quotationService } from '../../services';
 import type { SalesQuotation, DocumentStatus } from '../../types/proposal';
 import { DocumentStatusLabels, DocumentStatusColors, DocumentTipoLabels } from '../../types/proposal';
 import { useNotification } from '../../../../hooks/useNotification';
+import { translateError } from '../../../../utils/translateError';
 import { useAuth } from '../../../../hooks/useAuth';
 import { hasPermission } from '../../../../utils/permissions';
 import Notification from '../../../../components/Notification';
@@ -56,6 +58,7 @@ const STATUS_ORDER: DocumentStatus[] = [
   'negotiating',
   'price_survey',
   'closed',
+  'contract_finished',
   'lost',
   'cancelled',
 ];
@@ -171,7 +174,7 @@ function StatusBadge({ status }: { status: DocumentStatus }) {
 export default function ProposalManagementPage() {
   const navigate = useNavigate();
 
-  const { notification, showSuccess, showError, hideNotification } = useNotification();
+  const { notification, showSuccess, showError, showOperationError, hideNotification } = useNotification();
   const { userProfile } = useAuth();
   const userPermissions = userProfile?.permissions ?? [];
   const canViewAll = hasPermission(userPermissions, 'canViewAllProposals');
@@ -248,7 +251,7 @@ export default function ProposalManagementPage() {
       setTotalCount(count);
     } catch (err) {
       console.error('[ProposalManagementPage] load error:', err);
-      setError('Não foi possível carregar as propostas. Verifique a conexão.');
+      setError(translateError(err) || 'Não foi possível carregar as propostas.');
     } finally {
       setLoading(false);
     }
@@ -276,6 +279,7 @@ export default function ProposalManagementPage() {
       negotiating: countByStatus('negotiating'),
       price_survey: countByStatus('price_survey'),
       closed: countByStatus('closed'),
+      contract_finished: countByStatus('contract_finished'),
       lost: countByStatus('lost'),
       cancelled: countByStatus('cancelled'),
       totalValue: proposals
@@ -360,8 +364,8 @@ export default function ProposalManagementPage() {
       showSuccess('Status atualizado', `${selectedIds.size} proposta(s) atualizada(s) com sucesso.`);
       setSelectedIds(new Set());
       load();
-    } catch (err) {
-      showError('Erro', 'Não foi possível atualizar o status das propostas.');
+    } catch (error) {
+      showOperationError(error, 'atualizar', 'o status das propostas');
     } finally {
       setBulkActionLoading(false);
     }
@@ -377,8 +381,8 @@ export default function ProposalManagementPage() {
       showSuccess('Propostas excluídas', `${selectedIds.size} proposta(s) removida(s) com sucesso.`);
       setSelectedIds(new Set());
       load();
-    } catch (err) {
-      showError('Erro', 'Não foi possível excluir as propostas.');
+    } catch (error) {
+      showOperationError(error, 'excluir', 'as propostas');
     } finally {
       setBulkActionLoading(false);
     }
@@ -401,12 +405,9 @@ export default function ProposalManagementPage() {
       );
       setDeleteTarget(null);
       load();
-    } catch (err) {
-      console.error('[ProposalManagementPage] delete error:', err);
-      showError(
-        'Erro ao excluir',
-        'Não foi possível excluir a proposta. Tente novamente.'
-      );
+    } catch (error) {
+      console.error('[ProposalManagementPage] delete error:', error);
+      showOperationError(error, 'excluir', 'a proposta');
     } finally {
       setDeleting(false);
     }
@@ -525,7 +526,7 @@ export default function ProposalManagementPage() {
       </div>
 
       {/* ===== METRIC CARDS ===== */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
         <StatusCard
           label="Rascunho"
           count={metrics.draft}
@@ -557,6 +558,14 @@ export default function ProposalManagementPage() {
           colorClass="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300"
           icon={<CheckCircle2 className={`w-5 h-5 ${statusFilter === 'closed' ? 'text-emerald-700 dark:text-emerald-300' : 'text-emerald-500 dark:text-emerald-400'}`} />}
           onClick={() => setStatusFilter(statusFilter === 'closed' ? 'all' : 'closed')}
+        />
+        <StatusCard
+          label="Contrato Finalizado"
+          count={metrics.contract_finished}
+          active={statusFilter === 'contract_finished'}
+          colorClass="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300"
+          icon={<FileCheck className={`w-5 h-5 ${statusFilter === 'contract_finished' ? 'text-green-700 dark:text-green-300' : 'text-green-500 dark:text-green-400'}`} />}
+          onClick={() => setStatusFilter(statusFilter === 'contract_finished' ? 'all' : 'contract_finished')}
         />
         <StatusCard
           label="Proposta Perdida"
@@ -650,7 +659,9 @@ export default function ProposalManagementPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Data de</label>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1" title={statusFilter !== 'all' ? 'Data de entrada no status selecionado' : 'Data de emissão'}>
+                Data de {statusFilter !== 'all' ? '(status)' : ''}
+              </label>
               <input
                 type="date"
                 value={fromDate}
@@ -659,7 +670,9 @@ export default function ProposalManagementPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Data até</label>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1" title={statusFilter !== 'all' ? 'Data de entrada no status selecionado' : 'Data de emissão'}>
+                Data até {statusFilter !== 'all' ? '(status)' : ''}
+              </label>
               <input
                 type="date"
                 value={toDate}

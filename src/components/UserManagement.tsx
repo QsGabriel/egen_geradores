@@ -3,6 +3,7 @@ import { Users, Edit, Shield, Plus, X, Save, UserCog, User, ShieldCheck, Search,
 import { useAuth } from '../hooks/useAuth';
 import { useNotification } from '../hooks/useNotification';
 import { supabase } from '../lib/supabase';
+import { translateError } from '../utils/translateError';
 import { UserProfile, UserRole, CustomRole, Department } from '../types';
 import { ALL_PERMISSION_KEYS, hasPermission, getRoleLabel } from '../utils/permissions';
 import Notification from './Notification';
@@ -21,7 +22,7 @@ const GROUP_COLORS: Record<string, { dot: string; activePill: string; activeText
 
 const UserManagement: React.FC = () => {
   const { userProfile, refreshProfile } = useAuth();
-  const { notification, showSuccess, showError, hideNotification } = useNotification();
+  const { notification, showSuccess, showError, showOperationError, hideNotification } = useNotification();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
@@ -119,7 +120,7 @@ const UserManagement: React.FC = () => {
       })));
     } catch (error) {
       console.error('Erro ao carregar usuários:', error);
-      showError('Erro ao carregar usuários');
+      showOperationError(error, 'carregar', 'a lista de usuários');
     } finally {
       setLoading(false);
     }
@@ -160,7 +161,7 @@ const UserManagement: React.FC = () => {
       handleCancel();
     } catch (error) {
       console.error('Erro ao salvar usuário:', error);
-      showError('Erro ao salvar usuário.');
+      showOperationError(error, 'salvar', 'os dados do usuário');
     } finally {
       setIsSubmitting(false);
     }
@@ -187,7 +188,7 @@ const UserManagement: React.FC = () => {
       setDeleteTarget(null);
       await fetchUsers();
     } catch (error: any) {
-      showError('Erro ao excluir', error?.message || 'Não foi possível excluir o usuário.');
+      showError('Erro ao excluir usuário', translateError(error));
     } finally {
       setDeletingUser(false);
     }
@@ -259,7 +260,7 @@ const UserManagement: React.FC = () => {
       await fetchCustomRoles();
       handleCancelRole();
     } catch (error: any) {
-      showError(error?.message?.includes('unique') ? 'Já existe um cargo com este nome.' : 'Erro ao salvar cargo.');
+      showError(translateError(error));
     } finally {
       setIsSavingRole(false);
     }
@@ -275,7 +276,7 @@ const UserManagement: React.FC = () => {
       await fetchCustomRoles();
       await fetchUsers();
     } catch (error) {
-      showError('Erro ao excluir cargo.');
+      showOperationError(error, 'excluir', 'o cargo');
     }
   };
 
@@ -316,7 +317,7 @@ const UserManagement: React.FC = () => {
       await fetchDepartments();
       handleCancelDept();
     } catch (error: any) {
-      showError(error?.message?.includes('unique') ? 'Já existe um departamento com este nome.' : 'Erro ao salvar.');
+      showError(translateError(error));
     } finally {
       setIsSavingDept(false);
     }
@@ -331,7 +332,7 @@ const UserManagement: React.FC = () => {
       if (error) throw error;
       await fetchDepartments();
     } catch (error) {
-      showError('Erro ao alterar status.');
+      showOperationError(error, 'alterar', 'o status');
     }
   };
 

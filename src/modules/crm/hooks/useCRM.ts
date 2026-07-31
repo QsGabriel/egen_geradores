@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../hooks/useAuth';
+import { translateError } from '../../../utils/translateError';
 import { quotationService } from '../../quotations/services';
 import type { SalesQuotation } from '../../quotations/types/proposal';
 import type {
@@ -135,7 +136,7 @@ export function useCRM() {
     try {
       await Promise.all([fetchClients(), fetchLeads(), fetchHistory()]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar dados do CRM');
+      setError(translateError(err));
     } finally {
       setLoading(false);
     }

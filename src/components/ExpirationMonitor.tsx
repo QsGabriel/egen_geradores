@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Calendar, AlertTriangle, Package, Clock, Filter, Trash2, ShoppingCart } from 'lucide-react';
 import { useInventory } from '../hooks/useInventory';
 import { useNotification } from '../hooks/useNotification';
+import { translateError } from '../utils/translateError';
 import { useDialog } from '../hooks/useDialog';
 import Notification from './Notification';
 import ConfirmDialog from './ConfirmDialog';
@@ -9,7 +10,7 @@ import InputDialog from './InputDialog';
 
 const ExpirationMonitor: React.FC = () => {
   const { equipment, writeOffEquipment, requestReplenishment } = useInventory();
-  const { notification, showSuccess, showError, hideNotification } = useNotification();
+  const { notification, showSuccess, showError, hideNotification, showOperationError } = useNotification();
   const { confirmDialog, showConfirmDialog, hideConfirmDialog, handleConfirmDialogConfirm, inputDialog, showInputDialog, hideInputDialog, handleInputDialogConfirm } = useDialog();
   const [daysFilter, setDaysFilter] = useState(30);
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'general' | 'technical'>('all');
@@ -92,7 +93,7 @@ const ExpirationMonitor: React.FC = () => {
       showSuccess('Equipamento dado baixa com sucesso!');
     } catch (error) {
       console.error('Erro ao dar baixa no equipamento:', error);
-      showError('Erro ao dar baixa no equipamento. Tente novamente.');
+      showOperationError(error, 'dar baixa', 'no equipamento');
     } finally {
       setLoading(null);
     }
@@ -113,7 +114,7 @@ const ExpirationMonitor: React.FC = () => {
       showSuccess('Solicitação de reposição criada com sucesso!');
     } catch (error) {
       console.error('Erro ao solicitar reposição:', error);
-      showError('Erro ao solicitar reposição. Tente novamente.');
+      showOperationError(error, 'solicitar', 'a reposição');
     } finally {
       setLoading(null);
     }

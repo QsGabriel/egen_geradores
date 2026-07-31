@@ -4,6 +4,7 @@ import { useInventory } from '../hooks/useInventory';
 import { Equipment } from '../types';
 import { useLocation } from 'react-router-dom';
 import { supabase} from '../lib/supabase.ts';
+import { translateError } from '../utils/translateError';
 import { useNotification } from '../hooks/useNotification';
 import Notification from './Notification';
 
@@ -11,7 +12,7 @@ const AddEquipment: React.FC = () => {
   const { addEquipment } = useInventory();
   const location = useLocation();
   const prefilledData = location.state?.prefilledData;
-  const { notification, showSuccess, showError, hideNotification } = useNotification();
+  const { notification, showSuccess, showError, hideNotification, showOperationError } = useNotification();
 
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [categories, setCategories] = useState<string[]>(['general']);
@@ -156,7 +157,7 @@ const AddEquipment: React.FC = () => {
 
     } catch (error) {
       console.error('Erro ao adicionar equipamento:', error);
-      showError('Erro ao adicionar equipamento', 'Tente novamente.');
+      showOperationError(error, 'cadastrar', 'o equipamento');
     } finally {
       setIsSubmitting(false);
     }

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useCRM } from '../hooks/useCRM';
 import { useNotification } from '../../../hooks/useNotification';
+import { translateError } from '../../../utils/translateError';
 import { useDialog } from '../../../hooks/useDialog';
 import Notification from '../../../components/Notification';
 import ConfirmDialog from '../../../components/ConfirmDialog';
@@ -59,7 +60,7 @@ interface ClientListProps {
 
 const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
   const { clients, addClient, updateClient, deleteClient } = useCRM();
-  const { notification, showSuccess, showError, hideNotification } = useNotification();
+  const { notification, showSuccess, showError, showOperationError, hideNotification } = useNotification();
   const { confirmDialog, showConfirmDialog, hideConfirmDialog } = useDialog();
 
   const [showForm, setShowForm] = useState(false);
@@ -159,7 +160,7 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
       }
       resetForm();
     } catch (err: any) {
-      const message = err?.message || err?.error_description || 'Erro ao salvar cliente. Tente novamente.';
+      const message = translateError(err) || 'Erro ao salvar cliente. Tente novamente.';
       setSubmitError(message);
     } finally {
       setIsSubmitting(false);
@@ -194,8 +195,8 @@ const ClientList: React.FC<ClientListProps> = ({ onViewHistory }) => {
         try {
           await deleteClient(id);
           showSuccess('Cliente excluído com sucesso!');
-        } catch {
-          showError('Erro ao excluir cliente.');
+        } catch (error) {
+          showOperationError(error, 'excluir', 'o cliente');
         }
       },
       { type: 'danger', confirmText: 'Excluir' }

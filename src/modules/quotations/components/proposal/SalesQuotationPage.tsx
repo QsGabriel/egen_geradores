@@ -31,6 +31,7 @@ import QuotationForm from './QuotationForm';
 import QuotationPreview from './QuotationPreview';
 import type { DocumentTipo, DocumentStatus } from '../../types/proposal';
 import { useNotification } from '../../../../hooks/useNotification';
+import { translateError } from '../../../../utils/translateError';
 import { useAuth } from '../../../../hooks/useAuth';
 import { hasPermission } from '../../../../utils/permissions';
 import { useProposalCoverConfig } from '../../../../hooks/useAppSettings';
@@ -62,7 +63,7 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
-  const { notification, showSuccess, showError, showInfo, hideNotification } = useNotification();
+  const { notification, showSuccess, showError, showOperationError, showInfo, hideNotification } = useNotification();
   const { userProfile, isInitialized, loading: authLoading } = useAuth();
   const userPermissions = userProfile?.permissions ?? [];
   const canViewAll = hasPermission(userPermissions, 'canViewAllProposals');
@@ -93,7 +94,7 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
       loadExistingQuotation(quotationId);
     } else {
       setIsInitialLoading(false);
-      createNew('proposta');
+      createNew('proposta', userProfile ? { id: userProfile.id, name: userProfile.name, email: userProfile.email } : undefined);
     }
 
     return () => {
@@ -118,9 +119,9 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
         setIsInitialLoading(false);
         navigate('/propostas');
       }
-    } catch (err) {
-      console.error('Error loading quotation:', err);
-      showError('Erro ao carregar proposta');
+    } catch (error) {
+      console.error('Error loading quotation:', error);
+      showOperationError(error, 'carregar', 'a proposta');
       setIsInitialLoading(false);
     }
   };
@@ -141,9 +142,9 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
         loadQuotation(created);
         showSuccess('Sucesso', 'Proposta criada com sucesso!');
       }
-    } catch (err) {
-      console.error('Error saving:', err);
-      showError('Erro', 'Erro ao salvar proposta');
+    } catch (error) {
+      console.error('Error saving:', error);
+      showOperationError(error, 'salvar', 'a proposta');
     } finally {
       setIsSaving(false);
     }
@@ -160,9 +161,9 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
       await quotationService.updateStatus(current.id, newStatus);
       loadQuotation({ ...current, status: newStatus });
       showSuccess('Status atualizado', `Status alterado para ${newStatus}`);
-    } catch (err) {
-      console.error('Error updating status:', err);
-      showError('Erro', 'Erro ao alterar status');
+    } catch (error) {
+      console.error('Error updating status:', error);
+      showOperationError(error, 'alterar', 'o status');
     }
     setShowStatusMenu(false);
   };
@@ -175,9 +176,9 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
       const duplicate = await quotationService.duplicate(current.id);
       loadQuotation(duplicate);
       showSuccess('Proposta duplicada', 'Editando nova versão.');
-    } catch (err) {
-      console.error('Error duplicating:', err);
-      showError('Erro', 'Erro ao duplicar proposta');
+    } catch (error) {
+      console.error('Error duplicating:', error);
+      showOperationError(error, 'duplicar', 'a proposta');
     }
   };
 
@@ -228,7 +229,7 @@ export default function SalesQuotationPage(_props: SalesQuotationPageProps) {
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />
           <p className="mt-4 text-gray-600 dark:text-gray-400">Erro ao carregar proposta</p>
           <button
-            onClick={() => createNew('proposta')}
+            onClick={() => createNew('proposta', userProfile ? { id: userProfile.id, name: userProfile.name, email: userProfile.email } : undefined)}
             className="mt-4 px-4 py-2 bg-[#0D2A59] text-white rounded-lg hover:bg-[#0D2A59]/90"
           >
             Criar Nova Proposta

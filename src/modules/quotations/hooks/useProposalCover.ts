@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
+import { translateError } from '../../../utils/translateError';
 
 const BUCKET_NAME = 'proposal-covers';
 
@@ -42,7 +43,7 @@ export function useProposalCover(): UseProposalCoverReturn {
 
       return data?.publicUrl || null;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao enviar imagem');
+      setError(translateError(err));
       return null;
     } finally {
       setUploading(false);
@@ -65,7 +66,7 @@ export function useProposalCover(): UseProposalCoverReturn {
 
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao remover imagem');
+      setError(translateError(err));
       return false;
     }
   }, []);

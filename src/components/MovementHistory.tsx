@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { ArrowUpDown, Filter, Calendar, Package, User, FileText } from 'lucide-react';
 import { useInventory } from '../hooks/useInventory';
 import { useNotification } from '../hooks/useNotification';
+import { translateError } from '../utils/translateError';
 import Notification from './Notification';
 
 const MovementHistory: React.FC = () => {
   const { movements, equipment, addMovement } = useInventory();
-  const { notification, showSuccess, showError, hideNotification } = useNotification();
+  const { notification, showSuccess, showError, hideNotification, showOperationError } = useNotification();
   const [showAddMovement, setShowAddMovement] = useState(false);
   const [filterReason, setFilterReason] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState('');
@@ -65,7 +66,7 @@ const MovementHistory: React.FC = () => {
       showSuccess('Movimentação registrada com sucesso!');
     } catch (error) {
       console.error('Erro ao registrar movimentação:', error);
-      showError('Erro ao registrar movimentação. Tente novamente.');
+      showOperationError(error, 'registrar', 'a movimentação');
     }
   };
 

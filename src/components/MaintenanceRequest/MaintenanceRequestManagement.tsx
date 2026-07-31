@@ -28,6 +28,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useMaintenanceRequest } from '../../hooks/useMaintenanceRequest';
 import { useNotification } from '../../hooks/useNotification';
 import { useDialog } from '../../hooks/useDialog';
+import { translateError } from '../../utils/translateError';
 import { 
   MaintenanceRequest,
   MaintenanceRequestFormValues,
@@ -264,7 +265,7 @@ const MaintenanceRequestManagement: React.FC = () => {
       resetForm();
       setShowForm(false);
     } else {
-      showError('Erro', result.error || 'Não foi possível criar a solicitação.');
+      showError('Erro', translateError(result.error) || 'Não foi possível criar a solicitação.');
     }
   };
 
@@ -276,7 +277,7 @@ const MaintenanceRequestManagement: React.FC = () => {
       showSuccess('Status atualizado!', result.message || 'Status da solicitação atualizado.');
       setShowDetailModal(false);
     } else {
-      showError('Erro', result.error || 'Não foi possível atualizar o status.');
+      showError('Erro', translateError(result.error) || 'Não foi possível atualizar o status.');
     }
   };
 
@@ -290,7 +291,7 @@ const MaintenanceRequestManagement: React.FC = () => {
         if (result.success) {
           showSuccess('Excluída!', 'Solicitação excluída com sucesso.');
         } else {
-          showError('Erro', result.error || 'Não foi possível excluir a solicitação.');
+          showError('Erro', translateError(result.error) || 'Não foi possível excluir a solicitação.');
         }
         hideConfirmDialog();
       },

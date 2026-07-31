@@ -4,6 +4,7 @@ import { UserPlus, X, Loader2, ChevronDown, Check, AlertCircle } from 'lucide-re
 import { supabase } from '../lib/supabase';
 import { CustomRole, Department } from '../types';
 import { formatCPF, validateCPF } from '../utils/cpf';
+import { translateError } from '../utils/translateError';
 
 interface NewUserFormProps {
   customRoles: CustomRole[];
@@ -243,14 +244,14 @@ const NewUserForm: React.FC<NewUserFormProps> = ({ customRoles, departments, onC
         await res.json().catch(() => ({}));
 
       if (!res.ok || !data.success) {
-        setError(data.error || 'Erro ao cadastrar usuário.');
+        setError(translateError(data.error) || 'Erro ao cadastrar usuário.');
         setLoading(false);
         return;
       }
 
       onCreated(data.tempPassword || '');
-    } catch {
-      setError('Erro de rede ao cadastrar usuário.');
+    } catch (error) {
+      setError(translateError(error) || 'Erro de rede ao cadastrar usuário.');
       setLoading(false);
     }
   };

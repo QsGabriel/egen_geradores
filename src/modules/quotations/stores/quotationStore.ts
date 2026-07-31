@@ -45,7 +45,7 @@ interface QuotationStoreState {
 
 interface QuotationStoreActions {
   // Document lifecycle
-  createNew: (tipo?: DocumentTipo) => void;
+  createNew: (tipo?: DocumentTipo, vendedor?: { id: string; name?: string; email?: string }) => void;
   loadQuotation: (quotation: SalesQuotation) => void;
   saveDraft: () => void;
   deleteDraft: (id: string) => void;
@@ -137,15 +137,20 @@ function normalizeCondicoes(condicoes?: Partial<CondicoesComerciais>): Condicoes
   return normalized;
 }
 
-function createEmptyQuotation(tipo: DocumentTipo = 'proposta'): SalesQuotation {
+function createEmptyQuotation(
+  tipo: DocumentTipo = 'proposta',
+  vendedor?: { id: string; name?: string; email?: string },
+): SalesQuotation {
   const now = new Date();
-  
+
   return {
     id: crypto.randomUUID(),
     documentId: generateDocumentId(tipo),
     clientId: null,
     leadId: null,
-    vendedorId: null,
+    vendedorId: vendedor?.id ?? null,
+    vendedorNome: vendedor?.name,
+    vendedorEmail: vendedor?.email,
     tipo,
     status: 'draft',
     dataEmissao: formatDate(now),
@@ -193,9 +198,9 @@ export const useQuotationStore = create<QuotationStore>()(
 
         // ========== DOCUMENT LIFECYCLE ==========
         
-        createNew: (tipo: DocumentTipo = 'proposta') => {
-          const newQuotation = createEmptyQuotation(tipo);
-          set({ 
+        createNew: (tipo: DocumentTipo = 'proposta', vendedor) => {
+          const newQuotation = createEmptyQuotation(tipo, vendedor);
+          set({
             current: newQuotation, 
             isDirty: false,
             error: null,

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useCRM } from '../hooks/useCRM';
 import { useNotification } from '../../../hooks/useNotification';
+import { translateError } from '../../../utils/translateError';
 import { useDialog } from '../../../hooks/useDialog';
 import Notification from '../../../components/Notification';
 import ConfirmDialog from '../../../components/ConfirmDialog';
@@ -44,6 +45,7 @@ import {
   STATUSES_REQUIRING_SCHEDULE,
   STATUSES_SEASONAL_SCHEDULE,
 } from '../types';
+import { supabase } from '../../../lib/supabase';
 
 const EMPTY_FORM: LeadFormData = {
   name: '',
@@ -69,7 +71,7 @@ interface LeadListProps {
 const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
   const navigate = useNavigate();
   const { leads, addLead, updateLead, deleteLead, convertLeadToClient, generateProposalFromLead, importLeads } = useCRM();
-  const { notification, showSuccess, showError, hideNotification } = useNotification();
+  const { notification, showSuccess, showError, showOperationError, hideNotification } = useNotification();
   const { confirmDialog, showConfirmDialog, hideConfirmDialog } = useDialog();
 
   const [showForm, setShowForm] = useState(false);
@@ -84,6 +86,9 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
   const [stateFilter, setStateFilter] = useState<string[]>([]);
   const [classificationFilter, setClassificationFilter] = useState<string[]>([]);
   const [sourceFilter, setSourceFilter] = useState<string[]>([]);
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [dateFilteredLeadIds, setDateFilteredLeadIds] = useState<Set<string> | null>(null);
   const [page, setPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const [convertTarget, setConvertTarget] = useState<Lead | null>(null);
@@ -115,13 +120,14 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
     return <span className="ml-1 text-yellow-500">{sortDir === 'asc' ? '↑' : '↓'}</span>;
   };
 
-  const hasActiveFilters = statusFilter !== 'all' || cityFilter.length > 0 || stateFilter.length > 0 || classificationFilter.length > 0 || sourceFilter.length > 0;
+  const hasActiveFilters = statusFilter !== 'all' || cityFilter.length > 0 || stateFilter.length > 0 || classificationFilter.length > 0 || sourceFilter.length > 0 || fromDate !== '' || toDate !== '';
   let activeFilterCount = 0;
   if (statusFilter !== 'all') activeFilterCount++;
   if (cityFilter.length > 0) activeFilterCount++;
   if (stateFilter.length > 0) activeFilterCount++;
   if (classificationFilter.length > 0) activeFilterCount++;
   if (sourceFilter.length > 0) activeFilterCount++;
+  if (fromDate !== '' || toDate !== '') activeFilterCount++;
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -130,6 +136,9 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
     setStateFilter([]);
     setClassificationFilter([]);
     setSourceFilter([]);
+    setFromDate('');
+    setToDate('');
+    setDateFilteredLeadIds(null);
     setPage(1);
   };
 
@@ -179,7 +188,7 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
       }
       resetForm();
     } catch (err: any) {
-      const message = err?.message || err?.error_description || 'Erro ao salvar lead. Tente novamente.';
+      const message = translateError(err) || 'Erro ao salvar lead. Tente novamente.';
       setSubmitError(message);
     } finally {
       setIsSubmitting(false);
@@ -216,8 +225,8 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
         try {
           await deleteLead(id);
           showSuccess('Lead excluído com sucesso!');
-        } catch {
-          showError('Erro ao excluir lead.');
+        } catch (error) {
+          showOperationError(error, 'excluir', 'o lead');
         }
       },
       { type: 'danger', confirmText: 'Excluir' }
@@ -235,8 +244,8 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
       showSuccess(`Lead "${convertTarget.name}" convertido em cliente com sucesso!`);
       setConvertTarget(null);
       onConvert?.(convertTarget.id);
-    } catch {
-      showError('Erro ao converter lead.');
+    } catch (error) {
+      showOperationError(error, 'converter', 'o lead');
     }
   };
 
@@ -249,6 +258,37 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
       showError('Erro ao gerar proposta.');
     }
   };
+
+  // ── Date filter via contact_logs ──────────────────────────────────────────
+  useEffect(() => {
+    if (!fromDate && !toDate) {
+      setDateFilteredLeadIds(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      let query = supabase
+        .from('contact_logs')
+        .select('entity_id, contacted_at')
+        .eq('entity_type', 'lead');
+      if (fromDate) query = query.gte('contacted_at', fromDate);
+      if (toDate) query = query.lte('contacted_at', toDate + 'T23:59:59');
+      const { data } = await query;
+      if (cancelled) return;
+      const ids = new Set<string>((data || []).map((r: any) => r.entity_id));
+      if (!fromDate && !toDate) return;
+      // Fallback: also include leads created in the period
+      if (fromDate || toDate) {
+        let leadsQuery = supabase.from('leads').select('id');
+        if (fromDate) leadsQuery = leadsQuery.gte('created_at', fromDate);
+        if (toDate) leadsQuery = leadsQuery.lte('created_at', toDate + 'T23:59:59');
+        const { data: leadsData } = await leadsQuery;
+        (leadsData || []).forEach((l: any) => ids.add(l.id));
+      }
+      setDateFilteredLeadIds(ids);
+    })();
+    return () => { cancelled = true; };
+  }, [fromDate, toDate]);
 
   const filteredLeads = leads.filter((lead) => {
     const term = searchTerm.toLowerCase();
@@ -267,8 +307,9 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
     const matchesState = stateFilter.length === 0 || stateFilter.includes(lead.state);
     const matchesClassification = classificationFilter.length === 0 || classificationFilter.includes(lead.classification);
     const matchesSource = sourceFilter.length === 0 || sourceFilter.includes(lead.source);
+    const matchesDate = !dateFilteredLeadIds || dateFilteredLeadIds.has(lead.id);
 
-    return matchesSearch && matchesStatus && matchesCity && matchesState && matchesClassification && matchesSource;
+    return matchesSearch && matchesStatus && matchesCity && matchesState && matchesClassification && matchesSource && matchesDate;
   });
 
   const sortedLeads = sortField
@@ -743,6 +784,23 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
                 options={[...LEAD_SOURCES]}
                 placeholder="Todas"
               />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Período (última interação)</label>
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={fromDate}
+                  onChange={e => { setFromDate(e.target.value); setPage(1); }}
+                  className="w-full px-2.5 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-yellow-500"
+                />
+                <input
+                  type="date"
+                  value={toDate}
+                  onChange={e => { setToDate(e.target.value); setPage(1); }}
+                  className="w-full px-2.5 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-yellow-500"
+                />
+              </div>
             </div>
           </div>
         )}

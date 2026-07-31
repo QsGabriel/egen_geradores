@@ -606,34 +606,68 @@ export default function ProposalPrintDocument({
   const showCommercialInline = commercialAvailableMm >= conditionsHeightMm;
   const includeCommercialPage = !showCommercialInline;
 
-  let inlineParagraphCount = 0;
-  let dispositionsRemainingMm = 0;
-  if (showCommercialInline) {
-    dispositionsRemainingMm = commercialAvailableMm - conditionsHeightMm - DISPOSITION_TITLE_MM;
+  const hasObservations = !!quotation.observacoesGerais?.trim();
+  const obsHeightMm = hasObservations ? estimateObservationMm(quotation.observacoesGerais) : 0;
+
+  const fitParagraphCount = (availableMm: number): number => {
+    let remainingMm = availableMm - DISPOSITION_TITLE_MM;
+    let count = 0;
     for (const paragraph of DISPOSITION_PARAGRAPHS) {
       const paragraphMm = estimateDispositionMm(paragraph);
-      if (dispositionsRemainingMm - paragraphMm < 0) {
+      if (remainingMm - paragraphMm < 0) {
         break;
       }
-      dispositionsRemainingMm -= paragraphMm;
-      inlineParagraphCount += 1;
+      remainingMm -= paragraphMm;
+      count += 1;
+    }
+    return count;
+  };
+
+  // Observações gerais must always render as one unsplit block, positioned
+  // after the conditions grid (1.1-1.24) and before DISPOSIÇÕES GERAIS. So
+  // its fit is decided first, right after the conditions grid — and only
+  // if it fits (or is absent) do we inline any DISPOSIÇÕES GERAIS
+  // paragraphs. Otherwise inlining paragraphs here while Observações moves
+  // to a later page would wedge Observações in the middle of that section.
+  let inlineParagraphCount = 0;
+  let observationFitsInline = false;
+  if (showCommercialInline) {
+    let afterConditionsMm = commercialAvailableMm - conditionsHeightMm;
+    if (hasObservations) {
+      observationFitsInline = afterConditionsMm >= obsHeightMm;
+      if (observationFitsInline) {
+        afterConditionsMm -= obsHeightMm;
+      }
+    }
+    if (!hasObservations || observationFitsInline) {
+      inlineParagraphCount = fitParagraphCount(afterConditionsMm);
     }
   }
 
-  let observationFitsInline = false;
-  if (quotation.observacoesGerais?.trim()) {
-    const obsAvailableMm = showCommercialInline
-      ? dispositionsRemainingMm
-      : commercialAvailableMm;
-    const obsHeight = estimateObservationMm(quotation.observacoesGerais);
-    observationFitsInline = obsAvailableMm >= obsHeight;
+  // Same rule applies on the dedicated commercial page used when the
+  // conditions grid doesn't fit on the scope page at all.
+  const FULL_PAGE_USABLE_MM = SCOPE_BODY_USABLE_MM - SCOPE_SAFETY_MM;
+  let commercialPageParagraphCount = 0;
+  let observationFitsOnCommercialPage = false;
+  if (includeCommercialPage) {
+    let afterConditionsMm = FULL_PAGE_USABLE_MM - conditionsHeightMm;
+    if (hasObservations) {
+      observationFitsOnCommercialPage = afterConditionsMm >= obsHeightMm;
+      if (observationFitsOnCommercialPage) {
+        afterConditionsMm -= obsHeightMm;
+      }
+    }
+    if (!hasObservations || observationFitsOnCommercialPage) {
+      commercialPageParagraphCount = fitParagraphCount(afterConditionsMm);
+    }
   }
-  const observationOnSeparatePage = !!quotation.observacoesGerais?.trim() && !observationFitsInline;
+
+  const observationOnSeparatePage = hasObservations && !observationFitsInline && !observationFitsOnCommercialPage;
 
   const annexLabel = quotation.isAnnex ? 'ANEXO0001' : undefined;
   const showAsAnnex = quotation.tipo === 'contrato';
 
-  const proposalPageCount = 1 + scopePages.length + (includeCommercialPage ? 1 : 0) + (observationOnSeparatePage ? 1 : 0) + 1;
+  const proposalPageCount = 1 + scopePages.length + (includeCommercialPage ? 1 : 0) + 1;
   const totalPages = showAsAnnex
     ? 1 + contractPages.length + proposalPageCount
     : 1 + proposalPageCount;
@@ -923,6 +957,14 @@ export default function ProposalPrintDocument({
             {isLastScopePage && showCommercialInline ? (
               <>
                 <ConditionColumns rows={conditionRows} />
+
+                {hasObservations && observationFitsInline ? (
+                  <section className="proposal-observations-block">
+                    <h3 className="proposal-blue-section-title">Observações:</h3>
+                    <p className="proposal-observations-text">{quotation.observacoesGerais}</p>
+                  </section>
+                ) : null}
+
                 {inlineParagraphCount > 0 ? (
                   <div className="proposal-dispositions-inline">
                     <h3 className="proposal-blue-section-title">DISPOSIÇÕES GERAIS:</h3>
@@ -932,13 +974,6 @@ export default function ProposalPrintDocument({
                   </div>
                 ) : null}
               </>
-            ) : null}
-
-            {isLastScopePage && quotation.observacoesGerais?.trim() && observationFitsInline ? (
-              <section className="proposal-observations-block">
-                <h3 className="proposal-blue-section-title">Observações:</h3>
-                <p className="proposal-observations-text">{quotation.observacoesGerais}</p>
-              </section>
             ) : null}
           </div>
 
@@ -958,12 +993,21 @@ export default function ProposalPrintDocument({
           <div className="proposal-standard-body proposal-commercial-body">
             <ConditionColumns rows={conditionRows} />
 
+            {hasObservations && observationFitsOnCommercialPage ? (
+              <section className="proposal-observations-block">
+                <h3 className="proposal-blue-section-title">Observações:</h3>
+                <p className="proposal-observations-text">{quotation.observacoesGerais}</p>
+              </section>
+            ) : null}
+
+            {commercialPageParagraphCount > 0 ? (
             <div className="proposal-dispositions-inline">
               <h3 className="proposal-blue-section-title">DISPOSIÇÕES GERAIS:</h3>
-              {DISPOSITION_PARAGRAPHS.slice(0, 7).map((paragraph, index) => (
+              {DISPOSITION_PARAGRAPHS.slice(0, commercialPageParagraphCount).map((paragraph, index) => (
                 <p key={`comm-disp-${index}`}>{paragraph}</p>
               ))}
             </div>
+            ) : null}
           </div>
 
           <ProposalFooter pageNumber={scopePages.length + 3 + proposalPageOffset} totalPages={totalPages} />
@@ -972,37 +1016,17 @@ export default function ProposalPrintDocument({
     });
   }
 
-  if (observationOnSeparatePage) {
-    const obsPageNum = scopePages.length + 3 + proposalPageOffset + (includeCommercialPage ? 1 : 0);
-    pages.push({
-      key: 'observations',
-      content: (
-        <A4Page className="proposal-standard-page">
-          <ProposalHeader issueLine={issueLine} documentId={quotation.documentId} tipo={quotation.tipo} annexLabel={proposalAnnexLabel} />
+  const acceptanceParagraphs = showCommercialInline
+    ? DISPOSITION_PARAGRAPHS.slice(inlineParagraphCount)
+    : DISPOSITION_PARAGRAPHS.slice(commercialPageParagraphCount);
 
-          <div className="proposal-standard-body proposal-acceptance-body">
-            <section className="proposal-observations-block">
-              <h3 className="proposal-blue-section-title">Observações:</h3>
-              <p className="proposal-observations-text">{quotation.observacoesGerais}</p>
-            </section>
-          </div>
-
-          <ProposalFooter pageNumber={obsPageNum} totalPages={totalPages} />
-        </A4Page>
-      ),
-    });
-  }
-
-  const acceptanceParagraphs = shouldInlineCommercialSections
-    ? DISPOSITION_PARAGRAPHS.slice(2)
-    : showCommercialInline
-      ? DISPOSITION_PARAGRAPHS.slice(inlineParagraphCount)
-      : DISPOSITION_PARAGRAPHS.slice(7);
-
-  // If the conditions grid was inlined on the scope page but no disposition
-  // paragraph fit beneath it, the "DISPOSIÇÕES GERAIS:" heading has not been
-  // shown yet — render it on the acceptance page above the paragraphs.
-  const acceptanceShowsDispositionsHeading = showCommercialInline && inlineParagraphCount === 0;
+  // If the conditions grid was inlined on the scope page (or the dedicated
+  // commercial page) but no disposition paragraph fit beneath it, the
+  // "DISPOSIÇÕES GERAIS:" heading has not been shown yet — render it on the
+  // acceptance page above the paragraphs.
+  const acceptanceShowsDispositionsHeading = showCommercialInline
+    ? inlineParagraphCount === 0
+    : commercialPageParagraphCount === 0;
 
   pages.push({
     key: 'acceptance',
@@ -1011,6 +1035,12 @@ export default function ProposalPrintDocument({
         <ProposalHeader issueLine={issueLine} documentId={quotation.documentId} tipo={quotation.tipo} annexLabel={proposalAnnexLabel} />
 
         <div className="proposal-standard-body proposal-acceptance-body">
+          {observationOnSeparatePage ? (
+            <section className="proposal-observations-block">
+              <h3 className="proposal-blue-section-title">Observações:</h3>
+              <p className="proposal-observations-text">{quotation.observacoesGerais}</p>
+            </section>
+          ) : null}
           {acceptanceShowsDispositionsHeading ? (
             <div className="proposal-dispositions-inline">
               <h3 className="proposal-blue-section-title">DISPOSIÇÕES GERAIS:</h3>

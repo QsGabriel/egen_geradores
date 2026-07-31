@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useCRM } from '../hooks/useCRM';
 import { useNotification } from '../../../hooks/useNotification';
+import { translateError } from '../../../utils/translateError';
 import Notification from '../../../components/Notification';
 import type { Lead, LeadStatus } from '../types';
 import {
@@ -35,7 +36,7 @@ const COLUMN_INITIAL_LIMIT = 15;
 
 const LeadPipeline: React.FC = () => {
   const { leads, updateLeadStatus, generateProposalFromLead } = useCRM();
-  const { notification, showSuccess, showError, hideNotification } = useNotification();
+    const { notification, showSuccess, showError, showOperationError, hideNotification } = useNotification();
   const navigate = useNavigate();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -64,8 +65,8 @@ const LeadPipeline: React.FC = () => {
     try {
       await updateLeadStatus(lead.id, newStatus);
       showSuccess(`Lead "${lead.name}" movido para "${LEAD_STATUS_LABELS[newStatus]}"`);
-    } catch {
-      showError('Erro ao atualizar status do lead.');
+    } catch (error) {
+      showOperationError(error, 'atualizar', 'o status do lead');
     }
   };
 
@@ -74,8 +75,8 @@ const LeadPipeline: React.FC = () => {
       const proposalId = await generateProposalFromLead(lead.id);
       showSuccess(`Proposta criada com sucesso!`);
       navigate(`/propostas/${proposalId}`);
-    } catch {
-      showError('Erro ao gerar proposta.');
+    } catch (error) {
+      showOperationError(error, 'gerar', 'a proposta');
     }
   };
 

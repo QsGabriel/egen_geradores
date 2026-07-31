@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { useEquipment } from '../hooks/useEquipment';
 import { useNotification } from '../../../hooks/useNotification';
+import { translateError } from '../../../utils/translateError';
 import { useDialog } from '../../../hooks/useDialog';
 import Notification from '../../../components/Notification';
 import ConfirmDialog from '../../../components/ConfirmDialog';
@@ -54,7 +55,7 @@ const statusIcons: Record<EquipmentStatus, React.ReactNode> = {
 
 const EquipmentPage: React.FC = () => {
   const { equipment, loading, error, addEquipment, updateEquipment, updateEquipmentStatus, deleteEquipment } = useEquipment();
-  const { notification, showSuccess, showError, hideNotification } = useNotification();
+  const { notification, showSuccess, showError, showOperationError, hideNotification } = useNotification();
   const { confirmDialog, showConfirmDialog, hideConfirmDialog } = useDialog();
 
   const [showForm, setShowForm] = useState(false);
@@ -103,8 +104,8 @@ const EquipmentPage: React.FC = () => {
         showSuccess('Equipamento cadastrado com sucesso!');
       }
       resetForm();
-    } catch (err) {
-      showError('Erro ao salvar equipamento. Tente novamente.');
+    } catch (error) {
+      showOperationError(error, 'salvar', 'o equipamento');
     } finally {
       setIsSubmitting(false);
     }
@@ -140,8 +141,8 @@ const EquipmentPage: React.FC = () => {
         try {
           await deleteEquipment(eq.id);
           showSuccess('Equipamento excluido com sucesso!');
-        } catch {
-          showError('Erro ao excluir equipamento. Verifique se nao ha contratos vinculados.');
+        } catch (error) {
+          showOperationError(error, 'excluir', 'o equipamento');
         }
       },
       { type: 'danger', confirmText: 'Excluir' }
@@ -152,8 +153,8 @@ const EquipmentPage: React.FC = () => {
     try {
       await updateEquipmentStatus(eq.id, newStatus);
       showSuccess(`Status alterado para "${EQUIPMENT_STATUS_LABELS[newStatus]}"`);
-    } catch {
-      showError('Erro ao alterar status.');
+    } catch (error) {
+      showOperationError(error, 'alterar', 'o status');
     }
   };
 

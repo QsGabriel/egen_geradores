@@ -54,6 +54,7 @@ interface QuotationRow {
   vendedor_id: string | null;
   tipo: string;
   status: string;
+  status_updated_at: string;
   data_emissao: string;
   validade: string;
   conteudo: any;
@@ -76,7 +77,7 @@ interface QuotationRow {
 // MAPPERS
 // ============================================
 
-function quotationToRow(quotation: SalesQuotation): Omit<QuotationRow, 'created_at' | 'updated_at'> {
+function quotationToRow(quotation: SalesQuotation): Omit<QuotationRow, 'created_at' | 'updated_at' | 'status_updated_at'> {
   return {
     id: quotation.id,
     document_id: quotation.documentId,
@@ -335,11 +336,13 @@ export async function listQuotations(filters: SalesQuotationFilters = {}): Promi
   }
 
   if (filters.fromDate) {
-    query = query.gte('data_emissao', filters.fromDate);
+    const dateField = filters.status ? 'status_updated_at' : 'data_emissao';
+    query = query.gte(dateField, filters.fromDate);
   }
 
   if (filters.toDate) {
-    query = query.lte('data_emissao', filters.toDate);
+    const dateField = filters.status ? 'status_updated_at' : 'data_emissao';
+    query = query.lte(dateField, filters.toDate);
   }
 
   if (filters.minValue != null) {
@@ -401,6 +404,7 @@ export async function updateQuotationStatus(
     .from('sales_quotations')
     .update({
       status,
+      status_updated_at: new Date().toISOString(),
       updated_by: userId || null,
     })
     .eq('id', id)

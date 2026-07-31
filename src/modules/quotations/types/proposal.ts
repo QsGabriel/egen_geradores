@@ -15,7 +15,8 @@ export type DocumentStatus =
   | 'price_survey'
   | 'lost'
   | 'cancelled'
-  | 'closed';
+  | 'closed'
+  | 'contract_finished';
 
 export const DocumentTipoLabels: Record<DocumentTipo, string> = {
   proposta: 'Proposta Comercial',
@@ -30,6 +31,7 @@ export const DocumentStatusLabels: Record<DocumentStatus, string> = {
   lost: 'Proposta Perdida',
   cancelled: 'Proposta Cancelada',
   closed: 'Proposta Fechada',
+  contract_finished: 'Contrato Finalizado',
 };
 
 export const DocumentStatusColors: Record<DocumentStatus, string> = {
@@ -39,6 +41,7 @@ export const DocumentStatusColors: Record<DocumentStatus, string> = {
   lost: 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200',
   cancelled: 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400',
   closed: 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200',
+  contract_finished: 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200',
 };
 
 export type FranquiaHoras = 'standby' | '120h' | '240h' | '360h' | 'continuo' | string;
@@ -196,7 +199,6 @@ export interface CondicoesComerciais {
   telemetria: string;
   dimensionamento: string;
   definicaoEscopo: string;
-  observacoes: string;
 }
 
 // ============================================
@@ -333,7 +335,6 @@ export const DEFAULT_CONDICOES: CondicoesComerciais = {
   telemetria: 'Não orçado',
   dimensionamento: 'Locatária',
   definicaoEscopo: 'Locatária',
-  observacoes: '',
 };
 
 export const createEmptyItemPeriodico = (tipo: ItemTipoPeriodico = 'gerador'): ProposalItemPeriodico => ({

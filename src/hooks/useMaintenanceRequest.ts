@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { translateError } from '../utils/translateError';
 import { 
   MaintenanceRequest, 
   MaintenanceRequestFormValues, 
@@ -64,7 +65,7 @@ export const useMaintenanceRequest = () => {
 
       setMaintenanceRequests(formattedRequests);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar solicitações de manutenção');
+      setError(translateError(err));
     } finally {
       setLoading(false);
     }

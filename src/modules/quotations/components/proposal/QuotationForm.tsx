@@ -20,8 +20,11 @@ import {
   AlignLeft,
   LayoutList,
   UserCheck,
+  Lock,
+  Unlock,
 } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
+import { useAuth } from '../../../../hooks/useAuth';
 import { useQuotationStore } from '../../stores/quotationStore';
 import { ClientSelector } from './ClientSelector';
 import { EquipmentSelector } from './EquipmentSelector';
@@ -115,6 +118,8 @@ function AccordionSection({
 // ============================================
 
 export function QuotationForm({ onSave, className = '' }: QuotationFormProps) {
+  const { userProfile } = useAuth();
+
   // Get state and actions from store separately to avoid infinite loops
   const current = useQuotationStore((state) => state.current);
   const isDirty = useQuotationStore((state) => state.isDirty);
@@ -179,9 +184,19 @@ export function QuotationForm({ onSave, className = '' }: QuotationFormProps) {
   // Initialize new quotation if none exists
   useEffect(() => {
     if (!current) {
-      createNew('proposta');
+      createNew('proposta', userProfile ? { id: userProfile.id, name: userProfile.name, email: userProfile.email } : undefined);
     }
-  }, [current, createNew]);
+  }, [current, createNew, userProfile]);
+
+  // Vendedor Responsável starts locked whenever the current document already
+  // has a seller assigned (auto-filled on creation, or loaded from an
+  // existing proposal) — user must explicitly unlock it to reassign, so it
+  // never gets changed by accident. Re-evaluated only when switching to a
+  // different document, not on every field edit.
+  const [vendedorLocked, setVendedorLocked] = useState(!!current?.vendedorId);
+  useEffect(() => {
+    setVendedorLocked(!!current?.vendedorId);
+  }, [current?.id]);
 
   // Handle save
   const handleSave = () => {
@@ -309,16 +324,35 @@ export function QuotationForm({ onSave, className = '' }: QuotationFormProps) {
               <UserCheck className="w-3.5 h-3.5" />
               Vendedor Responsável
             </label>
-            <select
-              value={current.vendedorId || ''}
-              onChange={(e) => setVendedorId(e.target.value || null)}
-              className="w-full px-3 py-2 text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-egen-navy/30"
-            >
-              <option value="">Selecionar vendedor...</option>
-              {vendedores.map(v => (
-                <option key={v.id} value={v.id}>{v.name} ({v.email})</option>
-              ))}
-            </select>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 min-w-0">
+                <Select
+                  value={current.vendedorId || ''}
+                  onChange={(value) => setVendedorId(value || null)}
+                  disabled={vendedorLocked}
+                  searchable
+                  searchPlaceholder="Pesquisar vendedor..."
+                >
+                  <option value="">Selecionar vendedor...</option>
+                  {vendedores.map(v => (
+                    <option key={v.id} value={v.id}>{`${v.name} (${v.email})`}</option>
+                  ))}
+                </Select>
+              </div>
+              <button
+                type="button"
+                onClick={() => setVendedorLocked((prev) => !prev)}
+                title={vendedorLocked ? 'Desbloquear para alterar o vendedor' : 'Bloquear campo'}
+                className="flex-shrink-0 p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                {vendedorLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+              </button>
+            </div>
+            {vendedorLocked && (
+              <p className="mt-1 text-[11px] text-gray-400 dark:text-gray-500">
+                Preenchido automaticamente com quem criou a proposta. Clique no cadeado para alterar.
+              </p>
+            )}
           </div>
         </AccordionSection>
 
@@ -461,17 +495,6 @@ export function QuotationForm({ onSave, className = '' }: QuotationFormProps) {
           <ServiceSelector />
         </AccordionSection>
 
-        {/* Condições Comerciais */}
-        <AccordionSection
-          id="condicoes"
-          title="Condições Comerciais"
-          icon={<Settings className="w-5 h-5" />}
-          isOpen={openSections.includes('condicoes')}
-          onToggle={() => toggleSection('condicoes')}
-        >
-          <ConditionsEditor />
-        </AccordionSection>
-
         {/* Horas Excedentes */}
         <AccordionSection
           id="horasExcedentes"
@@ -488,6 +511,17 @@ export function QuotationForm({ onSave, className = '' }: QuotationFormProps) {
           }
         >
           <ExceedingHoursEditor />
+        </AccordionSection>
+
+        {/* Condições Comerciais */}
+        <AccordionSection
+          id="condicoes"
+          title="Condições Comerciais"
+          icon={<Settings className="w-5 h-5" />}
+          isOpen={openSections.includes('condicoes')}
+          onToggle={() => toggleSection('condicoes')}
+        >
+          <ConditionsEditor />
         </AccordionSection>
 
         {/* Observações Gerais */}

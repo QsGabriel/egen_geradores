@@ -5,6 +5,7 @@ import { useInventory } from '../hooks/useInventory';
 import { useAuth } from '../hooks/useAuth';
 import { useNotification } from '../hooks/useNotification';
 import { useDialog } from '../hooks/useDialog';
+import { translateError } from '../utils/translateError';
 import { DEPARTMENTS } from '../utils/permissions';
 import { Request, RequestItem } from '../types';
 import { useEffect } from 'react';
@@ -29,7 +30,7 @@ const RequestManagement: React.FC = () => {
     createQuotation 
   } = useInventory();
 
-  const { notification, showSuccess, showError, showWarning, showInfo, hideNotification } = useNotification();
+  const { notification, showSuccess, showError, showWarning, showInfo, showOperationError, hideNotification } = useNotification();
   const { confirmDialog, showConfirmDialog, hideConfirmDialog, handleConfirmDialogConfirm } = useDialog();
   
   const [showAddRequest, setShowAddRequest] = useState(false);
@@ -428,7 +429,7 @@ useEffect(() => {
       showSuccess('Solicitação criada com sucesso!');
     } catch (error) {
       console.error('Erro ao criar solicitação:', error);
-      showError('Erro ao criar solicitação. Tente novamente.');
+      showOperationError(error, 'criar', 'a solicitação');
     }
   };
 
@@ -442,7 +443,7 @@ useEffect(() => {
           showSuccess('Solicitação aprovada com sucesso!');
         } catch (error) {
           console.error('Erro ao aprovar solicitação:', error);
-          showError('Erro ao aprovar solicitação. Tente novamente.');
+          showOperationError(error, 'aprovar', 'a solicitação');
         }
       }
     );
@@ -458,7 +459,7 @@ useEffect(() => {
           showSuccess('Solicitação rejeitada.');
         } catch (error) {
           console.error('Erro ao rejeitar solicitação:', error);
-          showError('Erro ao rejeitar solicitação. Tente novamente.');
+          showOperationError(error, 'rejeitar', 'a solicitação');
         }
       },
       { type: 'danger', confirmText: 'Rejeitar' }
@@ -488,7 +489,7 @@ const handleCompleteRequest = async (request: Request) => {
     
     if (error) {
       console.error('Erro ao verificar status da solicitação:', error);
-      showError('Erro ao verificar status da solicitação.');
+      showOperationError(error, 'verificar', 'o status da solicitação');
       return;
     }
     
@@ -519,7 +520,7 @@ const handleCompleteRequest = async (request: Request) => {
     
   } catch (err) {
     console.error('Erro na verificação prévia:', err);
-    showError('Erro ao verificar solicitação. Tente novamente.');
+    showOperationError(err, 'verificar', 'a solicitação');
     return;
   }
   
@@ -549,7 +550,7 @@ const handleCompleteRequest = async (request: Request) => {
       showSuccess(`${uniqueItems.length} cotação(ões) criada(s)! Vá para a aba de Cotações para solicitar propostas dos fornecedores.`);
     } catch (error) {
       console.error('Erro ao criar cotação:', error);
-      showError('Erro ao criar cotação. Tente novamente.');
+      showOperationError(error, 'criar', 'a cotação');
     }
   };
 
@@ -1850,7 +1851,7 @@ const handleCompleteRequest = async (request: Request) => {
             setShowSignatureModal(null);
           } catch (error) {
             console.error(error);
-            showError('Erro ao finalizar solicitação. Tente novamente.');
+            showOperationError(error, 'finalizar', 'a solicitação');
           }
         }}
       />
@@ -1955,7 +1956,7 @@ const handleCompleteRequest = async (request: Request) => {
             
           } catch (error: any) {
             console.error('Erro ao processar retirada:', error);
-            showError(error.message || 'Erro ao finalizar solicitação. Tente novamente.');
+            showError(translateError(error));
             throw error; // Re-throw para o modal tratar
           } finally {
             setProcessingRequestId(null);

@@ -2,13 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { useNotification } from '../hooks/useNotification';
+import { translateError } from '../utils/translateError';
 import { Save } from 'lucide-react';
 import { hasPermission } from '../utils/permissions';
 import Notification from './Notification';
 
 const RequestPeriodConfig: React.FC = () => {
   const { user, userProfile } = useAuth();
-  const { notification, showSuccess, showError, hideNotification } = useNotification();
+  const { notification, showSuccess, showError, hideNotification, showOperationError } = useNotification();
   
   // Período geral (para todos os usuários exceto Área Técnica)
   const [generalStartDay, setGeneralStartDay] = useState<number | ''>('');
@@ -79,12 +80,12 @@ const RequestPeriodConfig: React.FC = () => {
       });
 
     if (error) {
-      showError('Erro ao salvar período geral.');
+      showOperationError(error, 'salvar', 'o período geral');
     } else {
       showSuccess('Período geral salvo com sucesso!');
     }
   } catch (error) {
-    showError('Erro ao salvar período geral.');
+    showOperationError(error, 'salvar', 'o período geral');
   }
 
   setLoading(false);
@@ -108,12 +109,12 @@ const handleTechSubmit = async (e: React.FormEvent) => {
       });
 
     if (error) {
-      showError('Erro ao salvar período da Área Técnica.');
+      showOperationError(error, 'salvar', 'o período da Área Técnica');
     } else {
       showSuccess('Período da Área Técnica salvo com sucesso!');
     }
   } catch (error) {
-    showError('Erro ao salvar período da Área Técnica.');
+    showOperationError(error, 'salvar', 'o período da Área Técnica');
   }
 
   setLoading(false);

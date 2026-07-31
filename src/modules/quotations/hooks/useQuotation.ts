@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../hooks/useAuth';
+import { translateError } from '../../../utils/translateError';
 import {
   Quotation,
   QuotationStatus,
@@ -158,7 +159,7 @@ export const useQuotation = () => {
 
       setQuotations(transformedQuotations);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar cotações');
+      setError(translateError(err));
     } finally {
       setLoading(false);
     }

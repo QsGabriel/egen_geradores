@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { NotificationType } from '../components/Notification';
+import { translateError } from '../utils/translateError';
 
 interface NotificationState {
   isVisible: boolean;
@@ -49,6 +50,24 @@ export const useNotification = () => {
     showNotification('info', title, message);
   }, [showNotification]);
 
+  const showOperationError = useCallback((
+    error: unknown,
+    operation: string,
+    entity?: string
+  ) => {
+    const translated = translateError(error);
+    const entityLabel = entity ? ` ${entity}` : '';
+
+    const isTranslated = translated !== (error instanceof Error ? error.message : String(error || ''));
+    const isPortuguese = /[áàãâéêíóôõúüç]/.test(translated);
+
+    if (isTranslated || isPortuguese) {
+      showError(translated);
+    } else {
+      showError(`Não foi possível ${operation}${entityLabel}. Tente novamente.`, translated);
+    }
+  }, [showNotification]);
+
   return {
     notification,
     showNotification,
@@ -56,6 +75,7 @@ export const useNotification = () => {
     showSuccess,
     showError,
     showWarning,
-    showInfo
+    showInfo,
+    showOperationError
   };
 };

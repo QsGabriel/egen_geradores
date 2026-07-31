@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { translateError } from '../utils/translateError';
 import type { Client, Lead, LeadStatus } from '../modules/crm/types';
 
 export interface CRMQuotation {
@@ -209,7 +210,7 @@ export function useCRMDashboard(vendedorId?: string | null, includeRanking: bool
         setVendedorRanking([]);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar dados');
+      setError(translateError(err));
     } finally {
       setLoading(false);
     }

@@ -74,7 +74,6 @@ export const PLACEHOLDERS = {
   TELEMETRIA: '{{condicoes.telemetria}}',
   DIMENSIONAMENTO: '{{condicoes.dimensionamento}}',
   DEFINICAO_ESCOPO: '{{condicoes.definicaoEscopo}}',
-  CONDICOES_OBSERVACOES: '{{condicoes.observacoes}}',
 } as const;
 
 // ============================================
@@ -410,9 +409,6 @@ export const TEMPLATE_CONDICOES = `
         </tr>
       </tbody>
     </table>
-
-    <!-- Observações das Condições -->
-    ${PLACEHOLDERS.CONDICOES_OBSERVACOES}
   </div>
 </section>
 `;
