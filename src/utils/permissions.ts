@@ -20,6 +20,8 @@ export const ALL_PERMISSION_KEYS: { key: string; label: string; group: string }[
   { key: 'canEditLeads', label: 'Editar Leads', group: 'CRM' },
   { key: 'canDeleteLeads', label: 'Excluir Leads', group: 'CRM' },
 
+  { key: 'canViewAllStates', label: 'Ver Todos os Estados (CRM)', group: 'CRM' },
+
   { key: 'canManageQuotations', label: 'Gerenciar Propostas', group: 'Propostas' },
   { key: 'canViewAllProposals', label: 'Ver Todas as Propostas', group: 'Propostas' },
   { key: 'canViewOwnProposals', label: 'Ver Próprias Propostas', group: 'Propostas' },
@@ -35,6 +37,53 @@ export const ALL_PERMISSION_KEYS: { key: string; label: string; group: string }[
   { key: 'canManageDepartments', label: 'Gerenciar Departamentos', group: 'Administração' },
   { key: 'canManageWhitelist', label: 'Gerenciar Whitelist', group: 'Administração' },
 ];
+
+export const BRAZILIAN_STATES: { uf: string; label: string; region: string }[] = [
+  { uf: 'AC', label: 'Acre', region: 'Norte' },
+  { uf: 'AL', label: 'Alagoas', region: 'Nordeste' },
+  { uf: 'AP', label: 'Amapá', region: 'Norte' },
+  { uf: 'AM', label: 'Amazonas', region: 'Norte' },
+  { uf: 'BA', label: 'Bahia', region: 'Nordeste' },
+  { uf: 'CE', label: 'Ceará', region: 'Nordeste' },
+  { uf: 'DF', label: 'Distrito Federal', region: 'Centro-Oeste' },
+  { uf: 'ES', label: 'Espírito Santo', region: 'Sudeste' },
+  { uf: 'GO', label: 'Goiás', region: 'Centro-Oeste' },
+  { uf: 'MA', label: 'Maranhão', region: 'Nordeste' },
+  { uf: 'MT', label: 'Mato Grosso', region: 'Centro-Oeste' },
+  { uf: 'MS', label: 'Mato Grosso do Sul', region: 'Centro-Oeste' },
+  { uf: 'MG', label: 'Minas Gerais', region: 'Sudeste' },
+  { uf: 'PA', label: 'Pará', region: 'Norte' },
+  { uf: 'PB', label: 'Paraíba', region: 'Nordeste' },
+  { uf: 'PR', label: 'Paraná', region: 'Sul' },
+  { uf: 'PE', label: 'Pernambuco', region: 'Nordeste' },
+  { uf: 'PI', label: 'Piauí', region: 'Nordeste' },
+  { uf: 'RJ', label: 'Rio de Janeiro', region: 'Sudeste' },
+  { uf: 'RN', label: 'Rio Grande do Norte', region: 'Nordeste' },
+  { uf: 'RS', label: 'Rio Grande do Sul', region: 'Sul' },
+  { uf: 'RO', label: 'Rondônia', region: 'Norte' },
+  { uf: 'RR', label: 'Roraima', region: 'Norte' },
+  { uf: 'SC', label: 'Santa Catarina', region: 'Sul' },
+  { uf: 'SP', label: 'São Paulo', region: 'Sudeste' },
+  { uf: 'SE', label: 'Sergipe', region: 'Nordeste' },
+  { uf: 'TO', label: 'Tocantins', region: 'Norte' },
+];
+
+export const BRAZILIAN_STATE_REGIONS = [...new Set(BRAZILIAN_STATES.map(s => s.region))];
+
+export function filterByAllowedStates<T>(
+  items: T[],
+  getState: (item: T) => string,
+  allowedStates: string[],
+  canViewAllStates: boolean,
+): T[] {
+  if (canViewAllStates) return items;
+  if (!allowedStates || allowedStates.length === 0) return items;
+  const normalizedAllowed = allowedStates.map(s => s.trim().toUpperCase());
+  return items.filter(item => {
+    const itemState = getState(item)?.trim().toUpperCase() || '';
+    return normalizedAllowed.includes(itemState);
+  });
+}
 
 // Fallback para roles legadas (transição)
 const LEGACY_ROLE_PERMISSIONS: Record<UserRole, string[]> = {

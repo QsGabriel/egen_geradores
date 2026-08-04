@@ -5,7 +5,7 @@ import { useNotification } from '../hooks/useNotification';
 import { supabase } from '../lib/supabase';
 import { translateError } from '../utils/translateError';
 import { UserProfile, UserRole, CustomRole, Department } from '../types';
-import { ALL_PERMISSION_KEYS, hasPermission, getRoleLabel } from '../utils/permissions';
+import { ALL_PERMISSION_KEYS, hasPermission, getRoleLabel, BRAZILIAN_STATES } from '../utils/permissions';
 import Notification from './Notification';
 import NewUserForm from './NewUserForm';
 import AvatarUpload from './AvatarUpload';
@@ -18,6 +18,38 @@ const GROUP_COLORS: Record<string, { dot: string; activePill: string; activeText
   'Propostas':     { dot: 'bg-rose-500',    activePill: 'bg-rose-100 dark:bg-rose-900/40 border-rose-300 dark:border-rose-700',      activeText: 'text-rose-700 dark:text-rose-300',      groupHeader: 'text-rose-600 dark:text-rose-400',      groupBg: 'border-l-2 border-rose-300 dark:border-rose-700 pl-3' },
   'Manutenção':    { dot: 'bg-teal-500',    activePill: 'bg-teal-100 dark:bg-teal-900/40 border-teal-300 dark:border-teal-700',      activeText: 'text-teal-700 dark:text-teal-300',      groupHeader: 'text-teal-600 dark:text-teal-400',      groupBg: 'border-l-2 border-teal-300 dark:border-teal-700 pl-3' },
   'Administração': { dot: 'bg-amber-500',   activePill: 'bg-amber-100 dark:bg-amber-900/40 border-amber-300 dark:border-amber-700',   activeText: 'text-amber-700 dark:text-amber-300',    groupHeader: 'text-amber-600 dark:text-amber-400',    groupBg: 'border-l-2 border-amber-300 dark:border-amber-700 pl-3' },
+};
+
+const REGION_COLORS: Record<string, string> = {
+  'Norte':          'border-emerald-400 dark:border-emerald-600',
+  'Nordeste':       'border-orange-400 dark:border-orange-600',
+  'Centro-Oeste':   'border-amber-400 dark:border-amber-600',
+  'Sudeste':        'border-blue-400 dark:border-blue-600',
+  'Sul':            'border-cyan-400 dark:border-cyan-600',
+};
+
+const REGION_DOT_COLORS: Record<string, string> = {
+  'Norte':          'bg-emerald-500',
+  'Nordeste':       'bg-orange-500',
+  'Centro-Oeste':   'bg-amber-500',
+  'Sudeste':        'bg-blue-500',
+  'Sul':            'bg-cyan-500',
+};
+
+const REGION_HEADER_COLORS: Record<string, string> = {
+  'Norte':          'text-emerald-600 dark:text-emerald-400',
+  'Nordeste':       'text-orange-600 dark:text-orange-400',
+  'Centro-Oeste':   'text-amber-600 dark:text-amber-400',
+  'Sudeste':        'text-blue-600 dark:text-blue-400',
+  'Sul':            'text-cyan-600 dark:text-cyan-400',
+};
+
+const REGION_BG_COLORS: Record<string, string> = {
+  'Norte':          'bg-emerald-50 dark:bg-emerald-900/20',
+  'Nordeste':       'bg-orange-50 dark:bg-orange-900/20',
+  'Centro-Oeste':   'bg-amber-50 dark:bg-amber-900/20',
+  'Sudeste':        'bg-blue-50 dark:bg-blue-900/20',
+  'Sul':            'bg-cyan-50 dark:bg-cyan-900/20',
 };
 
 const UserManagement: React.FC = () => {
@@ -42,7 +74,7 @@ const UserManagement: React.FC = () => {
   const [showRoleForm, setShowRoleForm] = useState(false);
   const [editingRole, setEditingRole] = useState<CustomRole | null>(null);
   const [isSavingRole, setIsSavingRole] = useState(false);
-  const [roleFormData, setRoleFormData] = useState({ name: '', description: '', permissions: [] as string[] });
+  const [roleFormData, setRoleFormData] = useState({ name: '', description: '', permissions: [] as string[], allowedStates: [] as string[] });
 
   // Department form
   const [showDeptForm, setShowDeptForm] = useState(false);
@@ -93,7 +125,8 @@ const UserManagement: React.FC = () => {
       if (error) throw error;
       setCustomRoles((data || []).map((r: any) => ({
         id: r.id, name: r.name, description: r.description,
-        permissions: r.permissions || [], isSystem: r.is_system,
+        permissions: r.permissions || [], allowedStates: r.allowed_states || [],
+        isSystem: r.is_system,
         createdAt: r.created_at, updatedAt: r.updated_at,
       })));
     } catch (error) {
@@ -204,13 +237,13 @@ const UserManagement: React.FC = () => {
 
   // ─── Roles CRUD ────────────────────────────────────────────────────────────
   const handleEditRole = (role: CustomRole) => {
-    setRoleFormData({ name: role.name, description: role.description || '', permissions: [...role.permissions] });
+    setRoleFormData({ name: role.name, description: role.description || '', permissions: [...role.permissions], allowedStates: [...(role.allowedStates || [])] });
     setEditingRole(role);
     setShowRoleForm(true);
   };
 
   const handleCancelRole = () => {
-    setRoleFormData({ name: '', description: '', permissions: [] });
+    setRoleFormData({ name: '', description: '', permissions: [], allowedStates: [] });
     setEditingRole(null);
     setShowRoleForm(false);
   };
@@ -230,6 +263,23 @@ const UserManagement: React.FC = () => {
     }));
   };
 
+  const toggleState = (uf: string) => {
+    setRoleFormData(prev => ({
+      ...prev,
+      allowedStates: prev.allowedStates.includes(uf)
+        ? prev.allowedStates.filter(s => s !== uf)
+        : [...prev.allowedStates, uf],
+    }));
+  };
+
+  const toggleAllStates = () => {
+    const allUfs = BRAZILIAN_STATES.map(s => s.uf);
+    setRoleFormData(prev => ({
+      ...prev,
+      allowedStates: prev.allowedStates.length === allUfs.length ? [] : allUfs,
+    }));
+  };
+
   const handleSaveRole = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!roleFormData.name.trim()) return;
@@ -240,6 +290,7 @@ const UserManagement: React.FC = () => {
           name: roleFormData.name.trim(),
           description: roleFormData.description.trim() || null,
           permissions: roleFormData.permissions,
+          allowed_states: roleFormData.allowedStates.length > 0 ? roleFormData.allowedStates : null,
           updated_at: new Date().toISOString(),
         }).eq('id', editingRole.id);
         if (error) throw error;
@@ -252,6 +303,7 @@ const UserManagement: React.FC = () => {
           name: roleFormData.name.trim(),
           description: roleFormData.description.trim() || null,
           permissions: roleFormData.permissions,
+          allowed_states: roleFormData.allowedStates.length > 0 ? roleFormData.allowedStates : null,
           is_system: false,
         });
         if (error) throw error;
@@ -509,6 +561,16 @@ const UserManagement: React.FC = () => {
                           return <span key={perm} className="px-2 py-0.5 bg-[#F3B229]/10 dark:bg-amber-800/30 rounded-md text-xs text-amber-700 dark:text-amber-300">{info?.label || perm}</span>;
                         })}
                       </div>
+                      {customRoles.find(r => r.id === formData.customRoleId)?.allowedStates?.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-[#F3B229]/20">
+                          <h4 className="text-sm font-medium text-amber-800 dark:text-amber-200 mb-1.5">Estados permitidos (CRM):</h4>
+                          <div className="flex flex-wrap gap-1">
+                            {customRoles.find(r => r.id === formData.customRoleId)!.allowedStates!.map(uf => (
+                              <span key={uf} className="px-2 py-0.5 bg-white dark:bg-amber-900/40 rounded-md text-xs font-semibold text-[#B8860B] dark:text-amber-300 border border-[#F3B229]/30">{uf}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -739,6 +801,49 @@ const UserManagement: React.FC = () => {
                   ))}
                 </div>
 
+                <div className="pt-2">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Estados Permitidos (CRM)</label>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Restringe visualização de clientes e leads. Vazio = todos os estados.</p>
+                    </div>
+                    <button type="button" onClick={toggleAllStates} className="text-xs text-[#F3B229] hover:text-[#E5A320] font-medium">
+                      {roleFormData.allowedStates.length === BRAZILIAN_STATES.length ? 'Limpar todos' : 'Selecionar todos'}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                    {Object.entries(
+                      BRAZILIAN_STATES.reduce((acc, s) => {
+                        if (!acc[s.region]) acc[s.region] = [];
+                        acc[s.region].push(s);
+                        return acc;
+                      }, {} as Record<string, typeof BRAZILIAN_STATES>)
+                    ).map(([region, states]) => (
+                      <div key={region} className={`rounded-xl border-2 ${REGION_COLORS[region] || 'border-gray-200 dark:border-gray-600'} p-2.5 ${REGION_BG_COLORS[region] || ''}`}>
+                        <p className={`text-[10px] font-semibold uppercase tracking-wider mb-1.5 ${REGION_HEADER_COLORS[region] || 'text-gray-500'}`}>
+                          <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${REGION_DOT_COLORS[region] || 'bg-gray-400'}`}></span>
+                          {region}
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {states.map(s => {
+                            const active = roleFormData.allowedStates.includes(s.uf);
+                            return (
+                              <button key={s.uf} type="button" onClick={() => toggleState(s.uf)}
+                                className={`px-2 py-1 text-[11px] font-semibold rounded-md border transition-all duration-150 ${
+                                  active
+                                    ? 'bg-white dark:bg-gray-800 border-[#F3B229] text-[#B8860B] shadow-sm'
+                                    : 'bg-white/60 dark:bg-gray-800/40 border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:border-gray-300 dark:hover:border-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
+                                }`}
+                                title={s.label}
+                              >{s.uf}</button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="flex justify-end gap-3 pt-2">
                   <button type="button" onClick={handleCancelRole} className="px-4 py-2.5 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 font-medium">Cancelar</button>
                   <button type="submit" disabled={isSavingRole} className="px-6 py-2.5 bg-gradient-to-r from-[#F3B229] to-[#E5A320] text-white rounded-xl hover:from-[#E5A320] hover:to-[#D4941A] disabled:opacity-50 flex items-center font-medium shadow-md">
@@ -774,6 +879,16 @@ const UserManagement: React.FC = () => {
                       </div>
                       <span className="text-xs text-gray-400 tabular-nums">{coveragePct}%</span>
                     </div>
+                    {role.allowedStates && role.allowedStates.length > 0 && (
+                      <div className="mb-3">
+                        <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Estados</p>
+                        <div className="flex flex-wrap gap-1">
+                          {role.allowedStates.map(uf => (
+                            <span key={uf} className="px-1.5 py-0.5 text-[10px] font-semibold rounded border border-[#F3B229]/30 bg-[#F3B229]/5 text-[#B8860B]">{uf}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     <div className="flex gap-2">
                       <button onClick={() => handleEditRole(role)} className="flex-1 px-3 py-1.5 text-xs font-medium text-[#B8860B] bg-[#F3B229]/10 rounded-lg hover:bg-[#F3B229]/20 transition-all">Editar</button>
                       {!role.isSystem && (

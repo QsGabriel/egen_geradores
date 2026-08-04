@@ -140,6 +140,7 @@ export interface CustomRole {
   name: string;
   description: string | null;
   permissions: string[];
+  allowedStates: string[];
   isSystem: boolean;
   createdAt: string;
   updatedAt: string;
@@ -168,6 +169,7 @@ export interface UserProfile {
   department: string;
   customRoleId?: string;
   permissions: string[];
+  allowedStates: string[];
   roleName?: string;
   createdAt: string;
   updatedAt: string;

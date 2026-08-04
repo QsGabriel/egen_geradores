@@ -2,10 +2,11 @@
  * useCRM Hook
  * Hook principal do módulo CRM — gerencia clients, leads e crm_history
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../hooks/useAuth';
 import { translateError } from '../../../utils/translateError';
+import { filterByAllowedStates, hasPermission } from '../../../utils/permissions';
 import { quotationService } from '../../quotations/services';
 import type { SalesQuotation } from '../../quotations/types/proposal';
 import type {
@@ -21,6 +22,9 @@ import type {
 
 export function useCRM() {
   const { userProfile } = useAuth();
+  const userProfileRef = useRef(userProfile);
+  userProfileRef.current = userProfile;
+
   const [clients, setClients] = useState<Client[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [history, setHistory] = useState<CrmHistory[]>([]);
@@ -61,7 +65,10 @@ export function useCRM() {
       updatedAt: r.updated_at,
     }));
 
-    setClients(mapped);
+    const canViewAllStates = hasPermission(userProfileRef.current?.permissions || [], 'canViewAllStates');
+    const allowed = userProfileRef.current?.allowedStates || [];
+    const filtered = filterByAllowedStates(mapped, (c) => c.state, allowed, canViewAllStates);
+    setClients(filtered);
   }, []);
 
   const fetchLeads = useCallback(async () => {
@@ -103,7 +110,10 @@ export function useCRM() {
       updatedAt: r.updated_at,
     }));
 
-    setLeads(mapped);
+    const canViewAllStates = hasPermission(userProfileRef.current?.permissions || [], 'canViewAllStates');
+    const allowed = userProfileRef.current?.allowedStates || [];
+    const filtered = filterByAllowedStates(mapped, (l) => l.state, allowed, canViewAllStates);
+    setLeads(filtered);
   }, []);
 
   const fetchHistory = useCallback(async (entityType?: string, entityId?: string) => {

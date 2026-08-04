@@ -15,7 +15,7 @@ export const useAuth = () => {
     try {
       const { data, error } = await supabase
         .from('user_profiles')
-        .select('*, custom_roles(id, name, permissions)')
+        .select('*, custom_roles(id, name, permissions, allowed_states)')
         .eq('id', userId)
         .single();
 
@@ -45,6 +45,7 @@ export const useAuth = () => {
           department: data.department || '',
           customRoleId: data.custom_role_id || undefined,
           permissions,
+          allowedStates: customRole?.allowed_states || [],
           roleName,
           createdAt: data.created_at,
           updatedAt: data.updated_at,
