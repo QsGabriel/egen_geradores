@@ -83,13 +83,6 @@ const DISPOSITION_PARAGRAPHS = [
   'A não devolução dos equipamentos na data prevista implica na continuidade da locação, sendo aplicada nova cobrança no mesmo valor e condições do período anterior.',
 ];
 
-const DEFAULT_SELLER: Required<ProposalSellerInfo> = {
-  name: 'CAMILA JANSEN',
-  email: 'camila.jansen@egengeradores.com.br',
-  phone: '(62) 9 9825-5400',
-  roleLabel: 'Comercial',
-};
-
 function textValue(value: string | null | undefined): string {
   if (!value || !value.trim()) {
     return '-';
@@ -487,10 +480,10 @@ export default function ProposalPrintDocument({
 }: ProposalPrintDocumentProps) {
   const sellerInfo = useMemo<Required<ProposalSellerInfo>>(
     () => ({
-      name: seller?.name?.trim() || DEFAULT_SELLER.name,
-      email: seller?.email?.trim() || DEFAULT_SELLER.email,
-      phone: seller?.phone?.trim() || DEFAULT_SELLER.phone,
-      roleLabel: seller?.roleLabel?.trim() || DEFAULT_SELLER.roleLabel,
+      name: seller?.name?.trim() || '',
+      email: seller?.email?.trim() || '',
+      phone: seller?.phone?.trim() || '',
+      roleLabel: seller?.roleLabel?.trim() || '',
       avatarUrl: seller?.avatarUrl || '',
       qrcodeUrl: seller?.qrcodeUrl || '',
     }),
