@@ -8,7 +8,7 @@ import {
   Plus, Trash2, Zap, Cable, Server, Fuel, Radio,
   Calculator, AlertTriangle,
 } from 'lucide-react';
-import { useQuotationStore, selectItensPeriodicos } from '../../stores/quotationStore';
+import { useQuotationStore, selectItensPeriodicos, selectHorasExcedentes } from '../../stores/quotationStore';
 import { usePricing } from '../../../pricing';
 import { Select } from './Select';
 import ComboBox from '../../../../components/ComboBox';
@@ -49,7 +49,8 @@ interface EquipmentSelectorProps {
 
 export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
   const itensPeriodicos = useQuotationStore(selectItensPeriodicos);
-  const { addItemPeriodico, updateItemPeriodico, removeItemPeriodico, recalculateTotals } = useQuotationStore();
+  const horasExcedentes = useQuotationStore(selectHorasExcedentes);
+  const { addItemPeriodico, updateItemPeriodico, removeItemPeriodico, recalculateTotals, addHoraExcedente, updateHoraExcedente } = useQuotationStore();
   
   const {
     generators,
@@ -57,6 +58,7 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
     getGeneratorPrice,
     getCableKitPrice,
     getAccessoryPrice,
+    getExtraHourPrice,
     getAvailablePowers,
     formatCurrency,
   } = usePricing();
@@ -185,6 +187,61 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
             field === 'potenciaKva' ? value : current.potenciaKva,
             field === 'periodoLocacao' ? value : current.periodoLocacao,
           );
+        }
+        if (field === 'potenciaKva' && value) {
+          const oldPotencia = current.potenciaKva;
+          const mappedPeriod = (periodMap[newPeriodo] || 'mensal') as 'mensal' | 'quinzenal' | 'semanal';
+          const extraPrice = getExtraHourPrice(value, mappedPeriod);
+
+          // Se existir hora excedente órfã da potência antiga (nenhum outro gerador a usa),
+          // atualiza ela em vez de criar uma nova
+          if (oldPotencia && oldPotencia !== value) {
+            const generatorsWithOldPower = itensPeriodicos.filter(
+              i => i.tipo === 'gerador' && i.potenciaKva === oldPotencia && i.id !== id,
+            );
+            if (generatorsWithOldPower.length === 0) {
+              const orphan = horasExcedentes.find(h => h.potenciaKva === oldPotencia);
+              if (orphan) {
+                updateHoraExcedente(orphan.id, {
+                  potenciaKva: value,
+                  descricao: `Hora excedente ${value}`,
+                  valorUnitario: extraPrice ?? 0,
+                });
+              } else {
+                const exists = horasExcedentes.some(h => h.potenciaKva === value);
+                if (!exists) {
+                  addHoraExcedente({
+                    potenciaKva: value,
+                    descricao: `Hora excedente ${value}`,
+                    valorUnitario: extraPrice ?? 0,
+                    observacoes: 'por equipamento',
+                  });
+                }
+              }
+            } else {
+              const exists = horasExcedentes.some(h => h.potenciaKva === value);
+              if (!exists) {
+                addHoraExcedente({
+                  potenciaKva: value,
+                  descricao: `Hora excedente ${value}`,
+                  valorUnitario: extraPrice ?? 0,
+                  observacoes: 'por equipamento',
+                });
+              }
+            }
+          } else if (!oldPotencia) {
+            // Primeira vez definindo a potência — só adiciona se não existir
+            const exists = horasExcedentes.some(h => h.potenciaKva === value);
+            if (!exists) {
+              addHoraExcedente({
+                potenciaKva: value,
+                descricao: `Hora excedente ${value}`,
+                valorUnitario: extraPrice ?? 0,
+                observacoes: 'por equipamento',
+              });
+            }
+          }
+          // oldPotencia === value: potência não mudou, não faz nada
         }
       } else {
         updateItemPeriodico(id, { [field]: value });
@@ -320,7 +377,7 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
               </div>
 
               {/* Main Fields */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                 {/* Potência — only for generators */}
                 {item.tipo === 'gerador' && (
                   <div>
@@ -405,7 +462,7 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
               </div>
 
               {/* Pricing Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
                 {/* Valor Unitário */}
                 <div>
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
@@ -442,7 +499,7 @@ export function EquipmentSelector({ className = '' }: EquipmentSelectorProps) {
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                     Total
                   </label>
-                  <div className="px-3 py-2 bg-egen-navy/10 dark:bg-egen-yellow/10 rounded-lg text-sm font-semibold text-egen-navy dark:text-egen-yellow flex items-center gap-2">
+                  <div className="px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-sm font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-2">
                     <Calculator className="w-4 h-4" />
                     {formatCurrency(item.valorTotal)}
                   </div>

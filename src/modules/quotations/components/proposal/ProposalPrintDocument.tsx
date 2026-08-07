@@ -878,11 +878,11 @@ export default function ProposalPrintDocument({
                 {isLastEquipmentPage ? (
                   <tfoot>
                     <tr className="proposal-table-subtotal">
-                      <td colSpan={5} className="proposal-table-subtotal-label">{getPeriodTotalLabel(quotation.condicoes.periodoOrcado)}</td>
+                      <td colSpan={4} className="proposal-table-subtotal-label">{getPeriodTotalLabel(quotation.condicoes.periodoOrcado)}</td>
                       <td className="proposal-table-subtotal-value">
                         <CurrencyCell value={quotation.totalPeriodicos} />
                       </td>
-                      <td className="proposal-table-subtotal-empty" />
+                      <td className="proposal-table-subtotal-empty" colSpan={2} />
                     </tr>
                   </tfoot>
                 ) : null}

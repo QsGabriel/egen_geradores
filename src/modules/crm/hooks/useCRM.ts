@@ -415,6 +415,9 @@ export function useCRM() {
       itensPeriodicos: [],
       itensSpot: [],
       horasExcedentes: [],
+      vendedorId: userProfile?.id ?? null,
+      vendedorNome: userProfile?.name,
+      vendedorEmail: userProfile?.email,
       condicoes: {} as any,
       observacoesGerais: lead.notes || '',
       exibirTotaisPorTabela: true,
@@ -450,6 +453,47 @@ export function useCRM() {
 
     return created.id;
   };
+
+  // ============================================
+  // LEAD PRODUCTION (filtro por vendedor)
+  // ============================================
+
+  const fetchLeadVendedores = useCallback(async (): Promise<string[]> => {
+    const { data, error: err } = await supabase
+      .from('contact_logs')
+      .select('created_by')
+      .eq('entity_type', 'lead')
+      .order('created_by', { ascending: true });
+
+    if (err) throw err;
+
+    const names = (data || []).map((r: any) => r.created_by as string);
+    return [...new Set(names)].filter(Boolean);
+  }, []);
+
+  const fetchLeadIdsByVendedor = useCallback(async (vendedor: string): Promise<Set<string>> => {
+    if (!vendedor) return new Set();
+
+    const PAGE = 1000;
+    let all: string[] = [];
+    let from = 0;
+
+    while (true) {
+      const { data, error: err } = await supabase
+        .from('contact_logs')
+        .select('entity_id')
+        .eq('entity_type', 'lead')
+        .eq('created_by', vendedor)
+        .range(from, from + PAGE - 1);
+
+      if (err) throw err;
+      if (data && data.length > 0) all = all.concat(data.map((r: any) => r.entity_id));
+      if (!data || data.length < PAGE) break;
+      from += PAGE;
+    }
+
+    return new Set(all);
+  }, []);
 
   // ============================================
   // CONTACT LOG
@@ -609,6 +653,10 @@ export function useCRM() {
     // Contact log operations
     fetchContactLogs,
     addContactLog,
+
+    // Lead production (filtro por vendedor)
+    fetchLeadVendedores,
+    fetchLeadIdsByVendedor,
 
     // History operations
     addHistoryEntry,

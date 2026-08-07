@@ -20,10 +20,13 @@ import {
   ChevronRight,
   FileText,
   Calendar,
+  BarChart3,
 } from 'lucide-react';
 import { useCRM } from '../hooks/useCRM';
+import { useAuth } from '../../../hooks/useAuth';
 import { useNotification } from '../../../hooks/useNotification';
 import { translateError } from '../../../utils/translateError';
+import { hasPermission } from '../../../utils/permissions';
 import { useDialog } from '../../../hooks/useDialog';
 import Notification from '../../../components/Notification';
 import ConfirmDialog from '../../../components/ConfirmDialog';
@@ -34,6 +37,7 @@ import FilterSelect from '../../../components/FilterSelect';
 import LeadImportModal from './LeadImportModal';
 import LeadConvertModal from './LeadConvertModal';
 import LeadDetailModal from './LeadDetailModal';
+import LeadSummaryModal from './LeadSummaryModal';
 import type { Lead, LeadFormData, LeadStatus, ContactPerson } from '../types';
 import {
   LEAD_STATUS_LABELS,
@@ -70,7 +74,8 @@ interface LeadListProps {
 
 const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
   const navigate = useNavigate();
-  const { leads, addLead, updateLead, deleteLead, convertLeadToClient, generateProposalFromLead, importLeads } = useCRM();
+  const { leads, addLead, updateLead, deleteLead, convertLeadToClient, generateProposalFromLead, importLeads, fetchLeadVendedores, fetchLeadIdsByVendedor } = useCRM();
+  const { userProfile } = useAuth();
   const { notification, showSuccess, showError, showOperationError, hideNotification } = useNotification();
   const { confirmDialog, showConfirmDialog, hideConfirmDialog } = useDialog();
 
@@ -89,10 +94,14 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [dateFilteredLeadIds, setDateFilteredLeadIds] = useState<Set<string> | null>(null);
+  const [vendedorFilter, setVendedorFilter] = useState('');
+  const [vendedores, setVendedores] = useState<string[]>([]);
+  const [vendedorFilteredLeadIds, setVendedorFilteredLeadIds] = useState<Set<string> | null>(null);
   const [page, setPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const [convertTarget, setConvertTarget] = useState<Lead | null>(null);
   const [detailLead, setDetailLead] = useState<Lead | null>(null);
+  const [showSummary, setShowSummary] = useState(false);
 
   const topScrollRef = useRef<HTMLDivElement>(null);
   const tableScrollRef = useRef<HTMLDivElement>(null);
@@ -120,7 +129,7 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
     return <span className="ml-1 text-yellow-500">{sortDir === 'asc' ? '↑' : '↓'}</span>;
   };
 
-  const hasActiveFilters = statusFilter !== 'all' || cityFilter.length > 0 || stateFilter.length > 0 || classificationFilter.length > 0 || sourceFilter.length > 0 || fromDate !== '' || toDate !== '';
+  const hasActiveFilters = statusFilter !== 'all' || cityFilter.length > 0 || stateFilter.length > 0 || classificationFilter.length > 0 || sourceFilter.length > 0 || fromDate !== '' || toDate !== '' || vendedorFilter !== '';
   let activeFilterCount = 0;
   if (statusFilter !== 'all') activeFilterCount++;
   if (cityFilter.length > 0) activeFilterCount++;
@@ -128,6 +137,7 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
   if (classificationFilter.length > 0) activeFilterCount++;
   if (sourceFilter.length > 0) activeFilterCount++;
   if (fromDate !== '' || toDate !== '') activeFilterCount++;
+  if (vendedorFilter !== '') activeFilterCount++;
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -139,6 +149,8 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
     setFromDate('');
     setToDate('');
     setDateFilteredLeadIds(null);
+    setVendedorFilter('');
+    setVendedorFilteredLeadIds(null);
     setPage(1);
   };
 
@@ -290,6 +302,36 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
     return () => { cancelled = true; };
   }, [fromDate, toDate]);
 
+  // ── Vendedor filter (production) ──────────────────────────────────────────
+  const canViewProduction = hasPermission(userProfile?.permissions || [], 'canViewLeadsProduction');
+
+  useEffect(() => {
+    if (!canViewProduction) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const names = await fetchLeadVendedores();
+        if (!cancelled) setVendedores(names);
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, [canViewProduction, fetchLeadVendedores]);
+
+  useEffect(() => {
+    if (!vendedorFilter) {
+      setVendedorFilteredLeadIds(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const ids = await fetchLeadIdsByVendedor(vendedorFilter);
+        if (!cancelled) setVendedorFilteredLeadIds(ids);
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, [vendedorFilter, fetchLeadIdsByVendedor]);
+
   const filteredLeads = leads.filter((lead) => {
     const term = searchTerm.toLowerCase();
     const matchesSearch =
@@ -308,8 +350,9 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
     const matchesClassification = classificationFilter.length === 0 || classificationFilter.includes(lead.classification);
     const matchesSource = sourceFilter.length === 0 || sourceFilter.includes(lead.source);
     const matchesDate = !dateFilteredLeadIds || dateFilteredLeadIds.has(lead.id);
+    const matchesVendedor = !vendedorFilteredLeadIds || vendedorFilteredLeadIds.has(lead.id);
 
-    return matchesSearch && matchesStatus && matchesCity && matchesState && matchesClassification && matchesSource && matchesDate;
+    return matchesSearch && matchesStatus && matchesCity && matchesState && matchesClassification && matchesSource && matchesDate && matchesVendedor;
   });
 
   const sortedLeads = sortField
@@ -720,6 +763,18 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
               <option key={key} value={key}>{label}</option>
             ))}
           </Select>
+          {canViewProduction && vendedores.length > 0 && (
+            <Select
+              value={vendedorFilter}
+              onChange={(v) => { setVendedorFilter(v); setPage(1); }}
+              className="min-w-[200px] bg-white dark:bg-gray-800"
+            >
+              <option value="">Todos os Vendedores</option>
+              {vendedores.map(name => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </Select>
+          )}
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={`inline-flex items-center gap-2 px-4 py-2.5 border rounded-xl text-sm font-medium transition-all ${
@@ -736,6 +791,15 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
               </span>
             )}
           </button>
+          {canViewProduction && (
+            <button
+              onClick={() => setShowSummary(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Resumo
+            </button>
+          )}
           {hasActiveFilters && (
             <button
               onClick={clearFilters}
@@ -1055,6 +1119,16 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
           lead={convertTarget}
           onConfirm={handleConvertConfirm}
           onClose={() => setConvertTarget(null)}
+        />
+      )}
+
+      {showSummary && (
+        <LeadSummaryModal
+          filteredLeads={filteredLeads}
+          totalLeads={leads.length}
+          vendedorName={vendedorFilter}
+          hasActiveFilters={hasActiveFilters}
+          onClose={() => setShowSummary(false)}
         />
       )}
 

@@ -19,6 +19,7 @@ export const ALL_PERMISSION_KEYS: { key: string; label: string; group: string }[
   { key: 'canCreateLeads', label: 'Criar Leads', group: 'CRM' },
   { key: 'canEditLeads', label: 'Editar Leads', group: 'CRM' },
   { key: 'canDeleteLeads', label: 'Excluir Leads', group: 'CRM' },
+  { key: 'canViewLeadsProduction', label: 'Ver Produção de Leads (filtro por vendedor)', group: 'CRM' },
 
   { key: 'canViewAllStates', label: 'Ver Todos os Estados (CRM)', group: 'CRM' },
 
