@@ -753,28 +753,6 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
               className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 dark:text-white"
             />
           </div>
-          <Select
-            value={statusFilter}
-            onChange={(v) => { setStatusFilter(v as LeadStatus | 'all'); setPage(1); }}
-            className="min-w-[180px] bg-white dark:bg-gray-800"
-          >
-            <option value="all">Todos os Status</option>
-            {Object.entries(LEAD_STATUS_LABELS).map(([key, label]) => (
-              <option key={key} value={key}>{label}</option>
-            ))}
-          </Select>
-          {canViewProduction && vendedores.length > 0 && (
-            <Select
-              value={vendedorFilter}
-              onChange={(v) => { setVendedorFilter(v); setPage(1); }}
-              className="min-w-[200px] bg-white dark:bg-gray-800"
-            >
-              <option value="">Todos os Vendedores</option>
-              {vendedores.map(name => (
-                <option key={name} value={name}>{name}</option>
-              ))}
-            </Select>
-          )}
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={`inline-flex items-center gap-2 px-4 py-2.5 border rounded-xl text-sm font-medium transition-all ${
@@ -791,15 +769,6 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
               </span>
             )}
           </button>
-          {canViewProduction && (
-            <button
-              onClick={() => setShowSummary(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
-            >
-              <BarChart3 className="h-4 w-4" />
-              Resumo
-            </button>
-          )}
           {hasActiveFilters && (
             <button
               onClick={clearFilters}
@@ -813,6 +782,19 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
         {/* Expandable advanced filters */}
         {showFilters && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Status</label>
+              <Select
+                value={statusFilter}
+                onChange={(v) => { setStatusFilter(v as LeadStatus | 'all'); setPage(1); }}
+                className="w-full bg-white dark:bg-gray-800"
+              >
+                <option value="all">Todos os Status</option>
+                {Object.entries(LEAD_STATUS_LABELS).map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </Select>
+            </div>
             <div>
               <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Cidade</label>
               <FilterSelect
@@ -866,6 +848,32 @@ const LeadList: React.FC<LeadListProps> = ({ onConvert }) => {
                 />
               </div>
             </div>
+            {canViewProduction && vendedores.length > 0 && (
+              <div>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Vendedor</label>
+                <Select
+                  value={vendedorFilter}
+                  onChange={(v) => { setVendedorFilter(v); setPage(1); }}
+                  className="w-full bg-white dark:bg-gray-800"
+                >
+                  <option value="">Todos os Vendedores</option>
+                  {vendedores.map(name => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                </Select>
+              </div>
+            )}
+            {canViewProduction && (
+              <div className="lg:col-span-4 flex justify-end pt-1">
+                <button
+                  onClick={() => setShowSummary(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#F3B229] to-[#E5A320] text-white rounded-xl text-sm font-medium hover:from-[#E5A320] hover:to-[#D4941A] transition-all shadow-md"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                  Ver Resumo
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
